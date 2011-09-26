@@ -20,7 +20,7 @@ endif
 
 virtualenv:
 	$(PYTHON) $(VIRTUALENV) --no-site-packages $(VIRTUALENV_DIR)
-	$(VIRTUALENV_DIR)/bin/pip install -r $(REQUIREMENTS)
+	$(VIRTUALENV_DIR)/bin/pip -q install -r $(REQUIREMENTS)
 
 ci-tests: NOSE=$(VIRTUALENV_DIR)/bin/nosetests
 ci-tests: TEST_PYTHON=$(VIRTUALENV_DIR)/bin/python
