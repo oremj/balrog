@@ -1,4 +1,4 @@
-VIRTUALENV=virtualenv
+VIRTUALENV=/usr/bin/virtualenv
 PYTHON=python
 NOSE=nosetests
 REQUIREMENTS=requirements.txt
@@ -7,8 +7,6 @@ VIRTUALENV_DIR=$(error VIRTUALENV_DIR must be set when running virtualenv or ci-
 test:
 ifdef VERBOSE
 	@echo Running unit tests
-	@echo $(NOSE)
-	@echo $(PYTHON)
 	$(NOSE) -v
 	@echo Running rules tests
 	$(PYTHON) test-rules.py -v
@@ -20,7 +18,7 @@ else
 endif
 
 virtualenv:
-	virtualenv --no-site-packages $(VIRTUALENV_DIR)
+	$(PYTHON) $(VIRTUALENV) --no-site-packages $(VIRTUALENV_DIR)
 	$(VIRTUALENV_DIR)/bin/pip install -r $(REQUIREMENTS)
 
 ci-tests: NOSE=$(VIRTUALENV_DIR)/bin/nosetests
