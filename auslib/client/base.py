@@ -1,6 +1,6 @@
 from flask import Flask
 
-from AUS import AUS3
+from auslib.AUS import AUS3
 
 app = Flask(__name__)
 AUS = AUS3()

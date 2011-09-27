@@ -11,7 +11,7 @@ from auslib.db import AUSDatabase
 class AUS3:
     def __init__(self, dbname=None):
         if dbname:
-            self.setDb()
+            self.setDb(dbname)
 
     def setDb(self, dbname):
         self.db = AUSDatabase(dbname)

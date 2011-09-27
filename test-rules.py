@@ -5,7 +5,7 @@ try:
     assert json # to shut pyflakes up
 except:
     import simplejson as json
-from AUS import *
+from auslib.AUS import *
 
 import logging
 log = logging.getLogger(__name__)

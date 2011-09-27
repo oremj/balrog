@@ -4,8 +4,6 @@ import sys
 from auslib.client.base import app as application
 from auslib.client.base import AUS
 
-sys.path.append('.')
-
 CONFIG_FILE = 'config.ini'
 
 cfg = RawConfigParser()
