@@ -9,9 +9,8 @@ CONFIG_FILE = 'config.ini'
 cfg = RawConfigParser()
 cfg.read(CONFIG_FILE)
 
-try:
-    dburi = cfg.get('database', 'dburi')
-    AUS.setDb(dburi)
-except:
-    print >> sys.stderr, "Can't find dburi in %s" % CONFIG_FILE
-    raise
+activate_this = path.join(cfg.get('paths', 'virtualenv'), 'bin', 'activate_this.py')
+execfile(activate_this, dict(__file__=activate_this))
+
+dburi = cfg.get('database', 'dburi')
+AUS.setDb(dburi)
