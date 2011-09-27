@@ -1,6 +1,7 @@
 from ConfigParser import RawConfigParser
 from os import path
 import sys
+sys.stdout = sys.stderr
 
 CONFIG_FILE = '/var/www/aus/config.ini'
 
