@@ -38,7 +38,7 @@ class ClientRequestView(MethodView):
             return query
         return {}
 
-    """/update/3/<product>/<version>/<buildid>/<build target>/<locale>/<channel>/<os version>/<distribution>/<distribution version>"""
+    """/update/3/<product>/<version>/<buildID>/<build target>/<locale>/<channel>/<os version>/<distribution>/<distribution version>"""
     def get(self, queryVersion, **url):
         query = self.getQueryFromURL(queryVersion, url)
         if query:
@@ -48,5 +48,5 @@ class ClientRequestView(MethodView):
         # passing {},{} returns empty xml
         return AUS.createXML(query, rule)
 
-app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildid>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
+app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
 # TODO: How can we make Flask serve empty XML files instead of 404s for non-matching URLs?
