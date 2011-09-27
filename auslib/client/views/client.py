@@ -3,7 +3,7 @@ from flask.views import MethodView
 from auslib.client.base import app, AUS
 
 class ClientRequestView(MethodView):
-    def getQueryFromURL(self, url):
+    def getQueryFromURL(self, queryVersion, url):
         """ Use regexp to turn
                 "update/3/Firefox/4.0b13pre/20110303122430/Darwin_x86_64-gcc-u-i386-x86_64/en-US/nightly/Darwin%2010.6.0/default/default/update.xml?force=1"
             into
@@ -40,7 +40,7 @@ class ClientRequestView(MethodView):
 
     """/update/3/<product>/<version>/<buildid>/<build target>/<locale>/<channel>/<os version>/<distribution>/<distribution version>"""
     def get(self, queryVersion, **url):
-        query = self.getQueryFromURL(url)
+        query = self.getQueryFromURL(queryVersion, url)
         if query:
             rule = AUS.evaluateRules(query)
         else:
