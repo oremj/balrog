@@ -10,8 +10,10 @@ from auslib.db import AUSDatabase
 
 class AUS3:
     def __init__(self, dbname=None):
-        if dbname == None:
-            dbname = "update.db"
+        if dbname:
+            self.setDb()
+
+    def setDb(self, dbname):
         self.db = AUSDatabase(dbname)
         self.releases = self.db.releases
         self.updatePaths = self.db.updatePaths
