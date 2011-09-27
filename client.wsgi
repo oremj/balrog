@@ -1,5 +1,5 @@
 from ConfigParser import RawConfigParser
-import logging
+import logging.config
 from os import path
 import sys
 
