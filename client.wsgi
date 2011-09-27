@@ -1,4 +1,5 @@
 from ConfigParser import RawConfigParser
+from os import path
 import sys
 
 CONFIG_FILE = 'config.ini'
