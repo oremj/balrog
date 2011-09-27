@@ -2,7 +2,7 @@ from ConfigParser import RawConfigParser
 from os import path
 import sys
 
-CONFIG_FILE = 'config.ini'
+CONFIG_FILE = '/var/www/aus/config.ini'
 
 cfg = RawConfigParser()
 cfg.read(CONFIG_FILE)
