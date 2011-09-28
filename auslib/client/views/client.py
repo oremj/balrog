@@ -52,4 +52,3 @@ class ClientRequestView(MethodView):
         return response
 
 app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
-# TODO: How can we make Flask serve empty XML files instead of 404s for non-matching URLs?
