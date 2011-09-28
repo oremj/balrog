@@ -1,8 +1,8 @@
 [database]
-dburi=sqlite:////var/www/aus/update.db
+;Database to be used by AUS applications, in URI format
+;dburi=sqlite:////var/www/aus/update.db
+;dburi=mysql://user:password@host/database
 
 [paths]
-virtualenv=/home/bhearsum/tmp/bbb
-
-[logging]
-logfile=/var/www/aus/aus.log
+;Virtualenv that the WSGI scripts should load before importing the application.
+virtualenv=/var/aus/virtualenv
