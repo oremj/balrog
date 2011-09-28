@@ -11,7 +11,7 @@ ifdef VERBOSE
 	$(NOSE) -v
 	@echo Running rules tests
 	$(TEST_PYTHON) test-rules.py -v
-else 
+else
 	@echo Running unit tests
 	$(NOSE)
 	@echo Running rules tests
