@@ -1,3 +1,4 @@
+from flask import make_response
 from flask.views import MethodView
 
 from auslib.client.base import app, AUS
@@ -46,7 +47,9 @@ class ClientRequestView(MethodView):
         else:
             rule = {}
         # passing {},{} returns empty xml
-        return AUS.createXML(query, rule)
+        response = make_response(AUS.createXML(query, rule))
+        response.mimetype = 'text/xml'
+        return response
 
 app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
 # TODO: How can we make Flask serve empty XML files instead of 404s for non-matching URLs?
