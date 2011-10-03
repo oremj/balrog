@@ -1,0 +1,2 @@
+SQLAlchemy==0.7.1
+simplejson==2.1.2
