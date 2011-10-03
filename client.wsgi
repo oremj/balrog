@@ -3,7 +3,7 @@ from os import path
 import site
 import sys
 
-mydir = os.path.dirname(os.path.abspath(__file__))
+mydir = path.dirname(path.abspath(__file__))
 site.addsitedir(mydir)
 site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
