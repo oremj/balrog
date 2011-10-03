@@ -1,12 +1,15 @@
 import logging
 from os import path
+import site
 import sys
+
+site.addsitedir('vendor/lib/python')
 
 from auslib.client.base import app as application
 from auslib.client.base import AUS
 from auslib.config import AUSConfig
 
-cfg = AUSConfig('config.ini-dist')
+cfg = AUSConfig('/etc/aus/config.ini')
 errors = cfg.validate()
 if errors:
     print >>sys.stderr, "Invalid configuration file:"
