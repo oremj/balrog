@@ -3,7 +3,9 @@ from os import path
 import site
 import sys
 
-site.addsitedir('vendor/lib/python')
+mydir = os.path.dirname(os.path.abspath(__file__))
+site.addsitedir(mydir)
+site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
 from auslib.client.base import app as application
 from auslib.client.base import AUS
