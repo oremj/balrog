@@ -8,7 +8,8 @@ VIRTUALENV_DIR ?= $(error VIRTUALENV_DIR must be set when running virtualenv or 
 TEST_PYTHON ?= $(PYTHON)
 # A pip requirements file describing the dependencies that should be installed
 # into the virtualenv.
-REQUIREMENTS=requirements.txt
+REQUIREMENTS=requirements/dev.txt
+COMPILED_REQUIREMENTS=requirements/compiled.txt
 
 ifdef VERBOSE
 NOSE_ARGS=-v
@@ -26,6 +27,7 @@ test:
 virtualenv:
 	$(PYTHON) $(VIRTUALENV) --no-site-packages $(VIRTUALENV_DIR)
 	$(VIRTUALENV_DIR)/bin/pip -q install -r $(REQUIREMENTS)
+	$(VIRTUALENV_DIR)/bin/pip -q install -r $(COMPILED_REQUIREMENTS)
 
 # Run the tests, installing any necessary libraries into a virtualenv.
 ci-tests: NOSE=$(VIRTUALENV_DIR)/bin/nosetests
