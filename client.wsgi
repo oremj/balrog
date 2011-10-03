@@ -1,19 +1,18 @@
-from ConfigParser import RawConfigParser
 import logging
 from os import path
 import sys
 
-CONFIG_FILE = '/var/www/aus/config.ini'
-
-cfg = RawConfigParser()
-cfg.read(CONFIG_FILE)
-
-activate_this = path.join(cfg.get('paths', 'virtualenv'), 'bin', 'activate_this.py')
-execfile(activate_this, dict(__file__=activate_this))
-
-# These must be imported after activating the virtualenv
 from auslib.client.base import app as application
 from auslib.client.base import AUS
+from auslib.config import AUSConfig
 
-dburi = cfg.get('database', 'dburi')
-AUS.setDb(dburi)
+cfg = AUSConfig('config.ini-dist')
+errors = cfg.validate()
+if errors:
+    print >>sys.stderr, "Invalid configuration file:"
+    for err in errors:
+        print >>sys.stderr, err
+    sys.exit(1)
+
+logging.basicConfig(filename=cfg.getLogfile())
+AUS.setDb(cfg.getDburi())

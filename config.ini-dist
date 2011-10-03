@@ -3,6 +3,6 @@
 ;dburi=sqlite:////var/www/aus/update.db
 ;dburi=mysql://user:password@host/database
 
-[paths]
-;Virtualenv that the WSGI scripts should load before importing the application.
-virtualenv=/var/aus/virtualenv
+[logging]
+;Where to put the application log. No rotation is done on this file.
+logfile=/var/log/aus.log
