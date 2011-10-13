@@ -8,6 +8,8 @@ from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   CheckConstraint, create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 
+from auslib.json import ReleaseBlobSchema1, SingleBuildBlob
+
 import logging
 log = logging.getLogger(__name__)
 
@@ -541,8 +543,44 @@ class Releases(AUSTable):
             where.append(self.version==version)
         rows = self.select(where=where, limit=limit)
         for row in rows:
-            row['data'] = json.loads(row['data'])
+            blob = ReleaseBlobSchema1()
+            blob.loadJSON(row['data'])
+            row['data'] = blob
         return rows
+
+    def getReleaseBlob(self, name):
+        try:
+            row = self.select(where=[self.name==name], columns=[self.data], limit=1)[0]
+        except IndexError:
+            raise KeyError("Couldn't find release with name '%s'" % name)
+        blob = ReleaseBlobSchema1()
+        blob.loadJSON(row['data'])
+        return blob
+
+    def addRelease(self, name, product, version, blob, changed_by):
+        columns = dict(name=name, product=product, version=version, data=blob.getJSON())
+        # Raises DuplicateDataError if the release already exists.
+        self.insert(changed_by, **columns)
+
+    def addBuildToRelease(self, name, platform, locale, blob, old_data_version, changed_by):
+        releaseBlob = self.getReleaseBlob(name)
+        if 'platforms' not in releaseBlob:
+            releaseBlob['platforms'] = {
+                platform: {
+                    'locales': {
+                    }
+                }
+            }
+            # Because we constructed the above by hand, we should re-validate it.
+            releaseBlob.validate()
+        releaseBlob['platforms'][platform]['locales'][locale] = blob
+        where = [self.name==name]
+        what = dict(data=releaseBlob.getJSON())
+        self.update(where, what, changed_by, old_data_version)
+
+    def getBuild(self, name, platform, locale):
+        blob = self.getReleaseBlob(name)
+        return blob['platforms'][platform]['locales'][locale]
 
 class Permissions(AUSTable):
     """allPermissions defines the structure and possible options for all

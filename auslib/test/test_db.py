@@ -8,6 +8,7 @@ from sqlalchemy.engine.reflection import Inspector
 
 from auslib.db import AUSDatabase, AUSTable, AlreadySetupError, PermissionDeniedError, \
   AUSTransaction, TransactionError, OutdatedDataError
+from auslib.json import SingleBuildBlob, ReleaseBlobSchema1
 
 class MemoryDatabaseMixin(object):
     """Use this when writing tests that don't require multiple connections to
@@ -371,10 +372,10 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
         self.releases = self.db.releases
-        self.releases.t.insert().execute(name='a', product='a', version='a', data=json.dumps(dict(one=1)), data_version=1)
-        self.releases.t.insert().execute(name='ab', product='a', version='a', data=json.dumps(dict(one=1)), data_version=1)
-        self.releases.t.insert().execute(name='b', product='b', version='b', data=json.dumps(dict(two=2)), data_version=1)
-        self.releases.t.insert().execute(name='c', product='c', version='c', data=json.dumps(dict(three=3)), data_version=1)
+        self.releases.t.insert().execute(name='a', product='a', version='a', data=json.dumps(dict(name=1)), data_version=1)
+        self.releases.t.insert().execute(name='ab', product='a', version='a', data=json.dumps(dict(name=1)), data_version=1)
+        self.releases.t.insert().execute(name='b', product='b', version='b', data=json.dumps(dict(name=2)), data_version=1)
+        self.releases.t.insert().execute(name='c', product='c', version='c', data=json.dumps(dict(name=3)), data_version=1)
 
     def testGetReleases(self):
         self.assertEquals(len(self.releases.getReleases()), 4)
@@ -383,8 +384,127 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEquals(len(self.releases.getReleases(limit=1)), 1)
 
     def testGetReleasesWithWhere(self):
-        expected = [dict(product='b', version='b', name='b', data=dict(two=2), data_version=1)]
+        expected = [dict(product='b', version='b', name='b', data=dict(name=2), data_version=1)]
         self.assertEquals(self.releases.getReleases(name='b'), expected)
+
+    def testGetReleaseBlob(self):
+        expected = dict(name=3)
+        self.assertEquals(self.releases.getReleaseBlob(name='c'), expected)
+
+    def testGetReleaseBlobNonExistentRelease(self):
+        self.assertRaises(KeyError, self.releases.getReleaseBlob, name='z')
+
+    def testAddRelease(self):
+        blob = ReleaseBlobSchema1()
+        blob.loadDict(dict(name=4))
+        self.releases.addRelease(name='d', product='d', version='d', blob=blob, changed_by='bill')
+        expected = [('d', 'd', 'd', json.dumps(dict(name=4)), 1)]
+        self.assertEquals(self.releases.t.select().where(self.releases.name=='d').execute().fetchall(), expected)
+
+    def testAddReleaseAlreadyExists(self):
+        blob = ReleaseBlobSchema1()
+        blob.loadDict(dict(name=1))
+        self.assertRaises(TransactionError, self.releases.addRelease, name='a', product='a', version='a', blob=blob, changed_by='bill')
+
+class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
+    """Tests for the Releases class that depend on version 1 of the blob schema."""
+    def setUp(self):
+        MemoryDatabaseMixin.setUp(self)
+        self.db = AUSDatabase(self.dburi)
+        self.releases = self.db.releases
+        self.releases.t.insert().execute(name='a', product='a', version='a', data_version=1, data="""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": "1234"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        self.releases.t.insert().execute(name='b', product='b', version='b', data_version=1, data="""
+{
+    "name": "b"
+}
+""")
+
+    def testAddBuildToRelease(self):
+        blob = SingleBuildBlob()
+        blob.loadDict(dict(complete=dict(hashValue='abc')))
+        self.releases.addBuildToRelease(name='a', platform='p', locale='c', blob=blob, old_data_version=1, changed_by='bill')
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "c": {
+                    "complete": {
+                        "hashValue": "abc"
+                    }
+                },
+                "l": {
+                    "complete": {
+                        "filesize": "1234"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        self.assertEqual(ret, expected)
+
+    def testAddBuildToReleaseOverride(self):
+        blob = SingleBuildBlob()
+        blob.loadDict(dict(complete=dict(hashValue=789)))
+        self.releases.addBuildToRelease(name='a', platform='p', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "hashValue": 789
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        self.assertEqual(ret, expected)
+
+    def testAddBuildToReleasePlatformsDoesntExist(self):
+        blob = SingleBuildBlob()
+        blob.loadDict(dict(buildID=432))
+        self.releases.addBuildToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "b",
+    "platforms": {
+        "q": {
+            "locales": {
+                "l": {
+                    "buildID": 432
+                }
+            }
+        }
+    }
+}
+""")
+        self.assertEqual(ret, expected)
 
 class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):
