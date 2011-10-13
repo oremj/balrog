@@ -16,7 +16,7 @@ NOSE_ARGS=-v
 TEST_ARGS=-v
 endif
 
-ALL_PY_FILES = $(shell find . -iname "*.py")
+ALL_PY_FILES := $(shell find . -iname "*.py")
 
 # Used to run the tests. Useful for both CI-driven tests and manual ones.
 test: $(ALL_PY_FILES)
