@@ -11,7 +11,7 @@ from auslib.client.base import app as application
 from auslib.client.base import AUS
 from auslib.config import AUSConfig
 
-cfg = AUSConfig('/etc/aus/config.ini')
+cfg = AUSConfig('/etc/aus/client.ini')
 errors = cfg.validate()
 if errors:
     print >>sys.stderr, "Invalid configuration file:"
