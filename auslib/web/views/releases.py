@@ -1,6 +1,6 @@
 import simplejson as json
 
-from flask import request, Response
+from flask import request, Response, jsonify
 from flask.views import MethodView
 
 from auslib.json import SingleBuildBlob, ReleaseBlobSchema1
@@ -9,6 +9,10 @@ from auslib.web.views.base import requirelogin
 
 class SingleBuildView(MethodView):
     """/releases/[release]/builds/[platform]/[build]"""
+    def get(self, release, platform, build):
+        build = db.releases.getBuild(release, platform, build)
+        return jsonify(build)
+
     @requirelogin
     def put(self, release, platform, build, changed_by):
         try:

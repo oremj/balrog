@@ -35,4 +35,4 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testBuildGet(self):
         ret = self._get('/releases/d/builds/p/d')
         self.assertStatusCode(ret, 200)
-        self.assertEquals(json.loads(ret.data), dict(complete=dict(buildID=1234)))
+        self.assertEquals(json.loads(ret.data), dict(complete=dict(filesize=1234)))

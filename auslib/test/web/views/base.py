@@ -27,15 +27,14 @@ class ViewTest(unittest.TestCase):
             "locales": {
                 "d": {
                     "complete": {
-                        "buildID": 1234
+                        "filesize": 1234
                     }
                 }
             }
         }
     }
 }
-"""
-        data=json.dumps(dict(name='c')), data_version=1)
+""")
         db.rules.t.insert().execute(id=1, priority=100, version='3.5', buildTarget='d', throttle=100, mapping='c', update_type='minor', data_version=1)
         db.rules.t.insert().execute(id=2, priority=100, version='3.3', buildTarget='d', throttle=100, mapping='b', update_type='minor', data_version=1)
         db.rules.t.insert().execute(id=3, priority=100, version='3.5', buildTarget='a', throttle=100, mapping='a', update_type='minor', data_version=1)
