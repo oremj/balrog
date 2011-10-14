@@ -8,7 +8,7 @@ from sqlalchemy.engine.reflection import Inspector
 
 from auslib.db import AUSDatabase, AUSTable, AlreadySetupError, PermissionDeniedError, \
   AUSTransaction, TransactionError, OutdatedDataError
-from auslib.json import SingleBuildBlob, ReleaseBlobSchema1
+from auslib.blob import ReleaseBlobV1
 
 class MemoryDatabaseMixin(object):
     """Use this when writing tests that don't require multiple connections to
@@ -395,15 +395,13 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         self.assertRaises(KeyError, self.releases.getReleaseBlob, name='z')
 
     def testAddRelease(self):
-        blob = ReleaseBlobSchema1()
-        blob.loadDict(dict(name=4))
+        blob = ReleaseBlobV1(name=4)
         self.releases.addRelease(name='d', product='d', version='d', blob=blob, changed_by='bill')
         expected = [('d', 'd', 'd', json.dumps(dict(name=4)), 1)]
         self.assertEquals(self.releases.t.select().where(self.releases.name=='d').execute().fetchall(), expected)
 
     def testAddReleaseAlreadyExists(self):
-        blob = ReleaseBlobSchema1()
-        blob.loadDict(dict(name=1))
+        blob = ReleaseBlobV1(name=1)
         self.assertRaises(TransactionError, self.releases.addRelease, name='a', product='a', version='a', blob=blob, changed_by='bill')
 
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
@@ -434,10 +432,9 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 }
 """)
 
-    def testAddBuildToRelease(self):
-        blob = SingleBuildBlob()
-        blob.loadDict(dict(complete=dict(hashValue='abc')))
-        self.releases.addBuildToRelease(name='a', platform='p', locale='c', blob=blob, old_data_version=1, changed_by='bill')
+    def testAddLocaleToRelease(self):
+        blob = dict(complete=dict(hashValue='abc'))
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
 {
@@ -462,10 +459,9 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 """)
         self.assertEqual(ret, expected)
 
-    def testAddBuildToReleaseOverride(self):
-        blob = SingleBuildBlob()
-        blob.loadDict(dict(complete=dict(hashValue=789)))
-        self.releases.addBuildToRelease(name='a', platform='p', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+    def testAddLocaleToReleaseOverride(self):
+        blob = dict(complete=dict(hashValue=789))
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='l', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
 {
@@ -485,10 +481,9 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 """)
         self.assertEqual(ret, expected)
 
-    def testAddBuildToReleasePlatformsDoesntExist(self):
-        blob = SingleBuildBlob()
-        blob.loadDict(dict(complete=dict(filesize=432)))
-        self.releases.addBuildToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+    def testAddLocaleToReleasePlatformsDoesntExist(self):
+        blob = dict(complete=dict(filesize=432))
+        self.releases.addLocaleToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
         expected = json.loads("""
 {

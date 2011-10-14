@@ -3,14 +3,14 @@ import simplejson as json
 from flask import request, Response, jsonify
 from flask.views import MethodView
 
-from auslib.json import SingleBuildBlob, ReleaseBlobSchema1
+from auslib.blob import ReleaseBlobV1
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin
 
-class SingleBuildView(MethodView):
-    """/releases/[release]/builds/[platform]/[build]"""
+class SingleLocaleView(MethodView):
+    """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, build):
-        build = db.releases.getBuild(release, platform, build)
+        build = db.releases.getLocale(release, platform, build)
         return jsonify(build)
 
     @requirelogin
@@ -19,20 +19,18 @@ class SingleBuildView(MethodView):
             product = request.form['product']
             version = request.form['version']
             if not db.releases.getReleases(name=release):
-                releaseBlob = ReleaseBlobSchema1()
-                releaseBlob.loadDict(dict(name=release))
+                releaseBlob = ReleaseBlobV1(name=release)
                 db.releases.addRelease(release, product, version, releaseBlob, changed_by)
                 existed = False
             else:
                 try:
-                    db.releases.getBuild(release, platform, build)
+                    db.releases.getLocale(release, platform, build)
                     existed = True
                 except:
                     existed = False
-            buildBlob = SingleBuildBlob()
-            buildBlob.loadJSON(request.form['details'])
+            buildBlob = json.loads(request.form['details'])
             old_data_version = db.releases.getReleases(name=release)[0]['data_version']
-            db.releases.addBuildToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
+            db.releases.addLocaleToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
             if existed:
                 return Response(status=200)
             else:
@@ -42,4 +40,4 @@ class SingleBuildView(MethodView):
         except Exception, e:
             return Response(status=500, response=e.message)
 
-app.add_url_rule('/releases/<release>/builds/<platform>/<build>', view_func=SingleBuildView.as_view('single_build'))
+app.add_url_rule('/releases/<release>/builds/<platform>/<build>', view_func=SingleLocaleView.as_view('single_build'))
