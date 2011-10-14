@@ -3,7 +3,7 @@ import simplejson as json
 from flask import request, Response, jsonify
 from flask.views import MethodView
 
-from auslib.blob import ReleaseBlobV1
+from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin
 
@@ -19,7 +19,7 @@ class SingleLocaleView(MethodView):
             product = request.form['product']
             version = request.form['version']
             if not db.releases.getReleases(name=release):
-                releaseBlob = ReleaseBlobV1(name=release)
+                releaseBlob = ReleaseBlobV1(name=release, schema_version=CURRENT_SCHEMA_VERSION)
                 db.releases.addRelease(release, product, version, releaseBlob, changed_by)
                 existed = False
             else:

@@ -3,6 +3,8 @@ import simplejson as json
 import logging
 log = logging.getLogger(__name__)
 
+CURRENT_SCHEMA_VERSION=1
+
 def isValidBlob(format, data):
     # If there's no format at all, we assume the data is valid.
     if not format:
