@@ -43,9 +43,9 @@ nightly_blob = """
     "name": "somename",
     "platforms": {
         "someplatform": {
+            "buildID": "9999",
             "locales": {
                 "en-US": {
-                    "buildID": "9999",
                     "complete": {
                         "filesize": "1234"
                     }
@@ -61,5 +61,5 @@ class TestRealBlob(unittest.TestCase):
         blob = ReleaseBlobSchema1()
         blob.loadJSON(nightly_blob)
         self.assertEquals(blob['name'], 'somename')
-        self.assertEquals(blob['platforms']['someplatform']['locales']['en-US']['buildID'], '9999')
+        self.assertEquals(blob['platforms']['someplatform']['buildID'], '9999')
         self.assertEquals(blob['platforms']['someplatform']['locales']['en-US']['complete']['filesize'], '1234')

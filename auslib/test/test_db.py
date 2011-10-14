@@ -487,7 +487,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 
     def testAddBuildToReleasePlatformsDoesntExist(self):
         blob = SingleBuildBlob()
-        blob.loadDict(dict(buildID=432))
+        blob.loadDict(dict(complete=dict(filesize=432)))
         self.releases.addBuildToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
         expected = json.loads("""
@@ -497,7 +497,9 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         "q": {
             "locales": {
                 "l": {
-                    "buildID": 432
+                    "complete": {
+                        "filesize": 432
+                    }
                 }
             }
         }

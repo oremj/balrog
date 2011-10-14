@@ -67,6 +67,10 @@ class Blob(dict):
             if callable(self[k]):
                 self[k].validate()
 
+class FileUrlsBlob(Blob):
+    def getClassFor(self, key):
+        return None
+
 class FtpFilenamesBlob(Blob):
     validation_keys = dict(partial=None, complete=None)
 
@@ -77,20 +81,21 @@ class UpdateBlob(Blob):
     validation_keys = {'filesize': None, 'from': None, 'hashValue': None, 'fileUrl': None}
 
 class SingleBuildBlob(Blob):
-    validation_keys = dict(buildID=None, partial=UpdateBlob, complete=UpdateBlob)
+    validation_keys = dict(partial=UpdateBlob, complete=UpdateBlob)
 
 class BuildsBlob(Blob):
     def getClassFor(self, key):
         return SingleBuildBlob
 
 class SinglePlatformBlob(Blob):
-    validation_keys = dict(OS_BOUNCER=None, OS_FTP=None, locales=BuildsBlob)
+    validation_keys = dict(alias=None, buildID=None, OS_BOUNCER=None, OS_FTP=None, locales=BuildsBlob)
 
 class PlatformsBlob(Blob):
     def getClassFor(self, key):
         return SinglePlatformBlob
 
 class ReleaseBlobSchema1(Blob):
-    validation_keys = dict(name=None, schema_version=None, detailsUrl=None, fileUrls=Blob,
+    validation_keys = dict(name=None, schema_version=None, detailsUrl=None, fileUrls=FileUrlsBlob,
                 ftpFilenames=FtpFilenamesBlob, bouncerProducts=BouncerProductsBlob,
-                hashFunction=None, fakePartials=None, platforms=PlatformsBlob)
+                hashFunction=None, fakePartials=None, platforms=PlatformsBlob,
+                extv=None, appv=None)
