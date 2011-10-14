@@ -19,6 +19,23 @@ class ViewTest(unittest.TestCase):
         db.releases.t.insert().execute(name='ab', product='a', version='a', data=json.dumps(dict(name='ab')), data_version=1)
         db.releases.t.insert().execute(name='b', product='b', version='b', data=json.dumps(dict(name='b')), data_version=1)
         db.releases.t.insert().execute(name='c', product='c', version='c', data=json.dumps(dict(name='c')), data_version=1)
+        db.releases.t.insert().execute(name='d', product='d', version='d', data_version=1, data="""
+{
+    "name": "d",
+    "platforms": {
+        "p": {
+            "locales": {
+                "d": {
+                    "complete": {
+                        "buildID": 1234
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+        data=json.dumps(dict(name='c')), data_version=1)
         db.rules.t.insert().execute(id=1, priority=100, version='3.5', buildTarget='d', throttle=100, mapping='c', update_type='minor', data_version=1)
         db.rules.t.insert().execute(id=2, priority=100, version='3.3', buildTarget='d', throttle=100, mapping='b', update_type='minor', data_version=1)
         db.rules.t.insert().execute(id=3, priority=100, version='3.5', buildTarget='a', throttle=100, mapping='a', update_type='minor', data_version=1)

@@ -7,10 +7,10 @@ from auslib.json import SingleBuildBlob, ReleaseBlobSchema1
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin
 
-class SingleLocaleView(MethodView):
-    """/releases/[release]/builds/[platform]/[locale]"""
+class SingleBuildView(MethodView):
+    """/releases/[release]/builds/[platform]/[build]"""
     @requirelogin
-    def put(self, release, platform, locale, changed_by):
+    def put(self, release, platform, build, changed_by):
         try:
             product = request.form['product']
             version = request.form['version']
@@ -21,14 +21,14 @@ class SingleLocaleView(MethodView):
                 existed = False
             else:
                 try:
-                    db.releases.getBuild(release, platform, locale)
+                    db.releases.getBuild(release, platform, build)
                     existed = True
                 except:
                     existed = False
-            localeBlob = SingleBuildBlob()
-            localeBlob.loadJSON(request.form['details'])
+            buildBlob = SingleBuildBlob()
+            buildBlob.loadJSON(request.form['details'])
             old_data_version = db.releases.getReleases(name=release)[0]['data_version']
-            db.releases.addBuildToRelease(release, platform, locale, localeBlob, old_data_version, changed_by)
+            db.releases.addBuildToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
             if existed:
                 return Response(status=200)
             else:
@@ -38,4 +38,4 @@ class SingleLocaleView(MethodView):
         except Exception, e:
             return Response(status=500, response=e.message)
 
-app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
+app.add_url_rule('/releases/<release>/builds/<platform>/<build>', view_func=SingleBuildView.as_view('single_build'))

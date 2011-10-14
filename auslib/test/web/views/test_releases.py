@@ -6,7 +6,7 @@ from auslib.web.base import db
 from auslib.test.web.views.base import ViewTest, JSONTestMixin
 
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
-    def testLocalePut(self):
+    def testBuildPut(self):
         details = json.dumps(dict(complete=dict(filesize=435)))
         ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='a'))
         self.assertStatusCode(ret, 201)
@@ -28,6 +28,11 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
-    def testLocalePutBadJSON(self):
+    def testBuildPutBadJSON(self):
         ret = self._put('/releases/a/builds/p/l', data=dict(details='a', product='a', version='a'))
         self.assertStatusCode(ret, 400)
+
+    def testBuildGet(self):
+        ret = self._get('/releases/d/builds/p/d')
+        self.assertStatusCode(ret, 200)
+        self.assertEquals(json.loads(ret.data), dict(complete=dict(buildID=1234)))
