@@ -147,7 +147,7 @@ class AUSTable(object):
             raise WrongNumberOfRowsError("where clause matched no rows")
         if len(rows) > 1:
             raise WrongNumberOfRowsError("where clause matches multiple rows (primary keys: %s)" % rows)
-        log.debug("AUSTable._returnRowOrRaise: returning %s" % rows)
+        log.debug("AUSTable._returnRowOrRaise: returning %s" % rows[0])
         return rows[0]
 
     def _selectStatement(self, columns=None, where=None, order_by=None, limit=None, distinct=False):
@@ -416,6 +416,7 @@ class History(AUSTable):
         # Tack on history table information to the row
         row['changed_by'] = changed_by
         row['timestamp'] = self.getTimestamp()
+        log.debug("History.forDelete: inserting %s to history table" % row)
         return self._insertStatement(**row)
 
     def forUpdate(self, rowData, changed_by):
@@ -424,6 +425,7 @@ class History(AUSTable):
         row = rowData.copy()
         row['changed_by'] = changed_by
         row['timestamp'] = self.getTimestamp()
+        log.debug("History.forUpdate: inserting %s to history table" % row)
         return self._insertStatement(**row)
 
 class Rules(AUSTable):
