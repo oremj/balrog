@@ -4,8 +4,13 @@ from flask import request, Response, jsonify
 from flask.views import MethodView
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
+from auslib.db import OutdatedDataError
+from auslib.util.retry import retry
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin
+
+import logging
+log = logging.getLogger(__name__)
 
 class SingleLocaleView(MethodView):
     """/releases/[release]/builds/[platform]/[locale]"""
@@ -29,8 +34,11 @@ class SingleLocaleView(MethodView):
                 except:
                     existed = False
             buildBlob = json.loads(request.form['details'])
-            old_data_version = db.releases.getReleases(name=release)[0]['data_version']
-            db.releases.addLocaleToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
+            def updateLocale():
+                old_data_version = db.releases.getReleases(name=release)[0]['data_version']
+                log.debug("SingleLocaleView.put: old_data_version is %s" % old_data_version)
+                db.releases.addLocaleToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
+            retry(updateLocale, sleeptime=0, retry_exceptions=(OutdatedDataError,))
             if existed:
                 return Response(status=200)
             else:
