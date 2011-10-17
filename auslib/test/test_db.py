@@ -190,15 +190,15 @@ class TestHistoryTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         TestTableMixin.setUp(self)
 
     def testHasHistoryTable(self):
-        self.assertIsNotNone(getattr(self.test, 'history', None))
+        self.assertTrue(self.test.history)
 
     def testHistoryTableHasAllColumns(self):
         columns = [c.name for c in self.test.history.t.get_children()]
-        self.assertIn('change_id', columns)
-        self.assertIn('id', columns)
-        self.assertIn('foo', columns)
-        self.assertIn('changed_by', columns)
-        self.assertIn('timestamp', columns)
+        self.assertTrue('change_id' in columns)
+        self.assertTrue('id' in columns)
+        self.assertTrue('foo' in columns)
+        self.assertTrue('changed_by' in columns)
+        self.assertTrue('timestamp' in columns)
 
     def testHistoryUponInsert(self):
         with mock.patch('time.time') as t:

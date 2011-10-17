@@ -147,6 +147,7 @@ class AUSTable(object):
             raise WrongNumberOfRowsError("where clause matched no rows")
         if len(rows) > 1:
             raise WrongNumberOfRowsError("where clause matches multiple rows (primary keys: %s)" % rows)
+        log.debug("AUSTable._returnRowOrRaise: returning %s" % rows)
         return rows[0]
 
     def _selectStatement(self, columns=None, where=None, order_by=None, limit=None, distinct=False):
