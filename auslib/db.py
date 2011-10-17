@@ -412,7 +412,9 @@ class History(AUSTable):
     def forDelete(self, rowData, changed_by):
         """Deletes cause a single row to be created, which only contains the
            primary key data. This represents that the row no longer exists."""
-        row = rowData.copy()
+        row = {}
+        for k in rowData:
+            row[str(k)] = rowData[k]
         # Tack on history table information to the row
         row['changed_by'] = changed_by
         row['timestamp'] = self.getTimestamp()
@@ -422,7 +424,9 @@ class History(AUSTable):
     def forUpdate(self, rowData, changed_by):
         """Updates cause a single row to be created, which contains the full,
            new data of the row at the time of the update."""
-        row = rowData.copy()
+        row = {}
+        for k in rowData:
+            row[str(k)] = rowData[k]
         row['changed_by'] = changed_by
         row['timestamp'] = self.getTimestamp()
         log.debug("History.forUpdate: inserting %s to history table" % row)
