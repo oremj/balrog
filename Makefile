@@ -16,12 +16,16 @@ NOSE_ARGS=-v
 TEST_ARGS=-v
 endif
 
+ALL_PY_FILES := $(shell find . -iname "*.py")
+
 # Used to run the tests. Useful for both CI-driven tests and manual ones.
-test:
+test: test.done
+test.done: $(ALL_PY_FILES)
 	@echo Running unit tests
 	$(NOSE) $(NOSE_ARGS)
 	@echo Running rules tests
 	$(TEST_PYTHON) test-rules.py $(TEST_ARGS)
+	touch $@
 
 # Creates a virtualenv containing all the requirements needed to run tests.
 virtualenv:
@@ -29,7 +33,10 @@ virtualenv:
 	$(VIRTUALENV_DIR)/bin/pip -q install -r $(REQUIREMENTS)
 	$(VIRTUALENV_DIR)/bin/pip -q install -r $(COMPILED_REQUIREMENTS)
 
+clobber-test:
+	$(RM) test.done
+
 # Run the tests, installing any necessary libraries into a virtualenv.
 ci-tests: NOSE=$(VIRTUALENV_DIR)/bin/nosetests
 ci-tests: TEST_PYTHON=$(VIRTUALENV_DIR)/bin/python
-ci-tests: virtualenv test
+ci-tests: clobber-test virtualenv test
