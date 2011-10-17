@@ -543,6 +543,8 @@ class Releases(AUSTable):
             where.append(self.version==version)
         rows = self.select(where=where, limit=limit)
         for row in rows:
+            # No need to validate this data, because it was validated when
+            # it was first inserted.
             blob = ReleaseBlobV1()
             blob.loadJSON(row['data'])
             row['data'] = blob
@@ -563,6 +565,11 @@ class Releases(AUSTable):
         self.insert(changed_by, **columns)
 
     def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by):
+        """Adds or update's the existing data for a specific platform + locale
+           combination, in the release identified by 'name'. The data is
+           validated before commiting it, and a ValueError is raised if it is
+           invalid.
+        """
         releaseBlob = self.getReleaseBlob(name)
         if 'platforms' not in releaseBlob:
             releaseBlob['platforms'] = {

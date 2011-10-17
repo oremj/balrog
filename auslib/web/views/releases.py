@@ -23,10 +23,12 @@ class SingleLocaleView(MethodView):
         try:
             product = request.form['product']
             version = request.form['version']
+            # If the release doesn't exist, create it.
             if not db.releases.getReleases(name=release):
                 releaseBlob = ReleaseBlobV1(name=release, schema_version=CURRENT_SCHEMA_VERSION)
                 db.releases.addRelease(release, product, version, releaseBlob, changed_by)
                 existed = False
+            # If it does exist, see if the locale already exists.
             else:
                 try:
                     db.releases.getLocale(release, platform, build)
@@ -34,6 +36,7 @@ class SingleLocaleView(MethodView):
                 except:
                     existed = False
             buildBlob = json.loads(request.form['details'])
+            # We need to wrap this in order to make it retry-able.
             def updateLocale():
                 old_data_version = db.releases.getReleases(name=release)[0]['data_version']
                 log.debug("SingleLocaleView.put: old_data_version is %s" % old_data_version)
