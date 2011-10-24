@@ -45,9 +45,8 @@ class ViewTest(unittest.TestCase):
     def tearDown(self):
         db.reset()
 
-    def _getAuth(self, username='bill', password='secret'):
-        auth = b64encode('%s:%s' % (username, password))
-        return {'Authorization': 'Basic %s' % auth}
+    def _getAuth(self, username='bill'):
+        return {'X-Remote-User': 'bill'}
 
     def _post(self, url, data={}):
         return self.client.post(url, data=data, headers=self._getAuth())
