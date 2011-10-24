@@ -7,7 +7,7 @@ mydir = path.dirname(path.abspath(__file__))
 site.addsitedir(mydir)
 site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
-from auslib.web.base import app as application
+from auslib.web.base import db, app as application
 from auslib.config import AUSConfig
 
 cfg = AUSConfig('/etc/aus/admin.ini')
@@ -19,4 +19,4 @@ if errors:
     sys.exit(1)
 
 logging.basicConfig(filename=cfg.getLogfile())
-AUS.setDb(cfg.getDburi())
+AUS.setDburi(cfg.getDburi())
