@@ -10,6 +10,10 @@ from auslib.db import AUSDatabase
 
 class AUS3:
     def __init__(self, dbname=None):
+        if dbname:
+            self.setDb(dbname)
+
+    def setDb(self, dbname):
         if dbname == None:
             dbname = "sqlite:///update.db"
         self.db = AUSDatabase(dbname)
