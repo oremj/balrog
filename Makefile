@@ -6,6 +6,7 @@ NOSE ?= nosetests
 VIRTUALENV_DIR ?= $(error VIRTUALENV_DIR must be set when running virtualenv or ci-tests targets)
 # The Python binary to use when running tests.
 TEST_PYTHON ?= $(PYTHON)
+PYTHONPATH ?= vendor/lib/python
 # A pip requirements file describing the dependencies that should be installed
 # into the virtualenv.
 REQUIREMENTS=requirements/dev.txt

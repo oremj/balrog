@@ -3,9 +3,10 @@ import simplejson as json
 from flask import request, Response, jsonify
 from flask.views import MethodView
 
+from buildtools.retry import retry
+
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.db import OutdatedDataError
-from auslib.util.retry import retry
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin
 
