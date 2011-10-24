@@ -19,4 +19,4 @@ if errors:
     sys.exit(1)
 
 logging.basicConfig(filename=cfg.getLogfile())
-AUS.setDburi(cfg.getDburi())
+db.setDburi(cfg.getDburi())
