@@ -10,6 +10,8 @@ def isValidBlob(format, blob):
        Validation follows these rules:
        1) If there's no format at all, the blob is valid.
        2) If the format contains a '*' key, all key names are accepted.
+       3) If the format doesn't contain a '*' key, all keys in the blob must
+          also be present in the format.
        3) If the value for the key is None, all values for that key are valid.
        4) If the value for the key is a dictionary, validate it.
     """

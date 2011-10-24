@@ -1,3 +1,4 @@
+from functools import wraps
 import simplejson as json
 
 from flask import request, Response, jsonify
@@ -8,7 +9,7 @@ from buildtools.retry import retry
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.db import OutdatedDataError
 from auslib.web.base import app, db
-from auslib.web.views.base import requirelogin
+from auslib.web.views.base import requirelogin, requirepermission
 
 import logging
 log = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class SingleLocaleView(MethodView):
         return jsonify(build)
 
     @requirelogin
+    @requirepermission
     def put(self, release, platform, build, changed_by):
         try:
             product = request.form['product']

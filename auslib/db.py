@@ -550,8 +550,6 @@ class Releases(AUSTable):
             where.append(self.version==version)
         rows = self.select(where=where, limit=limit)
         for row in rows:
-            # No need to validate this data, because it was validated when
-            # it was first inserted.
             blob = ReleaseBlobV1()
             blob.loadJSON(row['data'])
             row['data'] = blob
@@ -567,6 +565,9 @@ class Releases(AUSTable):
         return blob
 
     def addRelease(self, name, product, version, blob, changed_by):
+        if not blob.isValid():
+            log.debug("Releases.addRelease: invalid blob is %s" % blob)
+            raise ValueError("Release blob is invalid.")
         columns = dict(name=name, product=product, version=version, data=blob.getJSON())
         # Raises DuplicateDataError if the release already exists.
         self.insert(changed_by, **columns)
@@ -587,7 +588,7 @@ class Releases(AUSTable):
             }
         releaseBlob['platforms'][platform]['locales'][locale] = blob
         if not releaseBlob.isValid():
-            log.debug("Releases.addLocaleToRelease: releaseBlob is %s" % releaseBlob)
+            log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)
             raise ValueError("New release blob is invalid.")
         where = [self.name==name]
         what = dict(data=releaseBlob.getJSON())
@@ -703,7 +704,9 @@ class Permissions(AUSTable):
 
     def hasUrlPermission(self, username, url, method, urlOptions={}):
         """Check if a user has access to an URL via a specific HTTP method.
-           GETs are always allowed."""
+           GETs are always allowed, and admins can always access everything."""
+        if self.select(where=[self.username==username, self.permission=='admin']):
+            return True
         try:
             options = self.getOptions(username, url)
         except ValueError:
