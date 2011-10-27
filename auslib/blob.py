@@ -18,6 +18,9 @@ def isValidBlob(format, blob):
     # If there's no format at all, we assume the blob is valid.
     if not format:
         return True
+    # If the blob isn't a dictionary-like object, it's not valid!
+    if not hasattr(blob, 'keys') or not callable(blob.keys):
+        return False
     for key in blob.keys():
         # A '*' key in the format means that all key names in the blob are accepted.
         if '*' in format:

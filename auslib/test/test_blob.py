@@ -43,7 +43,9 @@ class TestBlob(unittest.TestCase):
         self.assertTrue(blob.isValid())
 
     def testWildcardInvalid(self):
-        BlobWithWildcard(bar=dict(foo='abc'))
+        blob = BlobWithWildcard(bar=dict(foo='abc'))
+        self.assertFalse(blob.isValid())
 
     def testWildcardWrongType(self):
-        BlobWithWildcard(foo='abc')
+        blob = BlobWithWildcard(foo='abc')
+        self.assertFalse(blob.isValid())
