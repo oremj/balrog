@@ -20,7 +20,7 @@ class SingleLocaleView(MethodView):
         return jsonify(build)
 
     @requirelogin
-    @requirepermission
+    @requirepermission()
     def put(self, release, platform, build, changed_by):
         try:
             product = request.form['product']
