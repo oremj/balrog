@@ -17,7 +17,7 @@ def requirepermission(f, options=['product']):
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
-            username = request.authorization.username
+            username = request.environ.get('REMOTE_USER')
             url = request.path
             method = request.method
             extra = dict()
