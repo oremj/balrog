@@ -1,8 +1,6 @@
-from base64 import b64encode
 import simplejson as json
 import unittest
 
-from auslib.db import AUSDatabase
 from auslib.web.base import app, db
 
 class ViewTest(unittest.TestCase):

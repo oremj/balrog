@@ -2,6 +2,8 @@ from functools import wraps
 
 from flask import request, Response
 
+from auslib.web.base import db
+
 def requirelogin(f):
     @wraps(f)
     def decorated(*args, **kwargs):

@@ -68,7 +68,6 @@ class SpecificPermissionView(MethodView):
             db.permissions.updatePermission(changed_by, username, permission, data_version, options)
             return Response(status=200)
         except ValueError, e:
-            import sys
             return Response(status=400, response=e.message)
         except Exception, e:
             return Response(status=500, response=e.message)

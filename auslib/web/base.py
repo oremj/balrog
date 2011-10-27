@@ -1,7 +1,5 @@
 from flask import Flask
 
-from sqlalchemy import create_engine
-
 from auslib.db import AUSDatabase
 
 app = Flask(__name__)

@@ -1,4 +1,3 @@
-from functools import wraps
 import simplejson as json
 
 from flask import request, Response, jsonify
