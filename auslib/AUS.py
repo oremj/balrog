@@ -1,7 +1,5 @@
-import re, copy
+import copy
 from collections import defaultdict
-# the json module in python 2.6 is really slow in comparison to simplejson
-import simplejson as json
 
 import logging
 log = logging.getLogger(__name__)

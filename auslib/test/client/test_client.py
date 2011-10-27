@@ -1,5 +1,3 @@
-import flask
-from mock import patch
 import unittest
 from xml.dom import minidom
 
