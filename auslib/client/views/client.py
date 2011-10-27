@@ -1,9 +1,21 @@
-from flask import make_response
+from flask import make_response, request
 from flask.views import MethodView
 
 from auslib.client.base import app, AUS
 
+import logging
+log = logging.getLogger(__name__)
+
 class ClientRequestView(MethodView):
+    def getHeaderArchitecture(self, buildTarget, ua):
+        if buildTarget.startswith('Darwin'):
+            if ua and 'PPC' in ua:
+                return 'PPC'
+            else:
+                return 'Intel'
+        else:
+            return 'Intel'
+
     def getQueryFromURL(self, queryVersion, url):
         """ Use regexp to turn
                 "update/3/Firefox/4.0b13pre/20110303122430/Darwin_x86_64-gcc-u-i386-x86_64/en-US/nightly/Darwin%2010.6.0/default/default/update.xml?force=1"
@@ -28,14 +40,8 @@ class ClientRequestView(MethodView):
         # TODO: Better way of dispatching different versions when we actually have to deal with them.
         if queryVersion == 3:
             query['name'] = AUS.identifyRequest(query)
-            if query['buildTarget'].startswith('Darwin'):
-                ua = self.headers.getfirstmatchingheader('User-Agent')
-                if ua and 'PPC' in ua[0]:
-                    query['headerArchitecture'] = 'PPC'
-                else:
-                    query['headerArchitecture'] = 'Intel'
-            else:
-                query['headerArchitecture'] = 'Intel'
+            ua = request.headers.get('User-Agent')
+            query['headerArchitecture'] = self.getHeaderArchitecture(query['buildTarget'], ua)
             return query
         return {}
 
@@ -47,7 +53,10 @@ class ClientRequestView(MethodView):
         else:
             rule = {}
         # passing {},{} returns empty xml
-        response = make_response(AUS.createXML(query, rule))
+        log.debug("ClientRequestView.getQueryFromURL: Got rule: %s", rule)
+        xml = AUS.createXML(query, rule)
+        log.debug("ClientRequestView.getQueryFromURL: Sending XML: %s", xml)
+        response = make_response(xml)
         response.mimetype = 'text/xml'
         return response
 
