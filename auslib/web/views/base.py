@@ -7,7 +7,6 @@ def requirelogin(f):
         username = request.environ.get('REMOTE_USER')
         if not username:
             return Response(status=401)
-        print kwargs
         return f(*args, changed_by=username, **kwargs)
     return decorated
 
