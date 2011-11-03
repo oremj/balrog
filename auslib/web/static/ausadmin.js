@@ -7,10 +7,32 @@ function getHTML(url) {
     });
 }
 
+function getFullURL(url) {
+    return SCRIPT_ROOT + url;
+}
+
 function getUsers() {
-    return getHTML('/users');
+    return getHTML(getFullURL('/users'));
 }
 
 function getUserPermissions(username) {
-    return getHTML('/users/' + username + '/permissions');
+    return getHTML(getFullURL('/users/' + username + '/permissions'));
+}
+
+function addUsers(element) {
+    getUsers()
+    .success(function(data) {
+        element.append(data);
+    });
+}
+
+function addUserPermissions(username, element) {
+    getUserPermissions(username)
+    .success(function(data) {
+        element.append(data);
+    });
+}
+
+function redirect(page, args) {
+    window.location.assign(page + '?' + $.param(args));
 }

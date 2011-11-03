@@ -1,9 +1,17 @@
 {% extends "base.html" %}
 {% block title %}AUS3 Admin - Permissions{% endblock %}
+{% block head %}
+<script type='text/javascript'>
+    $(document).ready(function() {
+        addUsers($('#users'));
+    });
+</script>
+{% endblock %}
 {% block content %}
-<ul id='users'>
-    {% for user in users %}
-        <li><a href='/user_permissions.html?username={{ user }}'>{{ user }}</a></li>
-    {% endfor %}
-</ul>
+<div id='users'></div>
+<form onsubmit='redirect("{{ url_for("user_permissions.html") }}", {username: $("#newuser").val()}); return false'>
+    <label for='newuser'>Edit permissions for a new user:</label>
+    <input type='text' id='newuser' name='newuser' />
+    <input type='submit' />
+</form>
 {% endblock %}

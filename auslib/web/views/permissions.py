@@ -17,15 +17,23 @@ class UsersView(MethodView):
     """/users"""
     def get(self):
         users = db.permissions.getAllUsers()
-        # We don't return a plain jsonify'ed list here because of:
-        # http://flask.pocoo.org/docs/security/#json-security
-        return jsonify(dict(users=users))
+        fmt = request.form.get('format')
+        if fmt == 'json':
+            # We don't return a plain jsonify'ed list here because of:
+            # http://flask.pocoo.org/docs/security/#json-security
+            return jsonify(dict(users=users))
+        else:
+            return render_template('snippets/users.html', users=users)
 
 class PermissionsView(MethodView):
     """/users/[user]/permissions"""
     def get(self, username):
         permissions = db.permissions.getUserPermissions(username)
-        return jsonify(permissions)
+        fmt = request.form.get('format')
+        if fmt == 'json':
+            return jsonify(permissions)
+        else:
+            return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
 
 class SpecificPermissionView(MethodView):
     """/users/[user]/permissions/[permission]"""
@@ -96,9 +104,9 @@ class UserPermissionsPageView(MethodView):
     """/user_permissions.html"""
     def get(self):
         username = request.args.get('username')
-        permissions = db.permissions.getUserPermissions(username)
         if not username:
             return Response(status=404)
+        permissions = db.permissions.getUserPermissions(username)
         return render_template('user_permissions.html', username=username, permissions=permissions)
 
 app.add_url_rule('/users', view_func=UsersView.as_view('users'))
