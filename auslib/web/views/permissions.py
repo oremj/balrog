@@ -54,9 +54,9 @@ class SpecificPermissionView(MethodView):
                 db.permissions.grantPermission(changed_by, username, permission, options)
                 return Response(status=201)
         except ValueError, e:
-            return Response(status=400, response=e.message)
+            return Response(status=400, response=e.args)
         except Exception, e:
-            return Response(status=500, response=e.message)
+            return Response(status=500, response=e.args)
 
     @setpermission
     @requirelogin
@@ -70,9 +70,9 @@ class SpecificPermissionView(MethodView):
             db.permissions.updatePermission(changed_by, username, permission, data_version, options)
             return Response(status=200)
         except ValueError, e:
-            return Response(status=400, response=e.message)
+            return Response(status=400, response=e.args)
         except Exception, e:
-            return Response(status=500, response=e.message)
+            return Response(status=500, response=e.args)
 
     @setpermission
     @requirelogin
@@ -85,9 +85,9 @@ class SpecificPermissionView(MethodView):
             db.permissions.revokePermission(changed_by, username, permission, data_version)
             return Response(status=200)
         except ValueError, e:
-            return Response(status=400, response=e.message)
+            return Response(status=400, response=e.args)
         except Exception, e:
-            return Response(status=500, response=e.message)
+            return Response(status=500, response=e.args)
 
 class PermissionsPageView(MethodView):
     """/permissions.html"""
