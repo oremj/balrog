@@ -15,13 +15,13 @@ log = logging.getLogger(__name__)
 
 class SingleLocaleView(MethodView):
     """/releases/[release]/builds/[platform]/[locale]"""
-    def get(self, release, platform, build):
-        build = db.releases.getLocale(release, platform, build)
-        return jsonify(build)
+    def get(self, release, platform, locale):
+        locale = db.releases.getLocale(release, platform, locale)
+        return jsonify(locale)
 
     @requirelogin
     @requirepermission()
-    def put(self, release, platform, build, changed_by):
+    def put(self, release, platform, locale, changed_by):
         try:
             product = request.form['product']
             version = request.form['version']
@@ -33,16 +33,16 @@ class SingleLocaleView(MethodView):
             # If it does exist, see if the locale already exists.
             else:
                 try:
-                    db.releases.getLocale(release, platform, build)
+                    db.releases.getLocale(release, platform, locale)
                     existed = True
                 except:
                     existed = False
-            buildBlob = json.loads(request.form['details'])
+            localeBlob = json.loads(request.form['details'])
             # We need to wrap this in order to make it retry-able.
             def updateLocale():
                 old_data_version = db.releases.getReleases(name=release)[0]['data_version']
                 log.debug("SingleLocaleView.put: old_data_version is %s" % old_data_version)
-                db.releases.addLocaleToRelease(release, platform, build, buildBlob, old_data_version, changed_by)
+                db.releases.addLocaleToRelease(release, platform, locale, localeBlob, old_data_version, changed_by)
             retry(updateLocale, sleeptime=0, retry_exceptions=(OutdatedDataError,))
             if existed:
                 return Response(status=200)
@@ -53,4 +53,4 @@ class SingleLocaleView(MethodView):
         except Exception, e:
             return Response(status=500, response=e.message)
 
-app.add_url_rule('/releases/<release>/builds/<platform>/<build>', view_func=SingleLocaleView.as_view('single_build'))
+app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
