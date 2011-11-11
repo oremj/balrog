@@ -412,6 +412,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
+        self.db.createTables()
         self.releases = self.db.releases
         self.releases.t.insert().execute(name='a', product='a', version='a', data_version=1, data="""
 {
