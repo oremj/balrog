@@ -23,27 +23,35 @@ class SingleLocaleView(MethodView):
     @requirepermission()
     def put(self, release, platform, locale, changed_by):
         try:
+            # Collect all of the release names that we should put the data into
+            releases = [release]
+            releases.extend(request.form.get('copyTo', []))
+            # XXX: what do we do with product and version when the release already exists,
+            #      but they don't match? update them? maybe we should require the client
+            #      to create the release via a separate method?
             product = request.form['product']
             version = request.form['version']
-            # If the release doesn't exist, create it.
-            if not db.releases.getReleases(name=release):
-                releaseBlob = ReleaseBlobV1(name=release, schema_version=CURRENT_SCHEMA_VERSION)
-                db.releases.addRelease(release, product, version, releaseBlob, changed_by)
-                existed = False
-            # If it does exist, see if the locale already exists.
-            else:
-                try:
-                    db.releases.getLocale(release, platform, locale)
-                    existed = True
-                except:
-                    existed = False
-            localeBlob = json.loads(request.form['details'])
-            # We need to wrap this in order to make it retry-able.
-            def updateLocale():
-                old_data_version = db.releases.getReleases(name=release)[0]['data_version']
-                log.debug("SingleLocaleView.put: old_data_version is %s" % old_data_version)
-                db.releases.addLocaleToRelease(release, platform, locale, localeBlob, old_data_version, changed_by)
-            retry(updateLocale, sleeptime=0, retry_exceptions=(OutdatedDataError,))
+            existed = False
+            for rel in releases:
+                # If the release doesn't exist, create it.
+                if not db.releases.getReleases(name=rel):
+                    releaseBlob = ReleaseBlobV1(name=rel, schema_version=CURRENT_SCHEMA_VERSION)
+                    db.releases.addRelease(rel, product, version, releaseBlob, changed_by)
+                # If it does exist, and this is this is the first release (aka, the one in the URL),
+                # see if the locale exists, for purposes of setting the correct Response code.
+                elif rel == release:
+                    try:
+                        db.releases.getLocale(rel, platform, locale)
+                        existed = True
+                    except:
+                        pass
+                localeBlob = json.loads(request.form['details'])
+                # We need to wrap this in order to make it retry-able.
+                def updateLocale():
+                    old_data_version = db.releases.getReleases(name=rel)[0]['data_version']
+                    log.debug("SingleLocaleView.put: old_data_version is %s" % old_data_version)
+                    db.releases.addLocaleToRelease(rel, platform, locale, localeBlob, old_data_version, changed_by)
+                retry(updateLocale, sleeptime=0, retry_exceptions=(OutdatedDataError,))
             if existed:
                 return Response(status=200)
             else:

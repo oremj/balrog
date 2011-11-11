@@ -29,6 +29,46 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
+    def testLocalePutWithCopy(self):
+        details = json.dumps(dict(partial=dict(filesize=123)))
+        data = dict(details=details, product='a', version='a', copyTo=json.dumps(['b']))
+        ret = self._put('/releases/a/builds/p/l', data=data)
+        self.assertStatusCode(ret, 201)
+        ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
+        self.assertEqual(json.loads(ret), json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "partial": {
+                        "filesize": 123
+                    }
+                }
+            }
+        }
+    }
+}
+"""))
+        ret = select([db.releases.data]).where(db.releases.name=='b').execute().fetchone()[0]
+        self.assertEqual(json.loads(ret), json.loads("""
+{
+    "name": "b",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "partial": {
+                        "filesize": 123
+                    }
+                }
+            }
+        }
+    }
+}
+"""))
+
     def testLocalePutRetry(self):
         # In order to test the retry logic we need to mock out the method used
         # to grab the current data_version. The first time through, it needs
