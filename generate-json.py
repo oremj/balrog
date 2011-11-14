@@ -355,4 +355,4 @@ if __name__ == "__main__":
             db.releases.delete(changed_by='generate-json.py', where=[db.releases.name==options.name,], old_data_version=current[0]['data_version'])
         # XXX: use db.releases.addRelease() when it exists
         db.releases.insert(changed_by='generate-json.py', name=options.name, product=options.product, version=options.version,
-                        data=json.dumps(relData, separators=(',', ':')))
+                           data=json.dumps(relData, separators=(',', ':')))
