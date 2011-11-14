@@ -311,6 +311,7 @@ if __name__ == "__main__":
     parser.add_option("--hash-func", dest="hash_func", default="sha512")
     parser.add_option("-l", "--limit-locale", dest="locales", action="append", default=[], help="Limit locales to only those specified. This option may be passed multiple times. If not specified, all locales will be processed")
     parser.add_option("--db", dest="db", help="When present, specifies a database to import the release into. Eg, sqlite:///test.db")
+    parser.add_option("--verbose", dest="verbose", default=False)
 
     options, args = parser.parse_args()
     if not options.walkdir or not isdir(options.walkdir):
@@ -345,7 +346,8 @@ if __name__ == "__main__":
             else:
                 fn(options.walkdir, d, options.version, options.partial, options.exclude_partials, options.locales, relData)
 
-    print json.dumps(relData, sort_keys=True, indent=4)
+    if options.verbose:
+        print json.dumps(relData, sort_keys=True, indent=4)
     if options.db:
         current = db.releases.select(columns=[db.releases.data_version], where=[db.releases.name==options.name])
         if current:

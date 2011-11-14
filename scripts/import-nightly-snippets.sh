@@ -22,6 +22,6 @@ previous=`ls $SNIPPET_DIR/$BRANCH/WINNT_x86-msvc | tail -n2 | head -n1`
 cd $SNIPPET_DIR
 for release in $PRODUCT-$BRANCH-nightly-$current $PRODUCT-$BRANCH-nightly-latest; do
     $PYTHON $AUS_REPO/generate-json.py -w $BRANCH -n $release \
-            $VERSION -p $PRODUCT-$BRANCH-nightly-$previous \
+            -v $VERSION -p $PRODUCT-$BRANCH-nightly-$previous \
             --db $DBURI --product $PRODUCT
 done
