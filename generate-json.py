@@ -347,9 +347,10 @@ if __name__ == "__main__":
 
     print json.dumps(relData, sort_keys=True, indent=4)
     if options.db:
-        v = db.releases.select(columns=[db.releases.data_version], where=[db.releases.name==options.name])[0]['old_data_version']
-        # Ideally, we'd update instead of doing this, but it's not easy to yet
-        db.releases.delete(changed_by='generate-json.py', where=(db.releases.name==options.name,), old_data_version=v)
+        current = db.releases.select(columns=[db.releases.data_version], where=[db.releases.name==options.name])
+        if current:
+            # Ideally, we'd update instead of doing this, but it's not easy to yet
+            db.releases.delete(changed_by='generate-json.py', where=[db.releases.name==options.name,], old_data_version=current[0]['data_version'])
         # XXX: use db.releases.addRelease() when it exists
         db.releases.insert(changed_by='generate-json.py', name=options.name, product=options.product, version=options.version,
-                           data=json.dumps(relData, separators=(',', ':')))
+                        data=json.dumps(relData, separators=(',', ':')))
