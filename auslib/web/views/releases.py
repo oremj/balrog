@@ -26,7 +26,6 @@ class SingleLocaleView(MethodView):
             # Collect all of the release names that we should put the data into
             releases = [release]
             releases.extend(json.loads(request.form.get('copyTo', '[]')))
-            print releases
             # XXX: what do we do with product and version when the release already exists,
             #      but they don't match? update them? maybe we should require the client
             #      to create the release via a separate method?
