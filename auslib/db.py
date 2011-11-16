@@ -602,8 +602,11 @@ class Releases(AUSTable):
         self.update(where, what, changed_by, old_data_version)
 
     def getLocale(self, name, platform, locale):
-        blob = self.getReleaseBlob(name)
-        return blob['platforms'][platform]['locales'][locale]
+        try:
+            blob = self.getReleaseBlob(name)
+            return blob['platforms'][platform]['locales'][locale]
+        except KeyError:
+            raise KeyError("Couldn't find locale identified by: %s, %s, %s" % (name, platform ,locale))
 
 class Permissions(AUSTable):
     """allPermissions defines the structure and possible options for all
