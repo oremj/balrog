@@ -26,25 +26,29 @@ class SingleLocaleView(MethodView):
             # Collect all of the release names that we should put the data into
             releases = [release]
             releases.extend(json.loads(request.form.get('copyTo', '[]')))
-            # XXX: what do we do with product and version when the release already exists,
-            #      but they don't match? update them? maybe we should require the client
-            #      to create the release via a separate method?
             product = request.form['product']
             version = request.form['version']
             existed = False
             for rel in releases:
                 # If the release doesn't exist, create it.
-                if not db.releases.getReleases(name=rel):
+                releaseObj = db.releases.getReleases(name=rel)[0]
+                if not releaseObj:
                     releaseBlob = ReleaseBlobV1(name=rel, schema_version=CURRENT_SCHEMA_VERSION)
                     db.releases.addRelease(rel, product, version, releaseBlob, changed_by)
-                # If it does exist, and this is this is the first release (aka, the one in the URL),
-                # see if the locale exists, for purposes of setting the correct Response code.
-                elif rel == release:
-                    try:
-                        db.releases.getLocale(rel, platform, locale)
-                        existed = True
-                    except:
-                        pass
+                else:
+                    # If the product name provided in the request doesn't match the one we already have
+                    # for it, fail. Product name changes shouldn't happen here, and any client trying to
+                    # is probably broken.
+                    if product != releaseObj['product']:
+                        return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseObj['product'], rel))
+                    # If it does exist, and this is this is the first release (aka, the one in the URL),
+                    # see if the locale exists, for purposes of setting the correct Response code.
+                    if rel == release:
+                        try:
+                            db.releases.getLocale(rel, platform, locale)
+                            existed = True
+                        except:
+                            pass
                 localeBlob = json.loads(request.form['details'])
                 # We need to wrap this in order to make it retry-able.
                 def updateLocale():

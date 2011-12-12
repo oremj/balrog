@@ -31,7 +31,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutWithCopy(self):
         details = json.dumps(dict(partial=dict(filesize=123)))
-        data = dict(details=details, product='a', version='a', copyTo=json.dumps(['b']))
+        data = dict(details=details, product='a', version='a', copyTo=json.dumps(['ab']))
         ret = self._put('/releases/a/builds/p/l', data=data)
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
@@ -51,10 +51,10 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     }
 }
 """))
-        ret = select([db.releases.data]).where(db.releases.name=='b').execute().fetchone()[0]
+        ret = select([db.releases.data]).where(db.releases.name=='ab').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
 {
-    "name": "b",
+    "name": "ab",
     "platforms": {
         "p": {
             "locales": {
@@ -76,7 +76,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         # through it needs to return the correct one, to make sure retrying
         # results in success still.
         with mock.patch('auslib.web.base.db.releases.getReleases') as r:
-            results = [[dict(data_version=1)], [dict(data_version=431)]]
+            results = [[dict(data_version=1, product='a')], [dict(data_version=431, product='a')]]
             def se(*args, **kwargs):
                 print results
                 return results.pop()
@@ -115,3 +115,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testLocalePutNotAllowed(self):
         ret = self.client.put('/releases/d/builds/p/d', data=dict(product='a'))
         self.assertStatusCode(ret, 401)
+
+    def testLocalePutCantChangeProduct(self):
+        details = json.dumps(dict(complete=dict(filesize=435)))
+        ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='b', version='a'))
+        self.assertStatusCode(ret, 400)
