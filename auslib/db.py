@@ -579,6 +579,14 @@ class Releases(AUSTable):
         # Raises DuplicateDataError if the release already exists.
         self.insert(changed_by, **columns)
 
+    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None):
+        what = {}
+        if product:
+            what['product'] = product
+        if version:
+            what['version'] = version
+        self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version)
+
     def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by):
         """Adds or update's the existing data for a specific platform + locale
            combination, in the release identified by 'name'. The data is

@@ -69,6 +69,26 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
+    def testLocalePutChangeVersion(self):
+        ret = self._put('/releases/a/builds/p/l', data=dict(details="{}", product='a', version='b'))
+        self.assertStatusCode(ret, 201)
+        ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
+        self.assertEqual(json.loads(ret), json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                }
+            }
+        }
+    }
+}
+"""))
+        newVersion = select([db.releases.version]).where(db.releases.name=='a').execute().fetchone()[0]
+        self.assertEquals(newVersion, 'b')
+
     def testLocalePutRetry(self):
         # In order to test the retry logic we need to mock out the method used
         # to grab the current data_version. The first time through, it needs
@@ -76,7 +96,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         # through it needs to return the correct one, to make sure retrying
         # results in success still.
         with mock.patch('auslib.web.base.db.releases.getReleases') as r:
-            results = [[dict(data_version=1, product='a')], [dict(data_version=431, product='a')]]
+            results = [[dict(data_version=1, product='a', version='a')], [dict(data_version=431, product='a', version='a')]]
             def se(*args, **kwargs):
                 print results
                 return results.pop()

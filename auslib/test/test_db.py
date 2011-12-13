@@ -407,6 +407,11 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         blob = ReleaseBlobV1(name=1)
         self.assertRaises(TransactionError, self.releases.addRelease, name='a', product='a', version='a', blob=blob, changed_by='bill')
 
+    def testUpdateRelease(self):
+        self.releases.updateRelease(name='b', product='z', changed_by='bill', old_data_version=1)
+        expected = [('b', 'z', 'b', json.dumps(dict(name=2)), 2)]
+        self.assertEquals(self.releases.t.select().where(self.releases.name=='b').execute().fetchall(), expected)
+
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     """Tests for the Releases class that depend on version 1 of the blob schema."""
     def setUp(self):
