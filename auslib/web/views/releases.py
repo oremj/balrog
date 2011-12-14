@@ -50,7 +50,7 @@ class SingleLocaleView(MethodView):
                     def updateVersion():
                         old_data_version = db.releases.getReleases(name=rel)[0]['data_version']
                         db.releases.updateRelease(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version)
-                    retry(updateVersion, sleeptime=0, retry_exceptions=(SQLAlchemyError,))
+                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
                 # If it does exist, and this is this is the first release (aka, the one in the URL),
                 # see if the locale exists, for purposes of setting the correct Response code.
                 if rel == release:
@@ -62,13 +62,13 @@ class SingleLocaleView(MethodView):
             # If the release doesn't exist, create it.
             else:
                 releaseBlob = ReleaseBlobV1(name=rel, schema_version=CURRENT_SCHEMA_VERSION)
-                retry(db.releases.addRelease, sleeptime=0, retry_exceptions=(SQLAlchemyError,),
+                retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
                       kwargs=dict(name=rel, product=product, version=version, blob=releaseBlob, changed_by=changed_by))
             # We need to wrap this in order to make it retry-able.
             def updateLocale():
                 old_data_version = db.releases.getReleases(name=rel)[0]['data_version']
                 db.releases.addLocaleToRelease(rel, platform, locale, localeBlob, old_data_version, changed_by)
-            retry(updateLocale, sleeptime=0, retry_exceptions=(SQLAlchemyError,))
+            retry(updateLocale, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
         if new:
             return Response(status=201)
         else:
