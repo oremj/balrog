@@ -28,6 +28,6 @@ if __name__ == "__main__":
     db = AUSDatabase(options.db)
     blob = db.releases.getReleaseBlob(options.release)
     if options.ugly:
-        json.dumps(blob)
+        print json.dumps(blob)
     else:
-        json.dumps(blob, indent=2)
+        print json.dumps(blob, indent=2)
