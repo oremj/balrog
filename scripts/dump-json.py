@@ -30,4 +30,4 @@ if __name__ == "__main__":
     if options.ugly:
         print json.dumps(blob)
     else:
-        print json.dumps(blob, indent=2)
+        print json.dumps(blob, indent=4)
