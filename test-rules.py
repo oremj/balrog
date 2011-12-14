@@ -30,7 +30,7 @@ def populateDB(AUS, testdir):
         data = json.load(open(f,'r'))
         product,version = data['name'].split('-')[0:2]
         AUS.db.engine.execute("INSERT INTO releases VALUES ('%s', '%s', '%s','%s', 1)" %
-                   (data['name'], product, data['extv'], json.dumps(data)))
+                   (data['name'], product, data.get('extv', '11.0a1'), json.dumps(data)))
     # TODO - create a proper importer that walks the snippet store to find hashes ?
 
 def getQueryFromPath(snippetPath):
