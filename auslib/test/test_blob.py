@@ -1,6 +1,6 @@
 import unittest
 
-from auslib.blob import Blob
+from auslib.blob import Blob, ReleaseBlobV1
 
 class SimpleBlob(Blob):
     format = {'foo': None}
@@ -49,3 +49,21 @@ class TestBlob(unittest.TestCase):
     def testWildcardWrongType(self):
         blob = BlobWithWildcard(foo='abc')
         self.assertFalse(blob.isValid())
+
+class TestReleaseBlobV1(unittest.TestCase):
+    def testGetLocaleOrTopLevelParamTopLevelOnly(self):
+        blob = ReleaseBlobV1(foo=5)
+        self.assertEquals(5, blob.getLocaleOrTopLevelParam('a', 'b', 'foo'))
+
+    def testGetLocaleOrTopLevelParamLocaleOnly(self):
+        blob = ReleaseBlobV1(platforms=dict(f=dict(locales=dict(g=dict(foo=6)))))
+        self.assertEquals(6, blob.getLocaleOrTopLevelParam('f', 'g', 'foo'))
+
+    def testGetBuildIDPlatformOnly(self):
+        blob = ReleaseBlobV1(platforms=dict(a=dict(buildID=1, locales=dict(b=dict()))))
+        self.assertEquals(1, blob.getBuildID('a', 'b'))
+
+    def testGetBuildIDLocaleOnly(self):
+        blob = ReleaseBlobV1(platforms=dict(c=dict(locales=dict(d=dict(buildID=9)))))
+        self.assertEquals(9, blob.getBuildID('c', 'd'))
+    # XXX: should we support the locale overriding the platform? this should probably be invalid

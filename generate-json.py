@@ -273,9 +273,6 @@ def processNightlySnippetDir(walkdir, platform, version, partial, exclude_partia
 
     # get params for all platforms
     snip = readFile(join(base,'en-US','partial.txt'))
-    relData["extv"] = getParameter(snip,'extv')
-    relData["appv"] = getParameter(snip,'appv')
-    relData["platforms"][platform]["buildID"] = getParameter(snip,'build')
 
     relData["platforms"][platform]["locales"] = {}
     for locale in listdir(base):
@@ -296,6 +293,9 @@ def processNightlySnippetDir(walkdir, platform, version, partial, exclude_partia
             lrelData[type]["filesize"] = getParameter(snip,'size')
             lrelData[type]["hashValue"] = getParameter(snip,'hashValue')
             lrelData[type]["fileUrl"] = getParameter(snip,'url')
+            lrelData["platforms"][platform]["locales"]["buildID"] = getParameter(snip,'build')
+            lrelData["platforms"][platform]["locales"]["extv"] = getParameter(snip,'extv')
+            lrelData["platforms"][platform]["locales"]["appv"] = getParameter(snip,'appv')
 
 
 if __name__ == "__main__":

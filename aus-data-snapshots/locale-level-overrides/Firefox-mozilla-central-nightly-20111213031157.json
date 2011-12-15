@@ -1,27 +1,11 @@
 {
-    "name": "Firefox-mozilla-central-nightly-20111213031157", 
-    "hashFunction": "sha512", 
-    "schema_version": 1,
-    "detailsUrl": "https://www.mozilla.com/%LOCALE%/firefox/5.0.1/releasenotes/",
+    "name": "Firefox-mozilla-central-nightly-20111213031157",
     "platforms": {
         "Darwin_x86_64-gcc3-u-i386-x86_64": {
             "locales": {
                 "sl": {
-                    "buildID": "20111213031157", 
-                    "extv": "11.0a1", 
-                    "appv": "11.0a1", 
-                    "partial": {
-                        "fileUrl": "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/2011/12/2011-12-13-03-11-57-mozilla-central-l10n/firefox-11.0a1.sl.mac.partial.20111212031122-20111213031157.mar", 
-                        "from": "Firefox-mozilla-central-nightly-20111212031122", 
-                        "hashValue": "7cb7351142611e58ec0acea401718540b4b2410e5e7ac46b41ea92a1add9222f3e9a090c9f3e18ebd6846d8c1d937af982ecfe724d0eeb6338cc3009e5ee6dff", 
-                        "filesize": "2119849"
-                    }, 
-                    "complete": {
-                        "fileUrl": "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/2011/12/2011-12-13-03-11-57-mozilla-central-l10n/firefox-11.0a1.sl.mac.complete.mar", 
-                        "from": "*", 
-                        "hashValue": "f5fc23fdde011ecbbb581fd075430996f9df5e7004e3278f8fd5d581b39bed916ddf8edc7bb70fb73c72b7bbb7b7500c886356c1c9dc332b42c2ac62466a81d6", 
-                        "filesize": "39833898"
-                    }
+                    "buildID": "20111213031157",
+                    "extv": "11.0a1"
                 }
             }
         }
