@@ -9,8 +9,6 @@ mydir = path.dirname(path.abspath(__file__))
 site.addsitedir(mydir)
 site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
-from auslib.web.base import app, db
-
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
@@ -29,6 +27,8 @@ if __name__ == '__main__':
     if options.verbose:
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format="%(asctime)s: %(message)s")
+
+    from auslib.web.base import app, db
 
     db.setDburi(options.db)
     db.createTables()
