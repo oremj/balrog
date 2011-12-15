@@ -4,11 +4,11 @@
     "schema_version": 1,
     "platforms": {
         "Darwin_x86_64-gcc3-u-i386-x86_64": {
-            "buildID": "20111214031134", 
-            "extv": "11.0a1", 
-            "appv": "11.0a1", 
             "locales": {
                 "sl": {
+                    "buildID": "20111214031134", 
+                    "extv": "11.0a1", 
+                    "appv": "11.0a1", 
                     "partial": {
                         "fileUrl": "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/2011/12/2011-12-14-03-11-34-mozilla-central-l10n/firefox-11.0a1.sl.mac.partial.20111213031157-20111214031134.mar", 
                         "from": "Firefox-mozilla-central-nightly-20111213031157", 
