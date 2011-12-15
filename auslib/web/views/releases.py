@@ -31,7 +31,7 @@ class SingleLocaleView(MethodView):
             localeBlob = json.loads(request.form['details'])
             copyTo = json.loads(request.form.get('copyTo', '[]'))
         except (KeyError, json.JSONDecodeError), e:
-            return Response(status=400, response=e.message)
+            return Response(status=400, response=e.args)
 
         for rel in [release] + copyTo:
             releaseObj = db.releases.getReleases(name=rel)[0]
