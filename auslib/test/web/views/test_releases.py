@@ -29,6 +29,33 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
+    def testLocalePutAppend(self):
+        details = json.dumps(dict(partial=dict(fileUrl='abc')))
+        ret = self._put('/releases/d/builds/p/g', data=dict(details=details, product='d', version='d'))
+        self.assertStatusCode(ret, 201)
+        ret = select([db.releases.data]).where(db.releases.name=='d').execute().fetchone()[0]
+        self.assertEquals(json.loads(ret), json.loads("""
+{
+    "name": "d",
+    "platforms": {
+        "p": {
+            "locales": {
+                "d": {
+                    "complete": {
+                        "filesize": 1234
+                    }
+                },
+                "g": {
+                    "partial": {
+                        "fileUrl": "abc"
+                    }
+                }
+            }
+        }
+    }
+}
+"""))
+
     def testLocalePutWithCopy(self):
         details = json.dumps(dict(partial=dict(filesize=123)))
         data = dict(details=details, product='a', version='a', copyTo=json.dumps(['ab']))
