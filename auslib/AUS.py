@@ -29,8 +29,7 @@ class AUS3:
         for release in self.releases.getReleases(product=updateQuery['product'], version=updateQuery['version']):
             log.debug("AUS.identifyRequest: Trying to match request to %s", release['name'])
             if buildTarget in release['data']['platforms']:
-                if 'alias' in release['data']['platforms'][buildTarget]:
-                    buildTarget = release['data']['platforms'][buildTarget]['alias']
+                buildTarget = release['data'].getResolvedPlatform(buildTarget)
 
                 releaseBuildID = release['data'].getBuildID(buildTarget, locale)
                 log.debug("AUS.identifyRequest: releasePlat buildID is: %s", releaseBuildID)
@@ -76,8 +75,7 @@ class AUS3:
 
         # platforms may be aliased to another platform in the case
         # of identical data, minimizing the json size
-        alias = relData['platforms'][updateQuery['buildTarget']].get('alias')
-        buildTarget = alias or updateQuery['buildTarget']
+        buildTarget = relData.getResolvedPlatform(updateQuery['buildTarget'])
         locale = updateQuery['locale']
         relDataPlat = relData['platforms'][buildTarget]
 

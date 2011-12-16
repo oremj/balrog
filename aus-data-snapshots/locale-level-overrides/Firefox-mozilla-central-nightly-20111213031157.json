@@ -8,6 +8,9 @@
                     "extv": "11.0a1"
                 }
             }
+        },
+        "Darwin_x86-gcc3-u-i386-x86_64": {
+            "alias": "Darwin_x86_64-gcc3-u-i386_x86_64"
         }
     }
 }
