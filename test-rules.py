@@ -38,7 +38,7 @@ def populateDB(AUS, testdir):
             if not extv:
                 raise Exception("Couldn't find extv for %s" % data['name'])
         AUS.db.engine.execute("INSERT INTO releases VALUES ('%s', '%s', '%s','%s', 1)" %
-                   (data['name'], product, data.get('extv', '11.0a1'), json.dumps(data)))
+                   (data['name'], product, extv, json.dumps(data)))
     # TODO - create a proper importer that walks the snippet store to find hashes ?
 
 def getQueryFromPath(snippetPath):
