@@ -293,9 +293,9 @@ def processNightlySnippetDir(walkdir, platform, version, partial, exclude_partia
             lrelData[type]["filesize"] = getParameter(snip,'size')
             lrelData[type]["hashValue"] = getParameter(snip,'hashValue')
             lrelData[type]["fileUrl"] = getParameter(snip,'url')
-            lrelData["platforms"][platform]["locales"]["buildID"] = getParameter(snip,'build')
-            lrelData["platforms"][platform]["locales"]["extv"] = getParameter(snip,'extv')
-            lrelData["platforms"][platform]["locales"]["appv"] = getParameter(snip,'appv')
+            lrelData["buildID"] = getParameter(snip,'build')
+            lrelData["extv"] = getParameter(snip,'extv')
+            lrelData["appv"] = getParameter(snip,'appv')
 
 
 if __name__ == "__main__":
@@ -311,7 +311,7 @@ if __name__ == "__main__":
     parser.add_option("--hash-func", dest="hash_func", default="sha512")
     parser.add_option("-l", "--limit-locale", dest="locales", action="append", default=[], help="Limit locales to only those specified. This option may be passed multiple times. If not specified, all locales will be processed")
     parser.add_option("--db", dest="db", help="When present, specifies a database to import the release into. Eg, sqlite:///test.db")
-    parser.add_option("--verbose", dest="verbose", default=False)
+    parser.add_option("--verbose", dest="verbose", default=False, action="store_true")
 
     options, args = parser.parse_args()
     if not options.walkdir or not isdir(options.walkdir):
