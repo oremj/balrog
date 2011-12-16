@@ -56,6 +56,10 @@ class TestReleaseBlobV1(unittest.TestCase):
         self.assertEquals('a', blob.getResolvedPlatform('a'))
         self.assertEquals('a', blob.getResolvedPlatform('b'))
 
+    def testGetPlatformData(self):
+        blob = ReleaseBlobV1(platforms=dict(a=dict(foo=1)))
+        self.assertEquals(blob.getPlatformData('a'), dict(foo=1))
+
     def testGetLocaleOrTopLevelParamTopLevelOnly(self):
         blob = ReleaseBlobV1(foo=5)
         self.assertEquals(5, blob.getLocaleOrTopLevelParam('a', 'b', 'foo'))

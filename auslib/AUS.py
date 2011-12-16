@@ -29,8 +29,6 @@ class AUS3:
         for release in self.releases.getReleases(product=updateQuery['product'], version=updateQuery['version']):
             log.debug("AUS.identifyRequest: Trying to match request to %s", release['name'])
             if buildTarget in release['data']['platforms']:
-                buildTarget = release['data'].getResolvedPlatform(buildTarget)
-
                 releaseBuildID = release['data'].getBuildID(buildTarget, locale)
                 log.debug("AUS.identifyRequest: releasePlat buildID is: %s", releaseBuildID)
                 if buildID == releaseBuildID:
@@ -75,9 +73,9 @@ class AUS3:
 
         # platforms may be aliased to another platform in the case
         # of identical data, minimizing the json size
-        buildTarget = relData.getResolvedPlatform(updateQuery['buildTarget'])
+        buildTarget = updateQuery['buildTarget']
+        relDataPlat = relData.getPlatformData(buildTarget)
         locale = updateQuery['locale']
-        relDataPlat = relData['platforms'][buildTarget]
 
         # return early if we don't have an update for this platform
         if buildTarget not in relData['platforms']:

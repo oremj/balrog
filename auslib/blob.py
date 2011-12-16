@@ -102,6 +102,10 @@ class ReleaseBlobV1(Blob):
     def getResolvedPlatform(self, platform):
         return self['platforms'][platform].get('alias', platform)
 
+    def getPlatformData(self, platform):
+        platform = self.getResolvedPlatform(platform)
+        return self['platforms'][platform]
+
     def getLocaleOrTopLevelParam(self, platform, locale, param):
         try:
             platform = self.getResolvedPlatform(platform)
