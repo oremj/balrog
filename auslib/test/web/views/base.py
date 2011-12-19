@@ -1,7 +1,13 @@
 import simplejson as json
 import unittest
 
+from flask import Response
+
 from auslib.web.base import app, db
+
+@app.errorhandler(Exception)
+def uncaughtexceptions(error):
+    return Response(status=500)
 
 class ViewTest(unittest.TestCase):
     """Base class for all view tests. Sets up some sample data, and provides
