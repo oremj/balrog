@@ -167,3 +167,14 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         details = json.dumps(dict(complete=dict(filesize=435)))
         ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='b', version='a'))
         self.assertStatusCode(ret, 400)
+
+    def testLocaleRevertsPartialUpdate(self):
+        details = json.dumps(dict(complete=dict(filesize=1)))
+        with mock.patch('auslib.web.base.db.releases.addLocaleToRelease') as r:
+            r.side_effect = Exception("Fail")
+            ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='c'))
+            self.assertStatusCode(ret, 500)
+            ret = db.releases.select().where(db.releases.name=='a').execute().fetchone()[0]
+            self.assertEquals(ret['product'], 'a')
+            self.assertEquals(ret['version'], 'a')
+            self.assertEquals(json.loads(ret['data'], json.dumps(dict(name='a'))))
