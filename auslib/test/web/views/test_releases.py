@@ -174,7 +174,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
             r.side_effect = Exception("Fail")
             ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='c'))
             self.assertStatusCode(ret, 500)
-            ret = db.releases.select().where(db.releases.name=='a').execute().fetchone()[0]
+            ret = db.releases.t.select().where(db.releases.name=='a').execute().fetchone()
             self.assertEquals(ret['product'], 'a')
             self.assertEquals(ret['version'], 'a')
             self.assertEquals(json.loads(ret['data'], json.dumps(dict(name='a'))))
