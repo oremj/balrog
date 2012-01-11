@@ -5,6 +5,9 @@ from flask import Response
 
 from auslib.web.base import app, db
 
+# XXX: should we do this for the entire application?
+# I _think_ we don't need to because normally the web server takes care of this.
+# We have to for tests, for sure, because there's no web server to do the conversion.
 @app.errorhandler(Exception)
 def uncaughtexceptions(error):
     return Response(status=500)

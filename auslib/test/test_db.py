@@ -141,6 +141,15 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.assertEquals(len(ret), 4)
         self.assertEquals(ret[-1], (4, 0, 1))
 
+    def testInsertWithTransaction(self):
+        trans = AUSTransaction(self.metadata.bind.connect())
+        self.test.insert(changed_by='bob', transaction=trans, id=5, foo=1)
+        ret = self.test.t.select().execute().fetchall()
+        self.assertEquals(len(ret), 3)
+        trans.commit()
+        ret = self.test.t.select().execute().fetchall()
+        self.assertEquals(ret[-1], (5, 1, 1))
+
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
             old_data_version=1)
@@ -151,6 +160,15 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.assertRaises(OutdatedDataError, self.test.delete, changed_by='bill',
             where=[self.test.id==3], old_data_version=1)
 
+    def testDeleteWithTransaction(self):
+        trans = AUSTransaction(self.metadata.bind.connect())
+        self.test.delete(changed_by='bill', transaction=trans, where=[self.test.id==2])
+        ret = self.test.t.select().execute().fetchall()
+        self.assertEquals(len(ret), 3)
+        trans.commit()
+        ret = self.test.t.select().execute().fetchall()
+        self.assertEquals(len(ret), 2)
+
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
             old_data_version=1)
@@ -160,6 +178,15 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
     def testUpdateFailsOnVersionMismatch(self):
         self.assertRaises(OutdatedDataError, self.test.update, changed_by='bill',
             where=[self.test.id==3], what=dict(foo=99), old_data_version=1)
+
+    def testUpdateWithTransaction(self):
+        trans = AUSTransaction(self.metadata.bind.connect())
+        self.test.delete(changed_by='bill', transaction=trans, where=[self.test.id==1], what=dict(foo=222))
+        ret = self.test.t.select(self.test.id==1).execute().fetchall()
+        self.assertEquals(ret, (1, 33, 1))
+        trans.commit()
+        ret = self.test.t.select(self.test.id==1).execute().fetchall()
+        self.assertEquals(ret, (1, 222, 2))
 
     def testWherePkMatches(self):
         expected = self.test.id==1
