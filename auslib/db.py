@@ -504,11 +504,11 @@ class Rules(AUSTable):
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
 
-    def getOrderedRules(self):
+    def getOrderedRules(self, transaction=None):
         """Returns all of the rules, sorted in ascending order"""
-        return self.select(order_by=(self.priority, self.version, self.mapping))
+        return self.select(order_by=(self.priority, self.version, self.mapping), transaction=transaction)
 
-    def getRulesMatchingQuery(self, updateQuery, fallbackChannel):
+    def getRulesMatchingQuery(self, updateQuery, fallbackChannel, transaction=None):
         """Returns all of the rules that match the given update query.
            For cases where a particular updateQuery channel has no
            fallback, fallbackChannel should match the channel from the query."""
@@ -524,7 +524,8 @@ class Rules(AUSTable):
                 ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
                 ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
                 ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
-            ]
+            ],
+            transaction=transaction
         )
         log.debug("Rules.getRulesMatchingQuery: Raw matches:")
         for rule in rules:
@@ -665,17 +666,17 @@ class Permissions(AUSTable):
         )
         AUSTable.__init__(self)
 
-    def canEditUsers(self, username):
+    def canEditUsers(self, username, transaction=None):
         where=[
             (self.username==username) &
             ((self.permission=='admin') | (self.permission=='/users/:id/permissions/:permission'))
         ]
-        if self.select(where=where):
+        if self.select(where=where, transaction=transaction):
             return True
         return False
 
-    def assertCanEdit(self, username):
-        if not self.canEditUsers(username):
+    def assertCanEdit(self, username, transaction=None):
+        if not self.canEditUsers(username, transaction=transaction):
             raise PermissionDeniedError('%s is not allowed to change permissions' % username)
 
     def assertPermissionExists(self, permission):
@@ -687,22 +688,22 @@ class Permissions(AUSTable):
             if opt not in self.allPermissions[permission]:
                 raise ValueError('Unknown option "%s" for permission "%s"' % (opt, permission))
 
-    def getAllUsers(self):
-        res = self.select(columns=[self.username], distinct=True)
+    def getAllUsers(self, transaction=None):
+        res = self.select(columns=[self.username], distinct=True, transaction=transaction)
         return [r['username'] for r in res]
 
-    def grantPermission(self, changed_by, username, permission, options=None):
-        self.assertCanEdit(changed_by)
+    def grantPermission(self, changed_by, username, permission, options=None, transaction=None):
+        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
         columns = dict(username=username, permission=permission)
         if options:
             columns['options'] = json.dumps(options)
-        self.insert(changed_by=changed_by, **columns)
+        self.insert(changed_by=changed_by, transaction=transaction, **columns)
 
-    def updatePermission(self, changed_by, username, permission, old_data_version, options=None):
-        self.assertCanEdit(changed_by)
+    def updatePermission(self, changed_by, username, permission, old_data_version, options=None, transaction=None):
+        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
@@ -710,15 +711,15 @@ class Permissions(AUSTable):
         else:
             what = dict(options=None)
         where = [self.username==username, self.permission==permission]
-        self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version)
+        self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
 
-    def revokePermission(self, changed_by, username, permission, old_data_version):
-        self.assertCanEdit(changed_by)
+    def revokePermission(self, changed_by, username, permission, old_data_version, transaction=None):
+        self.assertCanEdit(changed_by, transaction=transaction)
         where = [self.username==username, self.permission==permission]
-        self.delete(changed_by=changed_by, where=where, old_data_version=old_data_version)
+        self.delete(changed_by=changed_by, where=where, old_data_version=old_data_version, transaction=transaction)
 
-    def getUserPermissions(self, username):
-        rows = self.select(columns=[self.permission, self.options, self.data_version], where=[self.username==username])
+    def getUserPermissions(self, username, transaction=None):
+        rows = self.select(columns=[self.permission, self.options, self.data_version], where=[self.username==username], transaction=transaction)
         ret = dict()
         for row in rows:
             perm = row['permission']
@@ -731,8 +732,8 @@ class Permissions(AUSTable):
                 ret[perm]['options'] = None
         return ret
 
-    def getOptions(self, username, permission):
-        ret = self.select(columns=[self.options], where=[self.username==username, self.permission==permission])
+    def getOptions(self, username, permission, transaction=None):
+        ret = self.select(columns=[self.options], where=[self.username==username, self.permission==permission], transaction=transaction)
         if ret:
             if ret[0]['options']:
                 return json.loads(ret[0]['options'])
@@ -741,13 +742,13 @@ class Permissions(AUSTable):
         else:
             raise ValueError('Permission "%s" doesn\'t exist' % permission)
 
-    def hasUrlPermission(self, username, url, method, urlOptions={}):
+    def hasUrlPermission(self, username, url, method, urlOptions={}, transaction=None):
         """Check if a user has access to an URL via a specific HTTP method.
            GETs are always allowed, and admins can always access everything."""
-        if self.select(where=[self.username==username, self.permission=='admin']):
+        if self.select(where=[self.username==username, self.permission=='admin'], transaction=transaction):
             return True
         try:
-            options = self.getOptions(username, url)
+            options = self.getOptions(username, url, transaction=transaction)
         except ValueError:
             return False
 

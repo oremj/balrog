@@ -1,4 +1,5 @@
 import time
+import traceback
 
 import logging
 log = logging.getLogger(__name__)
@@ -24,7 +25,9 @@ def retry(action, attempts=5, sleeptime=60, retry_exceptions=(Exception,),
             log.info("Calling %s with args: %s, kwargs: %s, attempt #%d" % \
               (action, str(args), str(kwargs), n))
             return action(*args, **kwargs)
-        except retry_exceptions:
+        except retry_exceptions, e:
+            log.debug("Caught exception:")
+            log.debug(traceback.format_exc())
             if cleanup:
                 cleanup()
             if n == attempts:

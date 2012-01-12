@@ -10,7 +10,7 @@ from auslib.web.base import app, db
 # We have to for tests, for sure, because there's no web server to do the conversion.
 @app.errorhandler(Exception)
 def uncaughtexceptions(error):
-    return Response(status=500)
+    return Response(response=error, status=500)
 
 class ViewTest(unittest.TestCase):
     """Base class for all view tests. Sets up some sample data, and provides
