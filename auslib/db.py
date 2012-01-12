@@ -141,10 +141,10 @@ class AUSTable(object):
             cond.append(col==primary_key_values[col.name])
         return cond
 
-    def _returnRowOrRaise(self, where, columns=None):
+    def _returnRowOrRaise(self, where, columns=None, transaction=None):
         """Return the row matching the where clause supplied. If no rows match or multiple rows match,
            a WrongNumberOfRowsError will be raised."""
-        rows = self.select(where=where, columns=columns)
+        rows = self.select(where=where, columns=columns, transaction=transaction)
         if len(rows) == 0:
             raise WrongNumberOfRowsError("where clause matched no rows")
         if len(rows) > 1:
@@ -178,14 +178,17 @@ class AUSTable(object):
         return query
 
     @rowsToDicts
-    def select(self, **kwargs):
+    def select(self, transaction=None, **kwargs):
         """Perform a SELECT statement on this table.
            See AUSTable._selectStatement for possible arguments.
            
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
         query = self._selectStatement(**kwargs)
-        return query.execute().fetchall()
+        if transaction:
+            return transaction.execute(query).fetchall()
+        else:
+            return query.execute().fetchall()
 
     def _insertStatement(self, **columns):
         """Create an INSERT statement for this table
@@ -214,7 +217,7 @@ class AUSTable(object):
                 trans.execute(q)
         return ret
 
-    def insert(self, changed_by=None, **columns):
+    def insert(self, changed_by=None, transaction=None, **columns):
         """Perform an INSERT statement on this table. See AUSTable._insertStatement for
            a description of columns.
 
@@ -222,15 +225,20 @@ class AUSTable(object):
                               history is enabled. Unused otherwise. No authorization checks are done
                               at this level.
            @type changed_by: str
+           @param transaction: A transaction object to add the insert statement (and history changes) to.
+                               If provided, you must commit the transaction yourself. If None, they will
+                               be added to a locally-scoped transaction and committed.
 
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
 
-        with AUSTransaction(self.getEngine().connect()) as trans:
-            ret = self._prepareInsert(trans, changed_by, **columns)
-            return ret
+        trans = transaction or AUSTransaction(self.getEngine().connect())
+        ret = self._prepareInsert(trans, changed_by, **columns)
+        if not transaction:
+            trans.commit()
+        return ret
 
     def _deleteStatement(self, where):
         """Create a DELETE statement for this table.
@@ -255,7 +263,7 @@ class AUSTable(object):
 
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
-        row = self._returnRowOrRaise(where=where, columns=self.primary_key)
+        row = self._returnRowOrRaise(where=where, columns=self.primary_key, transaction=trans)
 
         if self.versioned:
             where = copy(where)
@@ -268,7 +276,7 @@ class AUSTable(object):
             trans.execute(self.history.forDelete(row, changed_by))
         return ret
 
-    def delete(self, where, changed_by=None, old_data_version=None):
+    def delete(self, where, changed_by=None, old_data_version=None, transaction=None):
         """Perform a DELETE statement on this table. See AUSTable._deleteStatement for
            a description of `where'. To simplify versioning, this method can only
            delete a single row per invocation. If the where clause given would delete
@@ -290,9 +298,12 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
-        with AUSTransaction(self.getEngine().connect()) as trans:
-            ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-            return ret
+        trans = transaction or AUSTransaction(self.getEngine().connect())
+        ret = self._prepareDelete(trans, where, changed_by, old_data_version)
+        if not transaction:
+            log.debug("AUSTable.delete: commiting transaction")
+            trans.commit()
+        return ret
 
     def _updateStatement(self, where, what):
         """Create an UPDATE statement for this table
@@ -317,7 +328,9 @@ class AUSTable(object):
 
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
-        row = self._returnRowOrRaise(where=where)
+        row = self._returnRowOrRaise(where=where, transaction=trans)
+        log.debug("balhuteohuntoahuntheonuheo: %s", row)
+        log.debug("AUSTable._prepareUpdate: Preparing update to row: %s, updating as follows: %s", row, what)
         if self.versioned:
             where = copy(where)
             where.append(self.data_version==old_data_version)
@@ -334,7 +347,7 @@ class AUSTable(object):
             raise OutdatedDataError("Failed to update row, old_data_version doesn't match current data_version")
         return ret
 
-    def update(self, where, what, changed_by=None, old_data_version=None):
+    def update(self, where, what, changed_by=None, old_data_version=None, transaction=None):
         """Perform an UPDATE statement on this stable. See AUSTable._updateStatement for
            a description of `where' and `what'. This method can only update a single row
            per invocation. If the where clause given would update zero or multiple rows, a
@@ -356,9 +369,11 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
-        with AUSTransaction(self.getEngine().connect()) as trans:
-            ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-            return ret
+        trans = transaction or AUSTransaction(self.getEngine().connect())
+        ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
+        if not transaction:
+            trans.commit()
+        return ret
 
 class History(AUSTable):
     """Represents a history table that may be attached to another AUSTable.
@@ -547,7 +562,11 @@ class Releases(AUSTable):
         self.table.append_column(Column('data', dataType, nullable=False))
         AUSTable.__init__(self)
 
-    def getReleases(self, name=None, product=None, version=None, limit=None):
+    def getReleases(self, name=None, product=None, version=None, limit=None, transaction=None):
+        log.debug("Releases.getReleases: Looking for releases with:")
+        log.debug("Releases.getReleases: name: %s", name)
+        log.debug("Releases.getReleases: product: %s", product)
+        log.debug("Releases.getReleases: version: %s", version)
         where = []
         if name:
             where.append(self.name==name)
@@ -555,45 +574,46 @@ class Releases(AUSTable):
             where.append(self.product==product)
         if version:
             where.append(self.version==version)
-        rows = self.select(where=where, limit=limit)
+        rows = self.select(where=where, limit=limit, transaction=transaction)
         for row in rows:
             blob = ReleaseBlobV1()
             blob.loadJSON(row['data'])
             row['data'] = blob
         return rows
 
-    def getReleaseBlob(self, name):
+    def getReleaseBlob(self, name, transaction=None):
         try:
-            row = self.select(where=[self.name==name], columns=[self.data], limit=1)[0]
+            row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
         except IndexError:
             raise KeyError("Couldn't find release with name '%s'" % name)
         blob = ReleaseBlobV1()
         blob.loadJSON(row['data'])
         return blob
 
-    def addRelease(self, name, product, version, blob, changed_by):
+    def addRelease(self, name, product, version, blob, changed_by, transaction=None):
         if not blob.isValid():
             log.debug("Releases.addRelease: invalid blob is %s" % blob)
             raise ValueError("Release blob is invalid.")
         columns = dict(name=name, product=product, version=version, data=blob.getJSON())
         # Raises DuplicateDataError if the release already exists.
-        self.insert(changed_by, **columns)
+        self.insert(changed_by=changed_by, transaction=transaction, **columns)
 
-    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None):
+    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, transaction=None):
         what = {}
         if product:
             what['product'] = product
         if version:
             what['version'] = version
-        self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version)
+        log.debug("Releases.updateRelease: Updating %s with %s", name, what)
+        self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
 
-    def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by):
+    def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by, transaction=None):
         """Adds or update's the existing data for a specific platform + locale
            combination, in the release identified by 'name'. The data is
            validated before commiting it, and a ValueError is raised if it is
            invalid.
         """
-        releaseBlob = self.getReleaseBlob(name)
+        releaseBlob = self.getReleaseBlob(name, transaction=transaction)
         if 'platforms' not in releaseBlob:
             releaseBlob['platforms'] = {
                 platform: {
@@ -607,11 +627,12 @@ class Releases(AUSTable):
             raise ValueError("New release blob is invalid.")
         where = [self.name==name]
         what = dict(data=releaseBlob.getJSON())
-        self.update(where, what, changed_by, old_data_version)
+        self.update(where=where, what=what, changed_by=changed_by, old_data_version=old_data_version,
+            transaction=transaction)
 
-    def getLocale(self, name, platform, locale):
+    def getLocale(self, name, platform, locale, transaction=None):
         try:
-            blob = self.getReleaseBlob(name)
+            blob = self.getReleaseBlob(name, transaction=transaction)
             return blob['platforms'][platform]['locales'][locale]
         except KeyError:
             raise KeyError("Couldn't find locale identified by: %s, %s, %s" % (name, platform ,locale))
@@ -776,6 +797,9 @@ class AUSDatabase(object):
     def reset(self):
         self.engine = None
         self.metadata.bind = None
+
+    def begin(self):
+        return AUSTransaction(self.engine.connect())
 
     @property
     def rules(self):
