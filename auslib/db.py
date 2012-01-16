@@ -234,11 +234,13 @@ class AUSTable(object):
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
 
-        trans = transaction or AUSTransaction(self.getEngine().connect())
-        ret = self._prepareInsert(trans, changed_by, **columns)
-        if not transaction:
+        if transaction:
+            return self._prepareInsert(transaction, changed_by, **columns)
+        else:
+            trans = AUSTransaction(self.getEngine().connect())
+            ret = self._prepareInsert(trans, changed_by, **columns)
             trans.commit()
-        return ret
+            return ret
 
     def _deleteStatement(self, where):
         """Create a DELETE statement for this table.
@@ -298,12 +300,13 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
-        trans = transaction or AUSTransaction(self.getEngine().connect())
-        ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-        if not transaction:
-            log.debug("AUSTable.delete: commiting transaction")
+        if transaction:
+            return self._prepareDelete(transaction, where, changed_by, old_data_version)
+        else:
+            trans = AUSTransaction(self.getEngine().connect())
+            ret = self._prepareDelete(trans, where, changed_by, old_data_version)
             trans.commit()
-        return ret
+            return ret
 
     def _updateStatement(self, where, what):
         """Create an UPDATE statement for this table
@@ -369,11 +372,13 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
-        trans = transaction or AUSTransaction(self.getEngine().connect())
-        ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-        if not transaction:
+        if transaction:
+            return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
+        else:
+            trans = AUSTransaction(self.getEngine().connect())
+            ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
             trans.commit()
-        return ret
+            return ret
 
 class History(AUSTable):
     """Represents a history table that may be attached to another AUSTable.
