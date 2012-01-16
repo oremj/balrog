@@ -1,0 +1,8 @@
+<form method='post' id='{{ form.permission.data }}' action='/users/{{ username }}/permissions/{{ form.permission.data }}'>
+    {{ form.permission.label()|safe }}:
+    {{ form.permission()|safe }}
+    {{ form.options.label()|safe }}:
+    {{ form.options()|safe }}
+    {{ form.data_version()|safe }}
+    <input type='submit' value='Update' />
+</form>
