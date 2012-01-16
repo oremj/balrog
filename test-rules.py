@@ -29,8 +29,16 @@ def populateDB(AUS, testdir):
     for f in glob.glob('%s/*.json' % testdir):
         data = json.load(open(f,'r'))
         product,version = data['name'].split('-')[0:2]
+        # JSON files can have the extv version at the top level, or in the locales
+        # If we can't find it at the top level, look for it in a locale. This is
+        # less accurate, but the best we can do.
+        extv = data.get('extv')
+        if not extv:
+            extv = data.get('platforms').values()[0].get('locales').values()[0]['extv']
+            if not extv:
+                raise Exception("Couldn't find extv for %s" % data['name'])
         AUS.db.engine.execute("INSERT INTO releases VALUES ('%s', '%s', '%s','%s', 1)" %
-                   (data['name'], product, data['extv'], json.dumps(data)))
+                   (data['name'], product, extv, json.dumps(data)))
     # TODO - create a proper importer that walks the snippet store to find hashes ?
 
 def getQueryFromPath(snippetPath):
@@ -157,6 +165,7 @@ if __name__ == "__main__":
     for td in options.testDirs:
         log.info("Testing %s", td)
         AUS = AUS3(dbname='sqlite:///:memory:')
+        AUS.createTables()
         populateDB(AUS, td)
         if options.dumprules:
             log.info("Rules are \n(id, priority, mapping, throttle, product, version, channel, buildTarget, buildID, locale, osVersion, distribution, distVersion, UA arch):")

@@ -7,11 +7,10 @@ mydir = path.dirname(path.abspath(__file__))
 site.addsitedir(mydir)
 site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
-from auslib.client.base import app as application
-from auslib.client.base import AUS
+from auslib.web.base import db, app as application
 from auslib.config import AUSConfig
 
-cfg = AUSConfig('/etc/aus/client.ini')
+cfg = AUSConfig('/etc/aus/admin.ini')
 errors = cfg.validate()
 if errors:
     print >>sys.stderr, "Invalid configuration file:"
@@ -20,4 +19,4 @@ if errors:
     sys.exit(1)
 
 logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel())
-AUS.setDb(cfg.getDburi())
+db.setDburi(cfg.getDburi())

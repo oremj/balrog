@@ -2,8 +2,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from auslib.client.base import app, AUS
-
 if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser()
@@ -22,7 +20,10 @@ if __name__ == "__main__":
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format="%(asctime)s: %(message)s")
 
+    from auslib.client.base import app, AUS
+
     AUS.setDb(options.db)
+    AUS.createTables()
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True

@@ -5,8 +5,10 @@ import sys
 import time
 
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
-  CheckConstraint, create_engine, select
+  CheckConstraint, create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
+
+from auslib.blob import ReleaseBlobV1
 
 import logging
 log = logging.getLogger(__name__)
@@ -329,7 +331,7 @@ class AUSTable(object):
         if self.history:
             trans.execute(self.history.forUpdate(row, changed_by))
         if ret.rowcount != 1:
-            raise OutdatedDataError("Failed to delet row, old_data_version doesn't match current data_version")
+            raise OutdatedDataError("Failed to update row, old_data_version doesn't match current data_version")
         return ret
 
     def update(self, where, what, changed_by=None, old_data_version=None):
@@ -371,11 +373,13 @@ class History(AUSTable):
     def __init__(self, metadata, baseTable):
         self.table = Table('%s_history' % baseTable.t.name, metadata,
             Column('change_id', Integer, primary_key=True, autoincrement=True),
-            Column('changed_by', String, nullable=False),
-            # Timestamps are stored as an Integer, but actually contain
+            Column('changed_by', String(100), nullable=False),
+            # Timestamps are stored as an integer, but actually contain
             # precision down to the millisecond, achieved through
             # multiplication.
-            Column('timestamp', Integer, nullable=False)
+            # BigInteger is used here because SQLAlchemy's Integer translates
+            # to Integer(11) in MySQL, which is too small for our needs.
+            Column('timestamp', BigInteger, nullable=False)
         )
         self.base_primary_key = [pk.name for pk in baseTable.primary_key]
         for col in baseTable.t.get_children():
@@ -433,24 +437,24 @@ class History(AUSTable):
         return self._insertStatement(**row)
 
 class Rules(AUSTable):
-    def __init__(self, metadata):
+    def __init__(self, metadata, dialect):
         self.table = Table('rules', metadata,
             Column('rule_id', Integer, primary_key=True, autoincrement=True),
             Column('priority', Integer),
-            Column('mapping', String),
+            Column('mapping', String(100)),
             Column('throttle', Integer, CheckConstraint('0 <= throttle <= 100')),
-            Column('update_type', String, nullable=False),
-            Column('product', String),
-            Column('version', String),
-            Column('channel', String),
-            Column('buildTarget', String),
-            Column('buildID', String),
-            Column('locale', String),
-            Column('osVersion', String),
-            Column('distribution', String),
-            Column('distVersion', String),
-            Column('headerArchitecture', String),
-            Column('comment', String)
+            Column('update_type', String(15), nullable=False),
+            Column('product', String(15)),
+            Column('version', String(10)),
+            Column('channel', String(75)),
+            Column('buildTarget', String(75)),
+            Column('buildID', String(20)),
+            Column('locale', String(10)),
+            Column('osVersion', String(100)),
+            Column('distribution', String(100)),
+            Column('distVersion', String(100)),
+            Column('headerArchitecture', String(10)),
+            Column('comment', String(500))
         )
         AUSTable.__init__(self)
 
@@ -529,13 +533,18 @@ class Rules(AUSTable):
         return matchingRules
 
 class Releases(AUSTable):
-    def __init__(self, metadata):
+    def __init__(self, metadata, dialect):
         self.table = Table('releases', metadata,
-            Column('name', String, primary_key=True),
-            Column('product', String, nullable=False),
-            Column('version', String, nullable=False),
-            Column('data', Text, nullable=False)
+            Column('name', String(100), primary_key=True),
+            Column('product', String(15), nullable=False),
+            Column('version', String(10), nullable=False),
         )
+        if dialect == 'mysql':
+            from sqlalchemy.dialects.mysql import LONGTEXT
+            dataType = LONGTEXT
+        else:
+            dataType = Text
+        self.table.append_column(Column('data', dataType, nullable=False))
         AUSTable.__init__(self)
 
     def getReleases(self, name=None, product=None, version=None, limit=None):
@@ -548,8 +557,64 @@ class Releases(AUSTable):
             where.append(self.version==version)
         rows = self.select(where=where, limit=limit)
         for row in rows:
-            row['data'] = json.loads(row['data'])
+            blob = ReleaseBlobV1()
+            blob.loadJSON(row['data'])
+            row['data'] = blob
         return rows
+
+    def getReleaseBlob(self, name):
+        try:
+            row = self.select(where=[self.name==name], columns=[self.data], limit=1)[0]
+        except IndexError:
+            raise KeyError("Couldn't find release with name '%s'" % name)
+        blob = ReleaseBlobV1()
+        blob.loadJSON(row['data'])
+        return blob
+
+    def addRelease(self, name, product, version, blob, changed_by):
+        if not blob.isValid():
+            log.debug("Releases.addRelease: invalid blob is %s" % blob)
+            raise ValueError("Release blob is invalid.")
+        columns = dict(name=name, product=product, version=version, data=blob.getJSON())
+        # Raises DuplicateDataError if the release already exists.
+        self.insert(changed_by, **columns)
+
+    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None):
+        what = {}
+        if product:
+            what['product'] = product
+        if version:
+            what['version'] = version
+        self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version)
+
+    def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by):
+        """Adds or update's the existing data for a specific platform + locale
+           combination, in the release identified by 'name'. The data is
+           validated before commiting it, and a ValueError is raised if it is
+           invalid.
+        """
+        releaseBlob = self.getReleaseBlob(name)
+        if 'platforms' not in releaseBlob:
+            releaseBlob['platforms'] = {
+                platform: {
+                    'locales': {
+                    }
+                }
+            }
+        releaseBlob['platforms'][platform]['locales'][locale] = blob
+        if not releaseBlob.isValid():
+            log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)
+            raise ValueError("New release blob is invalid.")
+        where = [self.name==name]
+        what = dict(data=releaseBlob.getJSON())
+        self.update(where, what, changed_by, old_data_version)
+
+    def getLocale(self, name, platform, locale):
+        try:
+            blob = self.getReleaseBlob(name)
+            return blob['platforms'][platform]['locales'][locale]
+        except KeyError:
+            raise KeyError("Couldn't find locale identified by: %s, %s, %s" % (name, platform ,locale))
 
 class Permissions(AUSTable):
     """allPermissions defines the structure and possible options for all
@@ -571,11 +636,11 @@ class Permissions(AUSTable):
         '/users/:id/permissions/:permission': ['method']
     }
 
-    def __init__(self, metadata):
+    def __init__(self, metadata, dialect):
         self.table = Table('permissions', metadata,
-            Column('permission', String, primary_key=True),
-            Column('username', String, primary_key=True),
-            Column('options', String)
+            Column('permission', String(50), primary_key=True),
+            Column('username', String(100), primary_key=True),
+            Column('options', Text)
         )
         AUSTable.__init__(self)
 
@@ -657,7 +722,9 @@ class Permissions(AUSTable):
 
     def hasUrlPermission(self, username, url, method, urlOptions={}):
         """Check if a user has access to an URL via a specific HTTP method.
-           GETs are always allowed."""
+           GETs are always allowed, and admins can always access everything."""
+        if self.select(where=[self.username==username, self.permission=='admin']):
+            return True
         try:
             options = self.getOptions(username, url)
         except ValueError:
@@ -682,10 +749,6 @@ class Permissions(AUSTable):
 
 class AUSDatabase(object):
     engine = None
-    metadata = MetaData()
-    rulesTable = Rules(metadata)
-    releasesTable = Releases(metadata)
-    permissionsTable = Permissions(metadata)
 
     def __init__(self, dburi=None):
         """Create a new AUSDatabase. Before this object is useful, dburi must be
@@ -696,11 +759,18 @@ class AUSDatabase(object):
     def setDburi(self, dburi):
         """Setup the database connection. Note that SQLAlchemy only opens a connection
            to the database when it needs to, however."""
-        self.dburi = dburi
         if self.engine:
             raise AlreadySetupError()
-        self.engine = create_engine(self.dburi)
+        self.dburi = dburi
+        self.metadata = MetaData()
+        self.engine = create_engine(self.dburi, pool_recycle=60)
+        dialect = self.engine.name
+        self.rulesTable = Rules(self.metadata, dialect)
+        self.releasesTable = Releases(self.metadata, dialect)
+        self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
+
+    def createTables(self):
         self.metadata.create_all()
 
     def reset(self):

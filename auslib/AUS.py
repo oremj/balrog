@@ -8,8 +8,7 @@ from auslib.db import AUSDatabase
 
 class AUS3:
     def __init__(self, dbname=None):
-        if dbname:
-            self.setDb(dbname)
+        self.setDb(dbname)
 
     def setDb(self, dbname):
         if dbname == None:
@@ -18,19 +17,24 @@ class AUS3:
         self.releases = self.db.releases
         self.rules = self.db.rules
 
+    def createTables(self):
+        self.db.createTables()
+
     def identifyRequest(self, updateQuery):
+        log.debug("AUS.identifyRequest: got updateQuery: %s", updateQuery)
         buildTarget = updateQuery['buildTarget']
         buildID = updateQuery['buildID']
+        locale = updateQuery['locale']
 
         for release in self.releases.getReleases(product=updateQuery['product'], version=updateQuery['version']):
+            log.debug("AUS.identifyRequest: Trying to match request to %s", release['name'])
             if buildTarget in release['data']['platforms']:
-                releasePlat = release['data']['platforms'][buildTarget]
-                if 'alias' in releasePlat:
-                    alternateTarget = releasePlat['alias']
-                    releasePlat = release['data']['platforms'][alternateTarget]
-
-                if buildID == releasePlat['buildID']:
+                releaseBuildID = release['data'].getBuildID(buildTarget, locale)
+                log.debug("AUS.identifyRequest: releasePlat buildID is: %s", releaseBuildID)
+                if buildID == releaseBuildID:
+                    log.debug("AUS.identifyRequest: Identified query as %s", release['name'])
                     return release['name']
+        log.debug("AUS.identifyRequest: Couldn't identify query")
         return None
 
     def evaluateRules(self, updateQuery):
@@ -67,21 +71,16 @@ class AUS3:
         relData = res['data']
         updateData = defaultdict(list)
 
+        # platforms may be aliased to another platform in the case
+        # of identical data, minimizing the json size
         buildTarget = updateQuery['buildTarget']
+        relDataPlat = relData.getPlatformData(buildTarget)
         locale = updateQuery['locale']
 
         # return early if we don't have an update for this platform
         if buildTarget not in relData['platforms']:
             log.debug("AUS.expandRelease: No platform %s in release %s", buildTarget, rule['mapping'])
             return updateData
-
-        # platforms may be aliased to another platform in the case
-        # of identical data, minimizing the json size
-        alias = relData['platforms'][buildTarget].get('alias')
-        if alias and alias in relData['platforms']:
-            relDataPlat = relData['platforms'][alias]
-        else:
-            relDataPlat = relData['platforms'][buildTarget]
 
         # return early if we don't have an update for this locale
         if locale not in relDataPlat['locales']:
@@ -93,15 +92,17 @@ class AUS3:
         # this is for the properties AUS2 can cope with today
         if relData['schema_version'] == 1:
             updateData['type'] = rule['update_type']
-            for key in ('appv','extv', 'schema_version'):
-                updateData[key] = relData[key]
+            updateData['appv'] = relData.getAppv(buildTarget, locale)
+            updateData['extv'] = relData.getExtv(buildTarget, locale)
+            updateData['schema_version'] = relData['schema_version']
             if 'detailsUrl' in relData:
                 updateData['detailsUrl'] = relData['detailsUrl'].replace('%LOCALE%',updateQuery['locale'])
-            updateData['build'] = relDataPlat['buildID']
+            updateData['build'] = relData.getBuildID(buildTarget, locale)
 
             # evaluate types of updates and see if we can use them
             for patchKey in relDataPlatLoc:
                 if patchKey not in ('partial','complete'):
+                    log.debug("AUS.expandRelease: Skipping patchKey '%s'", patchKey)
                     continue
                 patch = relDataPlatLoc[patchKey]
                 if patch['from'] == updateQuery['name'] or patch['from'] == '*':
@@ -128,6 +129,8 @@ class AUS3:
                         'hashValue': patch['hashValue'],
                         'size': patch['filesize']
                     })
+                else:
+                    log.debug("AUS.expandRelease: Didn't add patch for patchKey '%s'; from is '%s', updateQuery name is '%s'", patchKey, patch['from'], updateQuery['name'])
 
             # older branches required a <partial> in the update.xml, which we
             # used to fake by repeating the complete data.
