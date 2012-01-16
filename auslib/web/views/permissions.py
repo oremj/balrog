@@ -5,6 +5,10 @@ from flask.views import MethodView
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission
+from auslib.web.views.forms import PermissionForm
+
+import logging
+log = logging.getLogger(__name__)
 
 def setpermission(f):
     def decorated(*args, **kwargs):
@@ -33,16 +37,14 @@ class PermissionsView(MethodView):
         if fmt == 'json':
             return jsonify(permissions)
         else:
-            return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
+            forms = []
+            for perm, values in permissions.items():
+                perm = perm.lstrip('/')
+                forms.append(PermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
+            return render_template('snippets/user_permissions.html', username=username, forms=forms)
 
 class SpecificPermissionView(MethodView):
     """/users/[user]/permissions/[permission]"""
-    def _getOptions(self):
-            if 'options' in request.form and request.form['options']:
-                return json.loads(request.form['options'])
-            else:
-                return None
-
     def get(self, username, permission):
         return jsonify(db.permissions.getUserPermissions(username)[permission])
 
@@ -51,11 +53,12 @@ class SpecificPermissionView(MethodView):
     @requirepermission(options=[])
     def put(self, username, permission, changed_by):
         try:
-            options = self._getOptions()
+            form = PermissionForm()
+            options = form.options
             if db.permissions.getUserPermissions(username).get(permission):
                 # Raises ValueError if it can't convert the data, which (properly)
                 # causes us to return 400 below.
-                data_version = int(request.form['data_version'])
+                data_version = form.options.data_version
                 db.permissions.updatePermission(changed_by, username, permission, data_version, options)
                 return Response(status=200)
             else:
@@ -73,8 +76,9 @@ class SpecificPermissionView(MethodView):
         if not db.permissions.getUserPermissions(username).get(permission):
             return Response(status=404)
         try:
-            options = self._getOptions()
-            data_version = int(request.form['data_version'])
+            form = PermissionForm()
+            options = form.options.data
+            data_version = form.data_version.data
             db.permissions.updatePermission(changed_by, username, permission, data_version, options)
             return Response(status=200)
         except ValueError, e:
