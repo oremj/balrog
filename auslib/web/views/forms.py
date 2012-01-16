@@ -8,6 +8,7 @@ import logging
 log = logging.getLogger(__name__)
 
 class DisableableTextInput(TextInput):
+    """A TextInput widget that supports being disabled."""
     def __init__(self, disabled, *args, **kwargs):
         self.disabled = disabled
         TextInput.__init__(self, *args, **kwargs)
@@ -17,6 +18,7 @@ class DisableableTextInput(TextInput):
         return TextInput.__call__(self, *args, **kwargs)
 
 class JSONTextField(TextField):
+    """TextField that parses incoming data as JSON."""
     def process_formdata(self, valuelist):
         if valuelist:
             try:
@@ -34,6 +36,10 @@ class JSONTextField(TextField):
             self.data = {}
 
 class PermissionForm(Form):
+    """Base permission form, directly used for new permissions."""
     permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
     options = JSONTextField('Options')
+
+class ExistingPermissionForm(PermissionForm):
+    """Permission form to be used with existing permissions."""
     data_version = HiddenField('data_version', validators=[Required(), NumberRange()])

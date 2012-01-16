@@ -5,7 +5,7 @@ from flask.views import MethodView
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission
-from auslib.web.views.forms import PermissionForm
+from auslib.web.views.forms import PermissionForm, ExistingPermissionForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -33,20 +33,29 @@ class PermissionsView(MethodView):
     """/users/[user]/permissions"""
     def get(self, username):
         permissions = db.permissions.getUserPermissions(username)
-        fmt = request.form.get('format')
+        fmt = request.form.get('format', 'html')
         if fmt == 'json':
             return jsonify(permissions)
         else:
             forms = []
             for perm, values in permissions.items():
                 perm = perm.lstrip('/')
-                forms.append(PermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
+                forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
             return render_template('snippets/user_permissions.html', username=username, forms=forms)
 
 class SpecificPermissionView(MethodView):
     """/users/[user]/permissions/[permission]"""
     def get(self, username, permission):
-        return jsonify(db.permissions.getUserPermissions(username)[permission])
+        perm = db.permissions.getUserPermissions(username)[permission]
+        fmt = request.form.get('format', 'html')
+        if fmt == 'json':
+            return jsonify(perm)
+        else:
+            if permission == 'new':
+                form = PermissionForm(permission='')
+            else:
+                form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
+            return render_template('snippets/permission.html', form=form)
 
     @setpermission
     @requirelogin
