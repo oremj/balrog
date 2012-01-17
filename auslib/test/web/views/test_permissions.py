@@ -15,7 +15,7 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         self.assertEquals(json.loads(ret.data), dict(admin=dict(options=None, data_version=1)))
 
     def testPermissionGet(self):
-        ret = self.client.get('/users/bill/permissions/admin')
+        ret = self._get('/users/bill/permissions/admin')
         self.assertEquals(ret.status_code, 200)
         self.assertEquals(json.loads(ret.data), dict(options=None, data_version=1))
 
@@ -67,14 +67,3 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         query = query.where(db.permissions.username=='bob')
         query = query.where(db.permissions.permission=='/users/:id/permissions/:permission')
         self.assertEquals(query.execute().fetchone(), None)
-
-class TestPermissionsAPI_HTML(ViewTest, HTMLTestMixin):
-    def testUsers(self):
-        ret = self._get('/permissions.html')
-        self.assertEquals(ret.status_code, 200)
-        self.assertTrue('bill' in ret.data)
-        self.assertTrue('bob' in ret.data)
-
-    def testPermissionsCollection(self):
-        ret = self._get('/user_permissions.html', query_string=dict(username='bill'))
-        self.assertEquals(ret.status_code, 200)

@@ -1,10 +1,13 @@
+function handleError(req, code, error) {
+    alert(req);
+    alert(code);
+    alert(error);
+}
+
 function getHTML(url) {
-    return $.get(url, {'format': 'html'})
-    .error(function(req, code, error) {
-        alert(req);
-        alert(code);
-        alert(error);
-    });
+    return $.get(url, {'format': 'html'}
+    ).error(handleError
+    );
 }
 
 function getFullURL(url) {
@@ -37,11 +40,12 @@ function addUserPermissions(username, element) {
     });
 }
 
-function addNewUserPermission(username, element) {
-    getNewUserPermission(username)
-    .success(function(data) {
-        element.prepend(data);
-   });
+function addNewUserPermission(username, permission, element) {
+    $.put(getFullURL('/users/' + username + '/permissions/' + permission), {'format': 'html'})
+    .error(handleError
+    ).success(function(data) {
+        element.append(data);
+    });
 }
 
 function redirect(page, args) {

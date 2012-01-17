@@ -21,7 +21,9 @@ class UsersView(MethodView):
     """/users"""
     def get(self):
         users = db.permissions.getAllUsers()
-        fmt = request.form.get('format')
+        log.debug("UsersView.get: Found users: %s", users)
+        fmt = request.args.get('format', 'html')
+        log.debug("UsersView.get: format is '%s'", fmt)
         if fmt == 'json':
             # We don't return a plain jsonify'ed list here because of:
             # http://flask.pocoo.org/docs/security/#json-security
@@ -33,7 +35,8 @@ class PermissionsView(MethodView):
     """/users/[user]/permissions"""
     def get(self, username):
         permissions = db.permissions.getUserPermissions(username)
-        fmt = request.form.get('format', 'html')
+        fmt = request.args.get('format', 'html')
+        log.debug("PermissionsView.get: format is '%s':", fmt)
         if fmt == 'json':
             return jsonify(permissions)
         else:
@@ -46,33 +49,29 @@ class PermissionsView(MethodView):
 class SpecificPermissionView(MethodView):
     """/users/[user]/permissions/[permission]"""
     def get(self, username, permission):
-        perms = db.permissions.getUserPermissions(username)
-        fmt = request.form.get('format', 'html')
+        try:
+            perm = db.permissions.getUserPermissions(username)[permission]
+        except KeyError:
+            return Response(status=404)
+        fmt = request.args.get('format', 'html')
+        log.debug("SpecificPermissionsView.get: format is '%s':", fmt)
         if fmt == 'json':
-            if permission not in perms:
-                return Response(status=404)
-            else:
-                return jsonify(perms[permission])
+            return jsonify(perm)
         else:
-            if permission in perms:
-                form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
-                return render_template('snippets/permissions.html', form=form)
-            else:
-                form = PermissionForm(permission=permission)
-                return render_template('snippets/new_permission.html', form=form)
+            form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
+            return render_template('snippets/permissions.html', form=form)
 
     @setpermission
     @requirelogin
     @requirepermission(options=[])
     def put(self, username, permission, changed_by):
         try:
-            form = PermissionForm()
-            options = form.options
+            form = ExistingPermissionForm()
+            # Raises ValueError if it can't convert the data, which (properly)
+            # causes us to return 400 below.
+            options = form.options.data
             if db.permissions.getUserPermissions(username).get(permission):
-                # Raises ValueError if it can't convert the data, which (properly)
-                # causes us to return 400 below.
-                data_version = form.options.data_version
-                db.permissions.updatePermission(changed_by, username, permission, data_version, options)
+                db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
                 return Response(status=200)
             else:
                 db.permissions.grantPermission(changed_by, username, permission, options)
@@ -89,10 +88,8 @@ class SpecificPermissionView(MethodView):
         if not db.permissions.getUserPermissions(username).get(permission):
             return Response(status=404)
         try:
-            form = PermissionForm()
-            options = form.options.data
-            data_version = form.data_version.data
-            db.permissions.updatePermission(changed_by, username, permission, data_version, options)
+            form = ExistingPermissionForm()
+            db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
             return Response(status=200)
         except ValueError, e:
             return Response(status=400, response=e.args)

@@ -1,4 +1,4 @@
-<form method='post' id='{{ form.permission.data }}' action='/users/{{ username }}/permissions/{{ form.permission.data }}'>
+<form id='{{ form.permission.data }}' onsubmit='addNewPermission("{{ form.permission.id }}"); return false'>
     {{ form.permission.label()|safe }}:
     {{ form.permission()|safe }}
     {{ form.options.label()|safe }}:

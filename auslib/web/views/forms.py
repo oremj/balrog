@@ -20,7 +20,8 @@ class DisableableTextInput(TextInput):
 class JSONTextField(TextField):
     """TextField that parses incoming data as JSON."""
     def process_formdata(self, valuelist):
-        if valuelist:
+        if valuelist and valuelist[0]:
+            log.debug("JSONTextField.process_formdata: valuelist[0] is: %s", valuelist[0])
             try:
                 self.data = json.loads(valuelist[0])
             except JSONDecodeError, e:

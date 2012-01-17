@@ -327,7 +327,9 @@ class AUSTable(object):
         for col in what:
             row[col] = what[col]
 
-        ret = trans.execute(self._updateStatement(where, row))
+        query = self._updateStatement(where, row)
+        log.debug("AUSTable._prepareUpdate: Executing query: '%s' with values: %s", query, row)
+        ret = trans.execute(query)
         if self.history:
             trans.execute(self.history.forUpdate(row, changed_by))
         if ret.rowcount != 1:
