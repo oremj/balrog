@@ -37,10 +37,12 @@ class JSONTextField(TextField):
             self.data = {}
 
 class PermissionForm(Form):
-    """Base permission form, directly used for new permissions."""
-    permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
     options = JSONTextField('Options')
 
+class NewPermissionForm(PermissionForm):
+    permission = TextField('Permission', validators=[Required()])
+    data_version = HiddenField('data_version', validators=[Required(), NumberRange()])
+
 class ExistingPermissionForm(PermissionForm):
-    """Permission form to be used with existing permissions."""
+    permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
     data_version = HiddenField('data_version', validators=[Required(), NumberRange()])

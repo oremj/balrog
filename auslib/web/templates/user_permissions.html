@@ -1,18 +1,11 @@
 {% extends "base.html" %}
 {% block title %}AUS3 Admin - Permissions for {{ username }}{% endblock %}
 {% block head %}
-<script type='text/javascript'>
-    $(document).ready(function() {
-        addUserPermissions('{{ username }}', $('#permissions'));
-    });
-    // TODO: Add support for adding a new, non-existant permission
-</script>
 {% endblock %}
 {% block content %}
 <div id='permissions'>
-    <form onsubmit='return false;'>
-        <input type='text' name='permission' value='permission'>
-        <input type='submit' value='New Permission' onclick="addNewUserPermission('{{ username }}', $('#permissions'));">
-    </form>
+    {% set form = newPermission %}
+    {% include 'snippets/new_permission.html' %}
+    {% include 'snippets/user_permissions.html' %}
 </div>
 {% endblock %}

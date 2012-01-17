@@ -4,8 +4,8 @@ function handleError(req, code, error) {
     alert(error);
 }
 
-function getHTML(url) {
-    return $.get(url, {'format': 'html'}
+function getHTML(path) {
+    return $.get(SCRIPT_ROOT + path, {'format': 'html'}
     ).error(handleError
     );
 }
@@ -14,34 +14,26 @@ function getFullURL(url) {
     return SCRIPT_ROOT + url;
 }
 
-function getUsers() {
-    return getHTML(getFullURL('/users'));
-}
-
-function getUserPermissions(username) {
-    return getHTML(getFullURL('/users/' + username + '/permissions'));
-}
-
 function getNewUserPermission(username) {
     return getHTML(getFullURL('/users/' + username + '/permissions/new'));
 }
 
-function addUsers(element) {
-    getUsers()
+function getUsers(element) {
+    getHTML('/users')
     .success(function(data) {
         element.append(data);
     });
 }
 
-function addUserPermissions(username, element) {
-    getUserPermissions(username)
+function getUserPermissions(username, element) {
+    getHTML('/users/' + username + '/permissions')
     .success(function(data) {
         element.append(data);
     });
 }
 
 function addNewUserPermission(username, permission, element) {
-    $.put(getFullURL('/users/' + username + '/permissions/' + permission), {'format': 'html'})
+    $.put(SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission), {'format': 'html'})
     .error(handleError
     ).success(function(data) {
         element.append(data);

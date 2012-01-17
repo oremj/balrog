@@ -4,7 +4,7 @@ from flask import render_template, request, Response, jsonify
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
-from auslib.web.views.forms import PermissionForm, ExistingPermissionForm
+from auslib.web.views.forms import NewPermissionForm, ExistingPermissionForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class PermissionsView(AdminView):
             for perm, values in permissions.items():
                 perm = perm.lstrip('/')
                 forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
-            return render_template('snippets/user_permissions.html', username=username, forms=forms)
+            return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
 
 class SpecificPermissionView(AdminView):
     """/users/[user]/permissions/[permission]"""
@@ -58,18 +58,19 @@ class SpecificPermissionView(AdminView):
             return jsonify(perm)
         else:
             form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permissions.html', form=form)
+            return render_template('snippets/permissions.html', permission=permission)
 
     @setpermission
     @requirelogin
     @requirepermission(options=[])
     def _put(self, username, permission, changed_by, transaction):
         try:
-            form = ExistingPermissionForm()
             if db.permissions.getUserPermissions(username).get(permission):
+                form = ExistingPermissionForm()
                 db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
                 return Response(status=200)
             else:
+                form = NewPermissionForm()
                 db.permissions.grantPermission(changed_by, username, permission, form.options.data, transaction=transaction)
                 return Response(status=201)
         except ValueError, e:
@@ -120,7 +121,11 @@ class UserPermissionsPageView(AdminView):
         if not username:
             return Response(status=404)
         permissions = db.permissions.getUserPermissions(username)
-        return render_template('user_permissions.html', username=username, permissions=permissions)
+        forms = []
+        for perm, values in permissions.items():
+            perm = perm.lstrip('/')
+            forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
+        return render_template('user_permissions.html', username=username, permissions=forms, newPermission=NewPermissionForm())
 
 app.add_url_rule('/users', view_func=UsersView.as_view('users'))
 app.add_url_rule('/users/<username>/permissions', view_func=PermissionsView.as_view('permissions'))
