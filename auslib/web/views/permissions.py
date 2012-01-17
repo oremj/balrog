@@ -46,16 +46,20 @@ class PermissionsView(MethodView):
 class SpecificPermissionView(MethodView):
     """/users/[user]/permissions/[permission]"""
     def get(self, username, permission):
-        perm = db.permissions.getUserPermissions(username)[permission]
+        perms = db.permissions.getUserPermissions(username)
         fmt = request.form.get('format', 'html')
         if fmt == 'json':
-            return jsonify(perm)
-        else:
-            if permission == 'new':
-                form = PermissionForm(permission='')
+            if permission not in perms:
+                return Response(status=404)
             else:
+                return jsonify(perms[permission])
+        else:
+            if permission in perms:
                 form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permission.html', form=form)
+                return render_template('snippets/permissions.html', form=form)
+            else:
+                form = PermissionForm(permission=permission)
+                return render_template('snippets/new_permission.html', form=form)
 
     @setpermission
     @requirelogin

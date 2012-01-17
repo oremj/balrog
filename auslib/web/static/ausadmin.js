@@ -19,6 +19,10 @@ function getUserPermissions(username) {
     return getHTML(getFullURL('/users/' + username + '/permissions'));
 }
 
+function getNewUserPermission(username) {
+    return getHTML(getFullURL('/users/' + username + '/permissions/new'));
+}
+
 function addUsers(element) {
     getUsers()
     .success(function(data) {
@@ -31,6 +35,13 @@ function addUserPermissions(username, element) {
     .success(function(data) {
         element.append(data);
     });
+}
+
+function addNewUserPermission(username, element) {
+    getNewUserPermission(username)
+    .success(function(data) {
+        element.prepend(data);
+   });
 }
 
 function redirect(page, args) {
