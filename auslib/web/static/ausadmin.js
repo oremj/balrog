@@ -4,39 +4,16 @@ function handleError(req, code, error) {
     alert(error);
 }
 
-function getHTML(path) {
-    return $.get(SCRIPT_ROOT + path, {'format': 'html'}
-    ).error(handleError
-    );
-}
-
-function getFullURL(url) {
-    return SCRIPT_ROOT + url;
-}
-
-function getNewUserPermission(username) {
-    return getHTML(getFullURL('/users/' + username + '/permissions/new'));
-}
-
-function getUsers(element) {
-    getHTML('/users')
-    .success(function(data) {
-        element.append(data);
-    });
-}
-
-function getUserPermissions(username, element) {
-    getHTML('/users/' + username + '/permissions')
-    .success(function(data) {
-        element.append(data);
-    });
-}
-
-function addNewUserPermission(username, permission, element) {
-    $.put(SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission), {'format': 'html'})
+function addNewPermission(username, permission, options, element) {
+    url = SCRIPT_ROOT + '/users/' + username + '/permissions' + permission;
+    $.ajax(url, {'type': 'put'})
     .error(handleError
     ).success(function(data) {
-        element.append(data);
+        $.get(url, {'format': 'html'})
+        .error(handleError
+        ).success(function(data) {
+            element.append(data);
+        });
     });
 }
 
