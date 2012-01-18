@@ -3,9 +3,13 @@
 {% block head %}
 {% endblock %}
 {% block content %}
-<div id='permissions'>
+<h2>Give {{ username }} a new permission:</h2>
+<div>
     {% set form = newPermission %}
     {% include 'snippets/new_permission.html' %}
-    {% include 'snippets/user_permissions.html' %}
 </div>
+{% if permissions %}
+<h2>Edit existing permissions for {{ username }}:</h2>
+{% endif %}
+{% include 'snippets/user_permissions.html' %}
 {% endblock %}

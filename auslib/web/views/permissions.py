@@ -41,7 +41,6 @@ class PermissionsView(AdminView):
         else:
             forms = []
             for perm, values in permissions.items():
-                perm = perm.lstrip('/')
                 forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
             return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
 
@@ -49,6 +48,8 @@ class SpecificPermissionView(AdminView):
     """/users/[user]/permissions/[permission]"""
     def get(self, username, permission):
         try:
+            permission = '/%s' % permission
+            log.debug(permission)
             perm = db.permissions.getUserPermissions(username)[permission]
         except KeyError:
             return Response(status=404)
@@ -58,7 +59,7 @@ class SpecificPermissionView(AdminView):
             return jsonify(perm)
         else:
             form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permission.html', permission=permission)
+            return render_template('snippets/permission.html', form=form)
 
     @setpermission
     @requirelogin
@@ -67,6 +68,8 @@ class SpecificPermissionView(AdminView):
         try:
             if db.permissions.getUserPermissions(username).get(permission):
                 form = ExistingPermissionForm()
+                if not form.data_version.data:
+                    raise ValueError("Must provide the data version when updating an existing permission.")
                 db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
                 return Response(status=200)
             else:
@@ -100,12 +103,17 @@ class SpecificPermissionView(AdminView):
         if not db.permissions.getUserPermissions(username, transaction=transaction).get(permission):
             return Response(status=404)
         try:
-            data_version = int(request.args['data_version'])
-            db.permissions.revokePermission(changed_by, username, permission, data_version, transaction=transaction)
+            # For practical purposes, DELETE can't have a request body, which means the Form
+            # won't find data where it's expecting it. Instead, we have to tell it to look at
+            # the query string, which Flask puts in request.args.
+            form = ExistingPermissionForm(request.args)
+            db.permissions.revokePermission(changed_by, username, permission, form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
+            raise
             return Response(status=400, response=e.args)
         except Exception, e:
+            raise
             return Response(status=500, response=e.args)
 
 class PermissionsPageView(AdminView):
@@ -123,8 +131,7 @@ class UserPermissionsPageView(AdminView):
         permissions = db.permissions.getUserPermissions(username)
         forms = []
         for perm, values in permissions.items():
-            perm = perm.lstrip('/')
-            forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
+            forms.append(ExistingPermissionForm(prefix=perm, permission=perm, options=values['options'], data_version=values['data_version']))
         return render_template('user_permissions.html', username=username, permissions=forms, newPermission=NewPermissionForm())
 
 app.add_url_rule('/users', view_func=UsersView.as_view('users'))
