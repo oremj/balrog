@@ -63,8 +63,9 @@ class SpecificPermissionView(AdminView):
         if fmt == 'json':
             return jsonify(perm)
         else:
-            form = ExistingPermissionForm(permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permission.html', form=form)
+            prefix = permission2selector(permission)
+            form = ExistingPermissionForm(prefix=prefix, permission=permission, options=perm['options'], data_version=perm['data_version'])
+            return render_template('snippets/permission.html', username=username, form=form)
 
     @setpermission
     @requirelogin
