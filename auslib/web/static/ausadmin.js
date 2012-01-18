@@ -49,7 +49,7 @@ function deletePermission(username, permission, data_version) {
     );
 }
 
-function submitPermissionForm(username, permissionForm) {
+function submitPermissionForm(username, permissionForm, element) {
     clicked = permissionForm.data('clicked');
     permission = $('[name*=permission]', permissionForm).val()
     options = $('[name*=options]', permissionForm).val()
@@ -60,7 +60,7 @@ function submitPermissionForm(username, permissionForm) {
     else if (clicked == 'delete') {
         deletePermission(username, permission, data_version)
         .success(function() {
-            $('#' + permission + '_li').remove();
+            element.remove();
         });
     }
 }

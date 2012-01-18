@@ -15,6 +15,10 @@ def setpermission(f):
             kwargs['permission'] = '/%s' % kwargs['permission']
         return f(*args, **kwargs)
     return decorated
+
+def permission2selector(permission):
+    """Converts a permission to a valid CSS selector."""
+    return permission.replace('/', '').replace(':', '')
         
 class UsersView(AdminView):
     """/users"""
@@ -41,7 +45,8 @@ class PermissionsView(AdminView):
         else:
             forms = []
             for perm, values in permissions.items():
-                forms.append(ExistingPermissionForm(permission=perm, options=values['options'], data_version=values['data_version']))
+                prefix = permission2selector(perm)
+                forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
             return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
 
 class SpecificPermissionView(AdminView):
@@ -131,7 +136,8 @@ class UserPermissionsPageView(AdminView):
         permissions = db.permissions.getUserPermissions(username)
         forms = []
         for perm, values in permissions.items():
-            forms.append(ExistingPermissionForm(prefix=perm, permission=perm, options=values['options'], data_version=values['data_version']))
+            prefix = permission2selector(perm)
+            forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
         return render_template('user_permissions.html', username=username, permissions=forms, newPermission=NewPermissionForm())
 
 app.add_url_rule('/users', view_func=UsersView.as_view('users'))
