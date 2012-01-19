@@ -3,10 +3,7 @@ function handleError(response, code, error) {
 }
 
 function getPermissionUrl(username, permission) {
-    if (permission[0] != '/') {
-        permission = '/' + permission
-    }
-    return SCRIPT_ROOT + '/users/' + username + '/permissions' + permission;
+    return SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission;
 }
 
 function addNewPermission(username, permission, options, element) {

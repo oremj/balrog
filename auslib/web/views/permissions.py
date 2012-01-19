@@ -51,10 +51,9 @@ class PermissionsView(AdminView):
 
 class SpecificPermissionView(AdminView):
     """/users/[user]/permissions/[permission]"""
+    @setpermission
     def get(self, username, permission):
         try:
-            permission = '/%s' % permission
-            log.debug(permission)
             perm = db.permissions.getUserPermissions(username)[permission]
         except KeyError:
             return Response(status=404)
@@ -144,5 +143,7 @@ class UserPermissionsPageView(AdminView):
 app.add_url_rule('/users', view_func=UsersView.as_view('users'))
 app.add_url_rule('/users/<username>/permissions', view_func=PermissionsView.as_view('permissions'))
 app.add_url_rule('/users/<username>/permissions/<path:permission>', view_func=SpecificPermissionView.as_view('specific_permission'))
+# Some permissions may start with a slash, and the <path> converter won't match them, so we need an extra rule to cope.
+app.add_url_rule('/users/<username>/permissions//<path:permission>', view_func=SpecificPermissionView.as_view('specific_permission'))
 app.add_url_rule('/permissions.html', view_func=PermissionsPageView.as_view('permissions.html'))
 app.add_url_rule('/user_permissions.html', view_func=UserPermissionsPageView.as_view('user_permissions.html'))
