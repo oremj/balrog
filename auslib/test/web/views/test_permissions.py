@@ -27,6 +27,13 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         query = query.where(db.permissions.permission=='admin')
         self.assertEquals(query.execute().fetchone(), ('admin', 'bob', None, 1))
 
+    def testPermissionsPost(self):
+        ret = self._post('/users/bill/permissions/admin', data=dict(options="", data_version=1))
+        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        r = db.permissions.t.select().where(db.permissions.username=='bill').execute().fetchall()
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0], ('admin', 'bill', None, 2))
+
     def testPermissionUrl(self):
         ret = self._put('/users/cathy/permissions/releases/:name')
         self.assertStatusCode(ret, 201)
@@ -67,3 +74,14 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         query = query.where(db.permissions.username=='bob')
         query = query.where(db.permissions.permission=='/users/:id/permissions/:permission')
         self.assertEquals(query.execute().fetchone(), None)
+
+
+class TestPermissionsPage(ViewTest, HTMLTestMixin):
+    def testGet(self):
+        ret = self._get('/permissions.html')
+        self.assertTrue('bill' in ret.data, msg=ret.data)
+
+class TestUserPermissionsPage(ViewTest, HTMLTestMixin):
+    def testGet(self):
+        ret = self._get('/user_permissions.html', query_string=dict(username='bill'))
+        self.assertTrue('admin' in ret.data, msg=ret.data)
