@@ -185,6 +185,7 @@ class AUSTable(object):
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
         query = self._selectStatement(**kwargs)
+        log.debug("AUSTable._prepareUpdate: Executing query: '%s'", query)
         if transaction:
             return transaction.execute(query).fetchall()
         else:
@@ -211,7 +212,9 @@ class AUSTable(object):
         data = columns.copy()
         if self.versioned:
             data['data_version'] = 1
-        ret = trans.execute(self._insertStatement(**data))
+        query = self._insertStatement(**data)
+        log.debug("AUSTable._prepareUpdate: Executing query: '%s' with values: %s", query, data)
+        ret = trans.execute(query)
         if self.history:
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
                 trans.execute(q)
@@ -271,7 +274,9 @@ class AUSTable(object):
             where = copy(where)
             where.append(self.data_version==old_data_version)
 
-        ret = trans.execute(self._deleteStatement(where))
+        query = self._deleteStatement(where)
+        log.debug("AUSTable._prepareUpdate: Executing query: '%s'", query)
+        ret = trans.execute(query)
         if ret.rowcount != 1:
             raise OutdatedDataError("Failed to delete row, old_data_version doesn't match current data_version")
         if self.history:
