@@ -242,7 +242,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareInsert(trans, changed_by, **columns)
-            trans.commit()
             return ret
 
     def _deleteStatement(self, where):
@@ -310,7 +309,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-            trans.commit()
             return ret
 
     def _updateStatement(self, where, what):
@@ -383,7 +381,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-            trans.commit()
             return ret
 
 class History(AUSTable):
