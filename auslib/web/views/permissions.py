@@ -32,7 +32,7 @@ class UsersView(AdminView):
             # http://flask.pocoo.org/docs/security/#json-security
             return jsonify(dict(users=users))
         else:
-            return render_template('snippets/users.html', users=users)
+            return render_template('fragments/users.html', users=users)
 
 class PermissionsView(AdminView):
     """/users/[user]/permissions"""
@@ -47,7 +47,7 @@ class PermissionsView(AdminView):
             for perm, values in permissions.items():
                 prefix = permission2selector(perm)
                 forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
-            return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
+            return render_template('fragments/user_permissions.html', username=username, permissions=permissions)
 
 class SpecificPermissionView(AdminView):
     """/users/[user]/permissions/[permission]"""
@@ -64,7 +64,7 @@ class SpecificPermissionView(AdminView):
         else:
             prefix = permission2selector(permission)
             form = ExistingPermissionForm(prefix=prefix, permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permission.html', username=username, form=form)
+            return render_template('fragments/permission.html', username=username, form=form)
 
     @setpermission
     @requirelogin
