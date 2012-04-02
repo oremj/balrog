@@ -13,7 +13,7 @@ from auslib.web.views.base import requirelogin, requirepermission, AdminView
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ["SingleLocaleView"]
+__all__ = ["SingleReleaseView", "SingleLocaleView", "ReleasesPageView"]
 
 class SingleLocaleView(AdminView):
     """/releases/[release]/builds/[platform]/[locale]"""
@@ -93,6 +93,60 @@ class SingleReleaseView(AdminView):
         release = db.releases.getReleaseBlob(release)
         return jsonify(release)
 
+    @requirelogin
+    @requirepermission()
+    def _post(self, release, changed_by, transaction):
+        new = False
+        try:
+            # Collect all of the release names that we should put the data into
+            product = request.form['product']
+            version = request.form['version']
+            releaseInfo = json.loads(request.form['details'])
+            copyTo = json.loads(request.form.get('copyTo', '[]'))
+        except (KeyError, json.JSONDecodeError), e:
+            return Response(status=400, response=e.message)
+
+        for rel in [release] + copyTo:
+            try:
+                releaseObj = db.releases.getReleases(name=rel, transaction=transaction)[0]
+            except IndexError:
+                if rel == release:
+                    new = True
+                releaseObj = None
+            # If the release already exists, do some verification on it, and possibly update
+            # the version.
+            if releaseObj:
+                # If the product name provided in the request doesn't match the one we already have
+                # for it, fail. Product name changes shouldn't happen here, and any client trying to
+                # is probably broken.
+                if product != releaseObj['product']:
+                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseObj['product'], rel))
+                # However, we _should_ update the version because some rows (specifically,
+                # the ones that nightly update rules point at) have their version change over time.
+                if version != releaseObj['version']:
+                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseObj['version'], version)
+                    def updateVersion():
+                        old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
+                        db.releases.updateRelease(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
+                        releaseObj['version'] = version
+                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+                releaseObj['data'].update(releaseInfo)
+                def updateInfo():
+                    old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
+                    db.releases.updateRelease(name=rel, blob=releaseObj['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
+                retry(updateInfo, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+            # If the release doesn't exist, create it.
+            else:
+                releaseInfo['name'] = rel
+                releaseInfo['schema_version'] = CURRENT_SCHEMA_VERSION
+                releaseBlob = ReleaseBlobV1(**releaseInfo)
+                retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                      kwargs=dict(name=rel, product=product, version=version, blob=releaseBlob, changed_by=changed_by, transaction=transaction))
+        if new:
+            return Response(status=201)
+        else:
+            return Response(status=200)
+            
 
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
 app.add_url_rule('/releases/<release>', view_func=SingleReleaseView.as_view('release'))

@@ -7,6 +7,53 @@ from auslib.web.base import db
 from auslib.test.web.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
+    def testReleasePost(self):
+        details = json.dumps(dict(detailsUrl='blah', fakePartials=True))
+        ret = self._post('/releases/d', data=dict(details=details, product='d', version='d'))
+        self.assertStatusCode(ret, 200)
+        ret = select([db.releases.data]).where(db.releases.name=='d').execute().fetchone()[0]
+        self.assertEqual(json.loads(ret), json.loads("""
+{
+    "name": "d",
+    "detailsUrl": "blah",
+    "fakePartials": true,
+    "platforms": {
+        "p": {
+            "locales": {
+                "d": {
+                    "complete": {
+                        "filesize": 1234
+                    }
+                }
+            }
+        }
+    }
+}
+"""))
+    
+    def testReleasePostCreatesNewRelease(self):
+        details = json.dumps(dict(bouncerProducts=dict(linux='foo')))
+        ret = self._post('/releases/e', data=dict(details=details, product='e', version='e'))
+        self.assertStatusCode(ret, 201)
+        ret = db.releases.t.select().where(db.releases.name=='e').execute().fetchone()
+        self.assertEqual(ret['product'], 'e')
+        self.assertEqual(ret['version'], 'e')
+        self.assertEqual(ret['name'], 'e')
+        self.assertEqual(json.loads(ret['data']), json.loads("""
+{
+    "name": "e",
+    "schema_version": 1,
+    "bouncerProducts": {
+        "linux": "foo"
+    }
+}
+"""))
+
+    def testReleasePostInvalidKey(self):
+        details = json.dumps(dict(foo=1))
+        ret = self._post('/releases/a', data=dict(details=details))
+        self.assertStatusCode(ret, 400)
+
     def testLocalePut(self):
         details = json.dumps(dict(complete=dict(filesize=435)))
         ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='a'))
