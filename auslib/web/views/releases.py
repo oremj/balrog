@@ -33,6 +33,11 @@ def getReleaseBlob(release, transaction):
     except IndexError:
         return None
 
+def createRelease(release, product, version, changed_by, transaction, blobInfo):
+    blob = ReleaseBlobV1(schema_version=CURRENT_SCHEMA_VERSION, **blobInfo)
+    retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+          kwargs=dict(name=release, product=product, version=version, blob=blob, changed_by=changed_by, transaction=transaction))
+
 class SingleLocaleView(AdminView):
     """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
@@ -75,9 +80,7 @@ class SingleLocaleView(AdminView):
                     releaseBlob['version'] = version
             # If the release doesn't exist, create it.
             else:
-                releaseBlob = ReleaseBlobV1(name=rel, schema_version=CURRENT_SCHEMA_VERSION)
-                retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
-                      kwargs=dict(name=rel, product=product, version=version, blob=releaseBlob, changed_by=changed_by, transaction=transaction))
+                createRelease(rel, product, version, changed_by, transaction, dict(name=rel))
             # We need to wrap this in order to make it retry-able.
             def updateLocale():
                 old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
@@ -136,10 +139,7 @@ class SingleReleaseView(AdminView):
             # If the release doesn't exist, create it.
             else:
                 releaseInfo['name'] = rel
-                releaseInfo['schema_version'] = CURRENT_SCHEMA_VERSION
-                releaseBlob = ReleaseBlobV1(**releaseInfo)
-                retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
-                      kwargs=dict(name=rel, product=product, version=version, blob=releaseBlob, changed_by=changed_by, transaction=transaction))
+                createRelease(rel, product, version, changed_by, transaction, releaseInfo)
         if new:
             return Response(status=201)
         else:
