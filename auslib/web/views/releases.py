@@ -15,7 +15,28 @@ log = logging.getLogger(__name__)
 
 __all__ = ["SingleReleaseView", "SingleLocaleView", "ReleasesPageView"]
 
-class SingleLocaleView(AdminView):
+class ReleasesViewHelper(object):
+    def processArgs(self):
+        # Collect all of the release names that we should put the data into
+        product = request.form['product']
+        version = request.form['version']
+        details = json.loads(request.form['details'])
+        copyTo = json.loads(request.form.get('copyTo', '[]'))
+        return product, version, details, copyTo
+
+    def updateVersion(self, release, version, changed_by, transaction):
+        def updateVersion():
+            old_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
+            db.releases.updateRelease(name=release, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
+        retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+
+    def getReleaseBlob(self, release, transaction):
+        try:
+            return db.releases.getReleases(name=release, transaction=transaction)[0]
+        except IndexError:
+            return None
+
+class SingleLocaleView(AdminView, ReleasesViewHelper):
     """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
         locale = db.releases.getLocale(release, platform, locale)
@@ -26,45 +47,35 @@ class SingleLocaleView(AdminView):
     def _put(self, release, platform, locale, changed_by, transaction):
         new = True
         try:
-            # Collect all of the release names that we should put the data into
-            product = request.form['product']
-            version = request.form['version']
-            localeBlob = json.loads(request.form['details'])
-            copyTo = json.loads(request.form.get('copyTo', '[]'))
+            product, version, localeBlob, copyTo = self.processArgs()
         except (KeyError, json.JSONDecodeError), e:
             return Response(status=400, response=e.args)
 
         for rel in [release] + copyTo:
-            try:
-                releaseObj = db.releases.getReleases(name=rel, transaction=transaction)[0]
-            except IndexError:
-                releaseObj = None
+            releaseBlob = self.getReleaseBlob(release, transaction)
+            # If it does exist, and this is this is the first release (aka, the one in the URL),
+            # see if the locale exists, for purposes of setting the correct Response code.
+            if rel == release:
+                try:
+                    db.releases.getLocale(rel, platform, locale, transaction=transaction)
+                    new = False
+                except:
+                    pass
             # If the release already exists, do some verification on it, and possibly update
             # the version.
-            if releaseObj:
+            if releaseBlob:
                 # If the product name provided in the request doesn't match the one we already have
                 # for it, fail. Product name changes shouldn't happen here, and any client trying to
                 # is probably broken.
-                if product != releaseObj['product']:
-                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseObj['product'], rel))
+                if product != releaseBlob['product']:
+                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseBlob['product'], rel))
 
                 # However, we _should_ update the version because some rows (specifically,
                 # the ones that nightly update rules point at) have their version change over time.
-                if version != releaseObj['version']:
-                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseObj['version'], version)
-                    def updateVersion():
-                        old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
-                        db.releases.updateRelease(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
-                        releaseObj['version'] = version
-                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
-                # If it does exist, and this is this is the first release (aka, the one in the URL),
-                # see if the locale exists, for purposes of setting the correct Response code.
-                if rel == release:
-                    try:
-                        db.releases.getLocale(rel, platform, locale, transaction=transaction)
-                        new = False
-                    except:
-                        pass
+                if version != releaseBlob['version']:
+                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseBlob['version'], version)
+                    self.updateVersion(release, version, changed_by, transaction)
+                    releaseBlob['version'] = version
             # If the release doesn't exist, create it.
             else:
                 releaseBlob = ReleaseBlobV1(name=rel, schema_version=CURRENT_SCHEMA_VERSION)
@@ -87,7 +98,7 @@ class ReleasesPageView(AdminView):
         releases = db.releases.getReleases()
         return render_template('releases.html', releases=releases)
 
-class SingleReleaseView(AdminView):
+class SingleReleaseView(AdminView, ReleasesViewHelper):
     """ /releases/[release]"""
     def get(self, release):
         release = db.releases.getReleaseBlob(release)
@@ -96,44 +107,34 @@ class SingleReleaseView(AdminView):
     @requirelogin
     @requirepermission()
     def _post(self, release, changed_by, transaction):
-        new = False
+        new = True
         try:
-            # Collect all of the release names that we should put the data into
-            product = request.form['product']
-            version = request.form['version']
-            releaseInfo = json.loads(request.form['details'])
-            copyTo = json.loads(request.form.get('copyTo', '[]'))
+            product, version, releaseInfo, copyTo = self.processArgs()
         except (KeyError, json.JSONDecodeError), e:
-            return Response(status=400, response=e.message)
+            return Response(status=400, response=e.args)
 
         for rel in [release] + copyTo:
-            try:
-                releaseObj = db.releases.getReleases(name=rel, transaction=transaction)[0]
-            except IndexError:
-                if rel == release:
-                    new = True
-                releaseObj = None
+            releaseBlob = self.getReleaseBlob(release, transaction)
+            if rel == release and releaseBlob:
+                new = False
             # If the release already exists, do some verification on it, and possibly update
             # the version.
-            if releaseObj:
+            if releaseBlob:
                 # If the product name provided in the request doesn't match the one we already have
                 # for it, fail. Product name changes shouldn't happen here, and any client trying to
                 # is probably broken.
-                if product != releaseObj['product']:
-                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseObj['product'], rel))
+                if product != releaseBlob['product']:
+                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseBlob['product'], rel))
                 # However, we _should_ update the version because some rows (specifically,
                 # the ones that nightly update rules point at) have their version change over time.
-                if version != releaseObj['version']:
-                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseObj['version'], version)
-                    def updateVersion():
-                        old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
-                        db.releases.updateRelease(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
-                        releaseObj['version'] = version
-                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
-                releaseObj['data'].update(releaseInfo)
+                if version != releaseBlob['version']:
+                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseBlob['version'], version)
+                    self.updateVersion(release, version, changed_by, transaction)
+                    releaseBlob['version'] = version
+                releaseBlob['data'].update(releaseInfo)
                 def updateInfo():
                     old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
-                    db.releases.updateRelease(name=rel, blob=releaseObj['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
+                    db.releases.updateRelease(name=rel, blob=releaseBlob['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
                 retry(updateInfo, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
             # If the release doesn't exist, create it.
             else:
@@ -146,7 +147,7 @@ class SingleReleaseView(AdminView):
             return Response(status=201)
         else:
             return Response(status=200)
-            
+
 
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
 app.add_url_rule('/releases/<release>', view_func=SingleReleaseView.as_view('release'))
