@@ -96,7 +96,6 @@ class SingleReleaseView(AdminView):
     @requirepermission()
     def _post(self, release, changed_by, transaction):
         new = True
-        log.debug('in here')
         form = ReleaseForm()
         if not form.validate():
             return Response(status=400, response=form.errors)
@@ -105,8 +104,6 @@ class SingleReleaseView(AdminView):
         newReleaseInfo = form.details.data
         copyTo = form.copyTo.data
         old_data_version = form.data_version.data
-        if db.releases.exists(name=release) and not old_data_version:
-            return Response(status=400, response="Release exists, data_version must be provided")
 
         for rel in [release] + copyTo:
             try:
