@@ -3,25 +3,19 @@ import simplejson as json
 from sqlalchemy.exc import SQLAlchemyError
 
 from flask import render_template, request, Response, jsonify
+from flaskext.wtf import ValidationError
 
 from mozilla_buildtools.retry import retry
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
+from auslib.web.views.forms import ReleaseForm
 
 import logging
 log = logging.getLogger(__name__)
 
 __all__ = ["SingleReleaseView", "SingleLocaleView", "ReleasesPageView"]
-
-def processArgs():
-    # Collect all of the release names that we should put the data into
-    product = request.form['product']
-    version = request.form['version']
-    details = json.loads(request.form['details'])
-    copyTo = json.loads(request.form.get('copyTo', '[]'))
-    return product, version, details, copyTo
 
 def updateVersion(release, version, changed_by, transaction):
     old_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
@@ -48,10 +42,16 @@ class SingleLocaleView(AdminView):
     @requirepermission()
     def _put(self, release, platform, locale, changed_by, transaction):
         new = True
-        try:
-            product, version, localeBlob, copyTo = processArgs()
-        except (KeyError, json.JSONDecodeError), e:
-            return Response(status=400, response=e.args)
+        form = ReleaseForm()
+        if not form.validate():
+            return Response(status=400, response=form.errors)
+        product = form.product.data
+        version = form.version.data
+        localeInfo = form.details.data
+        copyTo = form.copyTo.data
+        old_data_version = form.data_version.data
+        if db.releases.exists(name=release) and not old_data_version:
+            return Response(status=400, response="Release exists, old_data_version must be provided")
 
         for rel in [release] + copyTo:
             releaseBlob = retry(getReleaseBlob, sleeptime=5, args=(release, transaction))
@@ -76,16 +76,14 @@ class SingleLocaleView(AdminView):
                 # the ones that nightly update rules point at) have their version change over time.
                 if version != releaseBlob['version']:
                     log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseBlob['version'], version)
-                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,), args=(release, version, changed_by, transaction))
+                    retry(db.releases.updateRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), kwargs=dict(name=release, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
                     releaseBlob['version'] = version
+                    old_data_version += 1
             # If the release doesn't exist, create it.
             else:
                 createRelease(rel, product, version, changed_by, transaction, dict(name=rel))
-            # We need to wrap this in order to make it retry-able.
-            def updateLocale():
-                old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
-                db.releases.addLocaleToRelease(rel, platform, locale, localeBlob, old_data_version, changed_by, transaction)
-            retry(updateLocale, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+                old_data_version = 1
+            retry(db.releases.addLocaleToRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), kwargs=dict(name=rel, platform=platform, locale=locale, blob=localeInfo, old_data_version=old_data_version, changed_by=changed_by, transaction=transaction))
         if new:
             return Response(status=201)
         else:
@@ -108,10 +106,14 @@ class SingleReleaseView(AdminView):
     @requirepermission()
     def _post(self, release, changed_by, transaction):
         new = True
-        try:
-            product, version, releaseInfo, copyTo = processArgs()
-        except (KeyError, json.JSONDecodeError), e:
-            return Response(status=400, response=e.args)
+        log.debug('in here')
+        form = ReleaseForm()
+        if not form.validate():
+            return Response(status=400, response=form.errors)
+        product = form.product.data
+        version = form.version.data
+        releaseInfo = form.details.data
+        copyTo = form.copyTo.data
 
         for rel in [release] + copyTo:
             releaseBlob = retry(getReleaseBlob, sleeptime=5, args=(release, transaction))

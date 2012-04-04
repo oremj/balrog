@@ -2,7 +2,7 @@ from simplejson import JSONDecodeError
 import simplejson as json
 import sys
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange
+from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, ValidationError
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,15 +29,16 @@ class JSONTextField(TextField):
                 # of. Because of this, we need to wrap this error in something
                 # else in order for it to be properly raised.
                 log.debug('JSONTextField.process_formdata: Caught JSONDecodeError')
-                raise Exception("Couldn't process JSONTextField %s, caught JSONDecodeError" % self.name)
-                klass, e, tb = sys.exc_info()
-                raise Exception, e, tb
+                self.process_errors.append(e.message)
         else:
-            log.debug('JSONTextField: No value list, setting self.data to {}')
-            self.data = {}
+            log.debug('JSONTextField: No value list, setting self.data to %s' % self.default)
+            try:
+                self.data = self.default()
+            except TypeError:
+                self.data = self.default
 
 class DbEditableForm(Form):
-    data_version = HiddenField('data_version', validators=[Required(), NumberRange()])
+    data_version = HiddenField('data_version', validators=[NumberRange()])
 
 class PermissionForm(DbEditableForm):
     options = JSONTextField('Options')
@@ -47,3 +48,9 @@ class NewPermissionForm(PermissionForm):
 
 class ExistingPermissionForm(PermissionForm):
     permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
+
+class ReleaseForm(DbEditableForm):
+    product = TextField('Product', validators=[Required()])
+    version = TextField('Version', validators=[Required()])
+    details = JSONTextField('Details', validators=[Required()])
+    copyTo = JSONTextField('Copy To', default=list)

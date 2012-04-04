@@ -18,6 +18,7 @@ class ViewTest(unittest.TestCase):
     def setUp(self):
         app.config['SECRET_KEY'] = 'abc123'
         app.config['DEBUG'] = True
+        app.config['CSRF_ENABLED'] = False
         db.setDburi('sqlite:///:memory:')
         db.createTables()
         db.permissions.t.insert().execute(permission='admin', username='bill', data_version=1)

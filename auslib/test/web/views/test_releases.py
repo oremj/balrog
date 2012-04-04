@@ -9,7 +9,7 @@ from auslib.test.web.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testReleasePost(self):
         details = json.dumps(dict(detailsUrl='blah', fakePartials=True))
-        ret = self._post('/releases/d', data=dict(details=details, product='d', version='d'))
+        ret = self._post('/releases/d', data=dict(details=details, product='d', version='d', data_version=1))
         self.assertStatusCode(ret, 200)
         ret = select([db.releases.data]).where(db.releases.name=='d').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -167,7 +167,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testLocalePutChangeVersion(self):
-        ret = self._put('/releases/a/builds/p/l', data=dict(details="{}", product='a', version='b'))
+        details = json.dumps(dict(extv=1))
+        ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='b'))
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -177,6 +178,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         "p": {
             "locales": {
                 "l": {
+                    "extv": 1
                 }
             }
         }
