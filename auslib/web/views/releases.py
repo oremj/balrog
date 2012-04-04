@@ -42,24 +42,36 @@ class SingleLocaleView(AdminView):
 
         for rel in [release] + copyTo:
             try:
+                # See if the release already exists...
                 releaseInfo = retry(db.releases.getReleases, kwargs=dict(name=rel, transaction=transaction))[0]
+                # If the release named in the URL exists...
                 if rel == release:
+                    # Make sure that old_data_version is provided, because we need to verify it when updating.
                     if not old_data_version:
                         return Response(status=400, response="Release exists, data_version must be provided")
+                    # And if the locale already exists for the release, make note of it so we can return the correct status code.
                     if retry(db.releases.localeExists, kwargs=dict(name=rel, platform=platform, locale=locale, transaction=transaction)):
                         new = False
+                # If this isn't the release in the URL...
                 else:
+                    # Use the data_version we just grabbed from the db.
+                    # XXX: We should probably require an old_data_version for this, too...
                     old_data_version = releaseInfo['data_version']
             except IndexError:
+                # If the release doesn't already exist, create it, and set old_data_version appropriately.
                 releaseInfo = createRelease(rel, product, version, changed_by, transaction, dict(name=rel))
                 old_data_version = 1
 
+            # If the product we're given doesn't match the one in the DB, panic.
             if product != releaseInfo['product']:
-                return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseBlob['product'], rel))
+                return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseInfo['product'], rel))
+            # But if the version doesn't match, just update it. This will be the case for nightlies
+            # every time there's a version bump.
             if version != releaseInfo['version']:
                 log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseInfo['version'], version)
                 retry(db.releases.updateRelease, kwargs=dict(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
                 old_data_version += 1
+            # Finally, add the locale to the release, overwriting any existing mention of it.
             retry(db.releases.addLocaleToRelease, kwargs=dict(name=rel, platform=platform, locale=locale, blob=localeInfo, old_data_version=old_data_version, changed_by=changed_by, transaction=transaction))
 
         if new:
@@ -90,37 +102,44 @@ class SingleReleaseView(AdminView):
             return Response(status=400, response=form.errors)
         product = form.product.data
         version = form.version.data
-        releaseInfo = form.details.data
+        newReleaseInfo = form.details.data
         copyTo = form.copyTo.data
         old_data_version = form.data_version.data
         if db.releases.exists(name=release) and not old_data_version:
             return Response(status=400, response="Release exists, data_version must be provided")
 
         for rel in [release] + copyTo:
-            releaseBlob = retry(getReleaseBlob, args=(release, transaction))
-            if rel == release and releaseBlob:
-                new = False
-            # If the release already exists, do some verification on it, and possibly update
-            # the version.
-            if releaseBlob:
-                # If the product name provided in the request doesn't match the one we already have
-                # for it, fail. Product name changes shouldn't happen here, and any client trying to
-                # is probably broken.
-                if product != releaseBlob['product']:
-                    return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseBlob['product'], rel))
-                # However, we _should_ update the version because some rows (specifically,
-                # the ones that nightly update rules point at) have their version change over time.
-                if version != releaseBlob['version']:
-                    log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseBlob['version'], version)
-                    retry(db.releases.updateRelease, kwargs=dict(name=release, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
-                    releaseBlob['version'] = version
-                    old_data_version += 1
-                releaseBlob['data'].update(releaseInfo)
-                retry(db.releases.updateRelease, kwargs=dict(name=rel, blob=releaseBlob['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
-            # If the release doesn't exist, create it.
-            else:
-                releaseInfo['name'] = rel
-                createRelease(rel, product, version, changed_by, transaction, releaseInfo)
+            try:
+                # See if the release already exists...
+                releaseInfo = retry(db.releases.getReleases, kwargs=dict(name=rel, transaction=transaction))[0]
+                # If the release named in the URL exists...
+                if rel == release:
+                    new = False
+                    # Make sure that old_data_version is provided, because we need to verify it when updating.
+                    if not old_data_version:
+                        return Response(status=400, response="Release exists, data_version must be provided")
+                # If this isn't the release in the URL...
+                else:
+                    # Use the data_version we just grabbed from the db.
+                    # XXX: We should probably require an old_data_version for this, too...
+                    old_data_version = releaseInfo['data_version']
+            except IndexError:
+                # If the release doesn't already exist, create it, and that's it for this iteration!
+                createRelease(rel, product, version, changed_by, transaction, newReleaseInfo)
+                continue
+
+            # If the product we're given doesn't match the one in the DB, panic.
+            if product != releaseInfo['product']:
+                return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseInfo['product'], rel))
+            # But if the version doesn't match, just update it. This will be the case for nightlies
+            # every time there's a version bump.
+            if version != releaseInfo['version']:
+                log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseInfo['version'], version)
+                retry(db.releases.updateRelease, kwargs=dict(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
+                old_data_version += 1
+            releaseInfo['data'].update(newReleaseInfo)
+            retry(db.releases.updateRelease, kwargs=dict(name=rel, blob=releaseInfo['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
+
         if new:
             return Response(status=201)
         else:

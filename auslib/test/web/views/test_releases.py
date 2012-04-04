@@ -32,7 +32,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
     
     def testReleasePostCreatesNewRelease(self):
-        details = json.dumps(dict(bouncerProducts=dict(linux='foo')))
+        details = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
         ret = self._post('/releases/e', data=dict(details=details, product='e', version='e'))
         self.assertStatusCode(ret, 201)
         ret = db.releases.t.select().where(db.releases.name=='e').execute().fetchone()
