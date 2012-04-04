@@ -2,7 +2,7 @@ from simplejson import JSONDecodeError
 import simplejson as json
 import sys
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, ValidationError
+from flaskext.wtf import Form, TextField, Required, TextInput, NumberRange, IntegerField, HiddenInput
 
 import logging
 log = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class JSONTextField(TextField):
                 self.data = self.default
 
 class DbEditableForm(Form):
-    data_version = HiddenField('data_version', validators=[NumberRange()])
+    data_version = IntegerField('data_version', widget=HiddenInput())
 
 class PermissionForm(DbEditableForm):
     options = JSONTextField('Options')

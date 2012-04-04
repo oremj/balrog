@@ -481,6 +481,12 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
     def testGetReleaseBlobNonExistentRelease(self):
         self.assertRaises(KeyError, self.releases.getReleaseBlob, name='z')
 
+    def testExists(self):
+        self.assertTrue(self.releases.exists(name='a'))
+
+    def testDoesntExist(self):
+        self.assertFalse(self.releases.exists(name='f'))
+
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     """Tests for the Releases class that depend on version 1 of the blob schema."""
     def setUp(self):

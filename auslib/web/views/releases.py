@@ -17,10 +17,6 @@ log = logging.getLogger(__name__)
 
 __all__ = ["SingleReleaseView", "SingleLocaleView", "ReleasesPageView"]
 
-def updateVersion(release, version, changed_by, transaction):
-    old_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
-    db.releases.updateRelease(name=release, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
-
 def getReleaseBlob(release, transaction):
     try:
         return db.releases.getReleases(name=release, transaction=transaction)[0]
@@ -51,7 +47,7 @@ class SingleLocaleView(AdminView):
         copyTo = form.copyTo.data
         old_data_version = form.data_version.data
         if db.releases.exists(name=release) and not old_data_version:
-            return Response(status=400, response="Release exists, old_data_version must be provided")
+            return Response(status=400, response="Release exists, data_version must be provided")
 
         for rel in [release] + copyTo:
             releaseBlob = retry(getReleaseBlob, sleeptime=5, args=(release, transaction))
@@ -114,6 +110,9 @@ class SingleReleaseView(AdminView):
         version = form.version.data
         releaseInfo = form.details.data
         copyTo = form.copyTo.data
+        old_data_version = form.data_version.data
+        if db.releases.exists(name=release) and not old_data_version:
+            return Response(status=400, response="Release exists, data_version must be provided")
 
         for rel in [release] + copyTo:
             releaseBlob = retry(getReleaseBlob, sleeptime=5, args=(release, transaction))
@@ -131,13 +130,11 @@ class SingleReleaseView(AdminView):
                 # the ones that nightly update rules point at) have their version change over time.
                 if version != releaseBlob['version']:
                     log.debug("SingleLocaleView.put: database version for %s is %s, updating it to %s", rel, releaseBlob['version'], version)
-                    retry(updateVersion, sleeptime=5, retry_exceptions=(SQLAlchemyError,), args=(release, version, changed_by, transaction))
+                    retry(db.releases.updateRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), kwargs=dict(name=release, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
                     releaseBlob['version'] = version
+                    old_data_version += 1
                 releaseBlob['data'].update(releaseInfo)
-                def updateInfo():
-                    old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
-                    db.releases.updateRelease(name=rel, blob=releaseBlob['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
-                retry(updateInfo, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+                retry(db.releases.updateRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), kwargs=dict(name=rel, blob=releaseBlob['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
             # If the release doesn't exist, create it.
             else:
                 releaseInfo['name'] = rel

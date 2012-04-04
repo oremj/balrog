@@ -61,7 +61,7 @@ class AUSTransaction(object):
         try:
             # If something that executed in the context raised an Exception,
             # rollback and re-raise it.
-            log.debug("AUSTransaction.__exit__: exc is: %s" % str(exc))
+            log.debug("AUSTransaction.__exit__: exc is:", exc_info=True)
             if exc[0]:
                 self.rollback()
                 raise exc[0], exc[1], exc[2]
@@ -580,6 +580,9 @@ class Releases(AUSTable):
             dataType = Text
         self.table.append_column(Column('data', dataType, nullable=False))
         AUSTable.__init__(self)
+
+    def exists(self, name, transaction=None):
+        return len(self.select(where=[self.name==name]))
 
     def getReleases(self, name=None, product=None, version=None, limit=None, transaction=None):
         log.debug("Releases.getReleases: Looking for releases with:")
