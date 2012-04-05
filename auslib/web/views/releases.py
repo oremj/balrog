@@ -30,6 +30,13 @@ class SingleLocaleView(AdminView):
     @requirelogin
     @requirepermission()
     def _put(self, release, platform, locale, changed_by, transaction):
+        """Something important to note about this method is that using the
+           "copyTo" field of the form, updates can be made to more than just
+           the release named in the URL. However, the release in the URL is
+           still considered the primary one, and used to make decisions about
+           what to set the status code to, and what data_version applies to.
+           In an ideal world we would probably require a data_version for the
+           releases named in copyTo as well."""
         new = True
         form = ReleaseForm()
         if not form.validate():
@@ -43,7 +50,9 @@ class SingleLocaleView(AdminView):
         for rel in [release] + copyTo:
             try:
                 releaseInfo = retry(db.releases.getReleases, kwargs=dict(name=rel, transaction=transaction))[0]
-                # If the release named in the URL exists...
+                # "release" is the one named in the URL (as opposed to the
+                # ones that can be provided in copyTo), and we treat it as
+                # the "primary" one
                 if rel == release:
                     # Make sure that old_data_version is provided, because we need to verify it when updating.
                     if not old_data_version:
@@ -57,7 +66,6 @@ class SingleLocaleView(AdminView):
                 # If this isn't the release in the URL...
                 else:
                     # Use the data_version we just grabbed from the db.
-                    # XXX: We should probably require an old_data_version for this, too...
                     old_data_version = releaseInfo['data_version']
             except IndexError:
                 # If the release doesn't already exist, create it, and set old_data_version appropriately.
