@@ -536,65 +536,71 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         blob = dict(complete=dict(hashValue='abc'))
         self.releases.addLocaleToRelease(name='a', platform='p', locale='c', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
-        expected = dict(
-            name='a',
-            platforms=dict(
-                p=dict(
-                    locales=dict(
-                        c=dict(
-                            complete=dict(
-                                hashValue='abc'
-                            )
-                        ),
-                        l=dict(
-                            complete=dict(
-                                filesize=1234
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "c": {
+                    "complete": {
+                        "hashValue": "abc"
+                    }
+                },
+                "l": {
+                    "complete": {
+                        "filesize": 1234
+                    }
+                }
+            }
+        }
+    }
+}
+""")
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleaseOverride(self):
         blob = dict(complete=dict(hashValue=789))
         self.releases.addLocaleToRelease(name='a', platform='p', locale='l', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
-        expected = dict(
-            name='a',
-            platforms=dict(
-                p=dict(
-                    locales=dict(
-                        l=dict(
-                            complete=dict(
-                                hashValue=789
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "hashValue": 789
+                    }
+                }
+            }
+        }
+    }
+}
+""")
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleasePlatformsDoesntExist(self):
         blob = dict(complete=dict(filesize=432))
         self.releases.addLocaleToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
-        expected = dict(
-            name='b',
-            platforms=dict(
-                q=dict(
-                    locales=dict(
-                        l=dict(
-                            complete=dict(
-                                filesize=432
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        expected = json.loads("""
+{
+    "name": "b",
+    "platforms": {
+        "q": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 432
+                    }
+                }
+            }
+        }
+    }
+}
+""")
         self.assertEqual(ret, expected)
 
 class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):

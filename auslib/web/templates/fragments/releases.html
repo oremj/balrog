@@ -10,10 +10,10 @@ Click through to access the data field
     </tr>
     {% for name, form in releases.iteritems() %}
     <tr>
-        <td>{{ name }}</td>
+        <td>{{ name|safe }}</td>
         <td>{{ form.product()|safe }}</td>
         <td>{{ form.version()|safe }}</td>
-        <td> <a href='releases/{{ name }}'>link</a></td>
+        <td> <a href='releases/{{ name|safe }}'>link</a></td>
     </tr>
     {% endfor %}
 </table>
