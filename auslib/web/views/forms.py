@@ -52,5 +52,5 @@ class ExistingPermissionForm(PermissionForm):
 class ReleaseForm(DbEditableForm):
     product = TextField('Product', validators=[Required()])
     version = TextField('Version', validators=[Required()])
-    details = JSONTextField('Details', validators=[Required()])
+    data = JSONTextField('Data', validators=[Required()])
     copyTo = JSONTextField('Copy To', default=list)

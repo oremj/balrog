@@ -8,12 +8,12 @@ Click through to access the data field
         <th>Version</th>
         <th>Data</th>
     </tr>
-    {% for row in releases %}
+    {% for name, form in releases.iteritems() %}
     <tr>
-        <td>{{ row['name'] }}</td>
-        <td>{{ row['product'] }}</td>
-        <td>{{ row['version'] }}</td>
-        <td> <a href='releases/{{ row.name }}'>link</a></td>
+        <td>{{ name }}</td>
+        <td>{{ form.product()|safe }}</td>
+        <td>{{ form.version()|safe }}</td>
+        <td> <a href='releases/{{ name }}'>link</a></td>
     </tr>
     {% endfor %}
 </table>

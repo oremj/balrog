@@ -581,9 +581,6 @@ class Releases(AUSTable):
         self.table.append_column(Column('data', dataType, nullable=False))
         AUSTable.__init__(self)
 
-    def exists(self, name, transaction=None):
-        return len(self.select(where=[self.name==name]))
-
     def getReleases(self, name=None, product=None, version=None, limit=None, transaction=None):
         log.debug("Releases.getReleases: Looking for releases with:")
         log.debug("Releases.getReleases: name: %s", name)

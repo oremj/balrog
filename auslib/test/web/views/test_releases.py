@@ -8,8 +8,8 @@ from auslib.test.web.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testReleasePost(self):
-        details = json.dumps(dict(detailsUrl='blah', fakePartials=True))
-        ret = self._post('/releases/d', data=dict(details=details, product='d', version='d', data_version=1))
+        data = json.dumps(dict(detailsUrl='blah', fakePartials=True))
+        ret = self._post('/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
         self.assertStatusCode(ret, 200)
         ret = select([db.releases.data]).where(db.releases.name=='d').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -32,8 +32,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
     
     def testReleasePostCreatesNewRelease(self):
-        details = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
-        ret = self._post('/releases/e', data=dict(details=details, product='e', version='e'))
+        data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
+        ret = self._post('/releases/e', data=dict(data=data, product='e', version='e'))
         self.assertStatusCode(ret, 201)
         ret = db.releases.t.select().where(db.releases.name=='e').execute().fetchone()
         self.assertEqual(ret['product'], 'e')
@@ -50,13 +50,13 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testReleasePostInvalidKey(self):
-        details = json.dumps(dict(foo=1))
-        ret = self._post('/releases/a', data=dict(details=details))
+        data = json.dumps(dict(foo=1))
+        ret = self._post('/releases/a', data=dict(data=data))
         self.assertStatusCode(ret, 400)
 
     def testLocalePut(self):
-        details = json.dumps(dict(complete=dict(filesize=435)))
-        ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='a', data_version=1))
+        data = json.dumps(dict(complete=dict(filesize=435)))
+        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1))
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -77,8 +77,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testLocalePutForNewRelease(self):
-        details = json.dumps(dict(complete=dict(filesize=678)))
-        ret = self._put('/releases/e/builds/p/a', data=dict(details=details, product='e', version='e'))
+        data = json.dumps(dict(complete=dict(filesize=678)))
+        ret = self._put('/releases/e/builds/p/a', data=dict(data=data, product='e', version='e'))
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='e').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -100,8 +100,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testLocalePutAppend(self):
-        details = json.dumps(dict(partial=dict(fileUrl='abc')))
-        ret = self._put('/releases/d/builds/p/g', data=dict(details=details, product='d', version='d', data_version=1))
+        data = json.dumps(dict(partial=dict(fileUrl='abc')))
+        ret = self._put('/releases/d/builds/p/g', data=dict(data=data, product='d', version='d', data_version=1))
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='d').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -127,8 +127,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testLocalePutWithCopy(self):
-        details = json.dumps(dict(partial=dict(filesize=123)))
-        data = dict(details=details, product='a', version='a', copyTo=json.dumps(['ab']), data_version=1)
+        data = json.dumps(dict(partial=dict(filesize=123)))
+        data = dict(data=data, product='a', version='a', copyTo=json.dumps(['ab']), data_version=1)
         ret = self._put('/releases/a/builds/p/l', data=data)
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
@@ -167,8 +167,8 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """))
 
     def testLocalePutChangeVersion(self):
-        details = json.dumps(dict(extv='b'))
-        ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='b', data_version=1))
+        data = json.dumps(dict(extv='b'))
+        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='b', data_version=1))
         self.assertStatusCode(ret, 201)
         ret = select([db.releases.data]).where(db.releases.name=='a').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -189,7 +189,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         self.assertEqual(newVersion, 'b')
 
     def testLocalePutBadJSON(self):
-        ret = self._put('/releases/a/builds/p/l', data=dict(details='a', product='a', version='a'))
+        ret = self._put('/releases/a/builds/p/l', data=dict(data='a', product='a', version='a'))
         self.assertStatusCode(ret, 400)
 
     def testLocaleGet(self):
@@ -202,15 +202,15 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         self.assertStatusCode(ret, 401)
 
     def testLocalePutCantChangeProduct(self):
-        details = json.dumps(dict(complete=dict(filesize=435)))
-        ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='b', version='a'))
+        data = json.dumps(dict(complete=dict(filesize=435)))
+        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='b', version='a'))
         self.assertStatusCode(ret, 400)
 
     def testLocaleRevertsPartialUpdate(self):
-        details = json.dumps(dict(complete=dict(filesize=1)))
+        data = json.dumps(dict(complete=dict(filesize=1)))
         with mock.patch('auslib.web.base.db.releases.addLocaleToRelease') as r:
             r.side_effect = Exception("Fail")
-            ret = self._put('/releases/a/builds/p/l', data=dict(details=details, product='a', version='c', data_version=1))
+            ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='c', data_version=1))
             self.assertStatusCode(ret, 500)
             ret = db.releases.t.select().where(db.releases.name=='a').execute().fetchone()
             self.assertEqual(ret['product'], 'a')

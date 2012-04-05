@@ -43,7 +43,7 @@ class SingleLocaleView(AdminView):
             return Response(status=400, response=form.errors)
         product = form.product.data
         version = form.version.data
-        localeInfo = form.details.data
+        localeInfo = form.data.data
         copyTo = form.copyTo.data
         old_data_version = form.data_version.data
 
@@ -90,8 +90,11 @@ class SingleLocaleView(AdminView):
 class ReleasesPageView(AdminView):
     """ /releases.html """
     def get(self):
-        releases = db.releases.getReleases()
-        return render_template('releases.html', releases=releases)
+        forms = {}
+        for release in db.releases.getReleases():
+            # XXX: prefix should probably be release['id'], when it exists
+            forms[release['name']] = ReleaseForm(prefix=release['name'], product=release['product'], version=release['version'])
+        return render_template('releases.html', releases=forms)
 
 class SingleReleaseView(AdminView):
     """ /releases/[release]"""
@@ -108,7 +111,7 @@ class SingleReleaseView(AdminView):
             return Response(status=400, response=form.errors)
         product = form.product.data
         version = form.version.data
-        newReleaseInfo = form.details.data
+        newReleaseInfo = form.data.data
         copyTo = form.copyTo.data
         old_data_version = form.data_version.data
 
