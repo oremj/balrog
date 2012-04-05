@@ -1,8 +1,7 @@
 from simplejson import JSONDecodeError
 import simplejson as json
-import sys
 
-from flaskext.wtf import Form, TextField, Required, TextInput, NumberRange, IntegerField, HiddenInput
+from flaskext.wtf import Form, TextField, Required, TextInput, IntegerField, HiddenInput
 
 import logging
 log = logging.getLogger(__name__)

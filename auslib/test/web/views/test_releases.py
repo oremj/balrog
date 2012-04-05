@@ -30,7 +30,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     }
 }
 """))
-    
+
     def testReleasePostCreatesNewRelease(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
         ret = self._post('/releases/e', data=dict(data=data, product='e', version='e'))

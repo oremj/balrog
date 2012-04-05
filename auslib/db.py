@@ -660,7 +660,7 @@ class Releases(AUSTable):
             return blob['platforms'][platform]['locales'][locale]
         except KeyError:
             raise KeyError("Couldn't find locale identified by: %s, %s, %s" % (name, platform ,locale))
-    
+
     def localeExists(self, name, platform, locale, transaction=None):
         try:
             self.getLocale(name, platform, locale, transaction)
