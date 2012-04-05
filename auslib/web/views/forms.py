@@ -37,7 +37,7 @@ class JSONTextField(TextField):
                 self.data = self.default
 
 class DbEditableForm(Form):
-    data_version = IntegerField('data_version', widget=HiddenInput())
+    data_version = IntegerField('data_version', validators=[Required()], widget=HiddenInput())
 
 class PermissionForm(DbEditableForm):
     options = JSONTextField('Options')
@@ -48,7 +48,11 @@ class NewPermissionForm(PermissionForm):
 class ExistingPermissionForm(PermissionForm):
     permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
 
-class ReleaseForm(DbEditableForm):
+class ReleaseForm(Form):
+    # Because we do implicit release creation in the Releases views, we can't
+    # have data_version be Required(). The views are responsible for checking
+    # for its existence in this case.
+    data_version = IntegerField('data_version', widget=HiddenInput())
     product = TextField('Product', validators=[Required()])
     version = TextField('Version', validators=[Required()])
     data = JSONTextField('Data', validators=[Required()])
