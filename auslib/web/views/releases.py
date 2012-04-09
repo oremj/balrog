@@ -13,19 +13,19 @@ log = logging.getLogger(__name__)
 
 __all__ = ["SingleReleaseView", "SingleLocaleView", "ReleasesPageView"]
 
-def createRelease(release, product, version, changed_by, transaction, blobInfo):
-    blob = ReleaseBlobV1(schema_version=CURRENT_SCHEMA_VERSION, **blobInfo)
+def createRelease(release, product, version, changed_by, transaction, releaseData):
+    blob = ReleaseBlobV1(schema_version=CURRENT_SCHEMA_VERSION, **releaseData)
     retry(db.releases.addRelease, kwargs=dict(name=release, product=product, version=version, blob=blob, changed_by=changed_by, transaction=transaction))
     return retry(db.releases.getReleases, kwargs=dict(name=release, transaction=transaction))[0]
 
-def doit(release, changed_by, transaction, existsCb, commitCb):
+def changeRelease(release, changed_by, transaction, existsCb, commitCb):
     new = True
     form = ReleaseForm()
     if not form.validate():
         return Response(status=400, response=form.errors)
     product = form.product.data
     version = form.version.data
-    info = form.data.data
+    incomingData = form.data.data
     copyTo = form.copyTo.data
     old_data_version = form.data_version.data
 
@@ -60,7 +60,7 @@ def doit(release, changed_by, transaction, existsCb, commitCb):
             retry(db.releases.updateRelease, kwargs=dict(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
             old_data_version += 1
 
-        commitCb(rel, product, version, info, releaseInfo, old_data_version)
+        commitCb(rel, product, version, incomingData, releaseInfo['data'], old_data_version)
 
     new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
     if new:
@@ -91,10 +91,10 @@ class SingleLocaleView(AdminView):
                 return retry(db.releases.localeExists, kwargs=dict(name=rel, platform=platform, locale=locale, transaction=transaction))
             return False
 
-        def commit(rel, product, version, localeInfo, newReleaseInfo, old_data_version):
-            return retry(db.releases.addLocaleToRelease, kwargs=dict(name=rel, platform=platform, locale=locale, blob=localeInfo, old_data_version=old_data_version, changed_by=changed_by, transaction=transaction))
+        def commit(rel, product, version, localeData, releaseData, old_data_version):
+            return retry(db.releases.addLocaleToRelease, kwargs=dict(name=rel, platform=platform, locale=locale, data=localeData, old_data_version=old_data_version, changed_by=changed_by, transaction=transaction))
 
-        return doit(release, changed_by, transaction, exists, commit)
+        return changeRelease(release, changed_by, transaction, exists, commit)
 
 class ReleasesPageView(AdminView):
     """ /releases.html """
@@ -119,11 +119,11 @@ class SingleReleaseView(AdminView):
                 return True
             return False
 
-        def commit(rel, product, version, newReleaseInfo, releaseInfo, old_data_version):
-            releaseInfo['data'].update(newReleaseInfo)
-            return retry(db.releases.updateRelease, kwargs=dict(name=rel, blob=releaseInfo['data'], changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
+        def commit(rel, product, version, newReleaseData, releaseData, old_data_version):
+            releaseData.update(newReleaseData)
+            return retry(db.releases.updateRelease, kwargs=dict(name=rel, blob=releaseData, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
 
-        return doit(release, changed_by, transaction, exists, commit)
+        return changeRelease(release, changed_by, transaction, exists, commit)
 
 
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))

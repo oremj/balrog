@@ -631,7 +631,7 @@ class Releases(AUSTable):
         log.debug("Releases.updateRelease: Updating %s with %s", name, what)
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
 
-    def addLocaleToRelease(self, name, platform, locale, blob, old_data_version, changed_by, transaction=None):
+    def addLocaleToRelease(self, name, platform, locale, data, old_data_version, changed_by, transaction=None):
         """Adds or update's the existing data for a specific platform + locale
            combination, in the release identified by 'name'. The data is
            validated before commiting it, and a ValueError is raised if it is
@@ -645,7 +645,7 @@ class Releases(AUSTable):
                     }
                 }
             }
-        releaseBlob['platforms'][platform]['locales'][locale] = blob
+        releaseBlob['platforms'][platform]['locales'][locale] = data
         if not releaseBlob.isValid():
             log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)
             raise ValueError("New release blob is invalid.")

@@ -533,8 +533,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertRaises(ValueError, self.releases.updateRelease, changed_by='bill', name='b', blob=blob, old_data_version=1)
 
     def testAddLocaleToRelease(self):
-        blob = dict(complete=dict(hashValue='abc'))
-        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', blob=blob, old_data_version=1, changed_by='bill')
+        data = dict(complete=dict(hashValue='abc'))
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = dict(
             name='a',
@@ -558,8 +558,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleaseOverride(self):
-        blob = dict(complete=dict(hashValue=789))
-        self.releases.addLocaleToRelease(name='a', platform='p', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+        data = dict(complete=dict(hashValue=789))
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='l', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = dict(
             name='a',
@@ -578,8 +578,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleasePlatformsDoesntExist(self):
-        blob = dict(complete=dict(filesize=432))
-        self.releases.addLocaleToRelease(name='b', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+        data = dict(complete=dict(filesize=432))
+        self.releases.addLocaleToRelease(name='b', platform='q', locale='l', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
         expected = dict(
             name='b',
