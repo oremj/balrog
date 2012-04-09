@@ -18,7 +18,48 @@ def createRelease(release, product, version, changed_by, transaction, releaseDat
     retry(db.releases.addRelease, kwargs=dict(name=release, product=product, version=version, blob=blob, changed_by=changed_by, transaction=transaction))
     return retry(db.releases.getReleases, kwargs=dict(name=release, transaction=transaction))[0]
 
-def changeRelease(release, changed_by, transaction, existsCb, commitCb):
+def changeRelease(release, changed_by, transaction, existsCallback, commitCallback):
+    """Generic function to change an aspect of a release. It relies on a
+       ReleaseForm existing and does some upfront work and checks before
+       doing anything. It will, for the named release and any found in the
+       'copyTo' field of the ReleaseForm:
+        - Create the release if it doesn't already exist.
+        - return a 400 Response if the release exists and old_data_version doesn't.
+        - return a 400 Response if the product name in the form doesn't match the existing one.
+        - update the version column of the release table if the one in the form doesn't match it.
+        - if the release already exists, 'existsCallback' will be called. If
+          that function returns True, a 201 Response will be returned upon
+          successful completion. If that function returns False, a 200 Response
+          will be returned instead.
+
+      @type  release: string
+      @param release: The primary release to update. Additional releases found
+                      in the 'copyTo' field of the ReleaseForm will also be
+                      updated.
+      @type  changed_by: string
+      @param changed_by: The username making the change.
+      @type  transaction: AUSTransaction object
+      @param transaction: The transaction object to be used for all database
+                          operations.
+      @type  existsCallback: callable
+      @param existsCallback: The callable to call to determine whether to
+                             consider this a "new" change or not. It must
+                             receive 3 positional arguments:
+                              - the name of the release
+                              - the product name from the ReleaseForm
+                              - the version from the ReleaseForm
+      @type  commitCallback: callable
+      @param commitCallback: The callable to call after all prerequisite checks
+                             and updates are done. It must receive 6 positional
+                             arguments:
+                              - the name of the release
+                              - the product name from the ReleaseForm
+                              - the version from the ReleaseForm
+                              - the data from the ReleaseForm
+                              - the most recent version of the data for the
+                                release from the database
+                              - the old_data_version from the ReleaseForm
+    """
     new = True
     form = ReleaseForm()
     if not form.validate():
@@ -32,7 +73,7 @@ def changeRelease(release, changed_by, transaction, existsCb, commitCb):
     for rel in [release] + copyTo:
         try:
             releaseInfo = retry(db.releases.getReleases, kwargs=dict(name=rel, transaction=transaction))[0]
-            if existsCb(rel, product, version):
+            if existsCallback(rel, product, version):
                 new = False
             # "release" is the one named in the URL (as opposed to the
             # ones that can be provided in copyTo), and we treat it as
@@ -60,7 +101,7 @@ def changeRelease(release, changed_by, transaction, existsCb, commitCb):
             retry(db.releases.updateRelease, kwargs=dict(name=rel, version=version, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
             old_data_version += 1
 
-        commitCb(rel, product, version, incomingData, releaseInfo['data'], old_data_version)
+        commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version)
 
     new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
     if new:
