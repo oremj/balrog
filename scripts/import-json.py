@@ -13,7 +13,7 @@ from auslib.db import AUSDatabase
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    doc = "%s --db dburi -r release-name foo.json" % sys.argv[0]
+    doc = "%s --db dburi -r release-name -v version -p product foo.json" % sys.argv[0]
     parser = OptionParser(doc)
     parser.add_option("-d", "--db", dest="db", default=None, help="database to manage, in URI format")
     parser.add_option("-r", "--release", dest="release", default=None, help="Release to put blob into")
