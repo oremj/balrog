@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args()
 
-    if not options.db or not options.release or not options.version or not options.product or not len(args) != 1:
+    if not options.db or not options.release or not options.version or not options.product or len(args) != 1:
         print doc
         sys.exit(1)
 
