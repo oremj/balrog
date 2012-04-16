@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 from os import path
 import sys
 
@@ -22,6 +23,8 @@ if __name__ == "__main__":
     parser.add_option("-p", "--product", dest="product", default=None, help="Product of the release")
 
     options, args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s: %(message)s")
 
     if not options.db or not options.release or not options.version or not options.product or len(args) != 1:
         print doc
