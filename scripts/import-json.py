@@ -33,8 +33,6 @@ if __name__ == "__main__":
     db = AUSDatabase(options.db)
     blob = ReleaseBlobV1()
     blob.loadJSON(open(args[0]).read())
-    if not blob.isValid():
-        print "blob isn't valid"
     try:
         old = db.releases.getReleases(name=options.release)[0]
         db.releases.updateRelease(name=options.release, product=options.product, version=options.version, changed_by='import-json', old_data_version=old['data_version'], blob=blob)
