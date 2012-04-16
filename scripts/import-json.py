@@ -33,7 +33,7 @@ if __name__ == "__main__":
     if not blob.isValid():
         print "blob isn't valid"
     try:
-        old = db.releases.getReleases(name=options.name)[0]
-        db.releases.updateRelease(name=options.name, product=options.product, version=options.version, changed_by='import-json', old_data_version=old['data_version'], blob=blob)
+        old = db.releases.getReleases(name=options.release)[0]
+        db.releases.updateRelease(name=options.release, product=options.product, version=options.version, changed_by='import-json', old_data_version=old['data_version'], blob=blob)
     except IndexError:
-        db.releases.addRelease(name=options.name, product=options.product, version=options.version, blob=blob, changed_by='import-json')
+        db.releases.addRelease(name=options.release, product=options.product, version=options.version, blob=blob, changed_by='import-json')
