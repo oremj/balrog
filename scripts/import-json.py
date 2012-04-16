@@ -28,7 +28,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     db = AUSDatabase(options.db)
-    blob = ReleaseBlobV1(open(args[0]))
+    blob = ReleaseBlobV1(open(args[0]).read())
     if not blob.isValid():
         print "blob isn't valid"
     try:
