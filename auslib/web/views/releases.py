@@ -25,7 +25,7 @@ class SingleLocaleView(AdminView):
         return jsonify(locale)
 
     @requirelogin
-    @requirepermission()
+    @requirepermission('/releases/:name/builds/:platform/:locale')
     def _put(self, release, platform, locale, changed_by, transaction):
         """Something important to note about this method is that using the
            "copyTo" field of the form, updates can be made to more than just
@@ -101,7 +101,7 @@ class SingleReleaseView(AdminView):
         return jsonify(release)
 
     @requirelogin
-    @requirepermission()
+    @requirepermission('/releases/:name/builds/:platform/:locale', options=[])
     def _post(self, release, changed_by, transaction):
         new = True
         form = ReleaseForm()

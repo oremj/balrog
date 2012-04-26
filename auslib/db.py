@@ -5,7 +5,7 @@ import sys
 import time
 
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
-  CheckConstraint, create_engine, select, BigInteger
+  CheckConstraint, create_engine, select, BigInteger, desc
 from sqlalchemy.exc import SQLAlchemyError
 
 from auslib.blob import ReleaseBlobV1
@@ -385,7 +385,7 @@ class AUSTable(object):
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
         if self.versioned and not old_data_version:
-            raise ValueError("old_data_version must be passed for Tables that are versioned")
+            raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
@@ -404,6 +404,7 @@ class History(AUSTable):
        inputs, and are documented below. History tables are never versioned,
        and cannot have history of their own."""
     def __init__(self, metadata, baseTable):
+        self.baseTable = baseTable
         self.table = Table('%s_history' % baseTable.t.name, metadata,
             Column('change_id', Integer, primary_key=True, autoincrement=True),
             Column('changed_by', String(100), nullable=False),
@@ -441,6 +442,9 @@ class History(AUSTable):
         for i in range(0, len(self.base_primary_key)):
             name = self.base_primary_key[i]
             primary_key_data[name] = insertedKeys[i]
+            # Make sure the primary keys are included in the second row as well
+            columns[name]=insertedKeys[i]
+
         ts = self.getTimestamp()
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts-1, **primary_key_data))
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts, **columns))
@@ -468,6 +472,118 @@ class History(AUSTable):
         row['timestamp'] = self.getTimestamp()
         log.debug("History.forUpdate: inserting %s to history table" % row)
         return self._insertStatement(**row)
+
+    def getChange(self, change_id, transaction=None):
+        """ Returns the unique change that matches the give change_id """
+        changes = self.select( where=[self.change_id==change_id], transaction=transaction)
+        found = len(changes)
+        if found > 1 or found == 0:
+            log.debug("History.getChange: Found %s changes, should have been 1", found)
+            return None
+        return changes[0]
+
+    def getPrevChange(self, change_id, row_primary_keys, transaction=None):
+        """ Returns the most recent change to a given row in the base table """
+        where = [self.change_id < change_id]
+        for i in range(0, len(self.base_primary_key)):
+            self_prim = getattr(self, self.base_primary_key[i])
+            where.append((self_prim == row_primary_keys[i]))
+
+        changes = self.select( where=where, transaction=transaction, limit=1, order_by=self.change_id.desc())
+        length = len(changes)
+        if(length == 0):   
+            log.debug("History.getPrevChange: No previous changes found")
+            return None
+        return changes[0]
+
+    def _stripNullColumns(self, change):
+        # We know a bunch of columns are going to be empty...easier to strip them out
+        # than to be super verbose (also should let this test continue to work even
+        # if the schema changes).
+        for key in change.keys():
+            if change[key] == None:
+                del change[key]
+        return change
+
+    def _stripHistoryColumns(self, change):
+        """ Will strip history specific columns as well as data_version from the given change """
+        log.debug(change)
+        del change['change_id']
+        del change['changed_by']
+        del change['timestamp']
+        del change['data_version']
+        return change
+
+    def _isNull(self, change, row_primary_keys):
+        # Define a row that's empty except for the primary keys
+        # This is what the NULL rows for inserts and deletes will look like.
+        null_row = dict()
+        for i in range(0, len(self.base_primary_key)):
+            null_row[self.base_primary_key[i]] = row_primary_keys[i]
+        return self._stripNullColumns(change) == null_row
+
+    def _isDelete(self, cur_base_state, row_primary_keys):
+        return self._isNull(cur_base_state.copy(), row_primary_keys)
+
+    def _isInsert(self, prev_base_state, row_primary_keys):
+        return self._isNull(prev_base_state.copy(), row_primary_keys)
+
+    def _isUpdate(self, cur_base_state, prev_base_state, row_primary_keys):
+        return (not self._isNull(cur_base_state.copy(), row_primary_keys) ) and (not self._isNull(prev_base_state.copy(), row_primary_keys))
+
+    def rollbackChange(self, change_id, changed_by, transaction=None):
+        """ Rollback the change given by the change_id,
+        Will handle all cases: insert, delete, update """
+
+        change = self.getChange(change_id , transaction)
+
+        # Get the values of the primary keys for the given row
+        row_primary_keys = [0]*len(self.base_primary_key)
+        for i in range(0, len(self.base_primary_key)):
+            row_primary_keys[i] = change[self.base_primary_key[i]]
+
+        # Strip the History Specific Columns from the cahgnes
+        prev_base_state = self._stripHistoryColumns(self.getPrevChange(change_id, row_primary_keys, transaction))
+        cur_base_state = self._stripHistoryColumns(change.copy())
+
+        # Define a row that's empty except for the primary keys
+        # This is what the NULL rows for inserts and deletes will look like.
+        null_row = dict()
+        for i in range(0, len(self.base_primary_key)):
+            null_row[self.base_primary_key[i]] = row_primary_keys[i]
+
+        # If the row has all NULLS, then the operation we're rolling back is a DELETE
+        # We need to do an insert, with the data from the previous change
+        if self._isDelete(cur_base_state, row_primary_keys):
+            log.debug("History.rollbackChange: reverting a DELETE")
+            self.baseTable.insert(changed_by=changed_by, transaction=transaction, **prev_base_state)
+
+        # If the previous change is NULL, then the operation is an INSERT
+        # We will need to do a delete.
+        elif self._isInsert(prev_base_state, row_primary_keys): 
+                log.debug("History.rollbackChange: reverting an INSERT")
+                where = []
+                for i in range(0, len(self.base_primary_key)):
+                    self_prim = getattr(self.baseTable, self.base_primary_key[i])
+                    where.append((self_prim == row_primary_keys[i]))
+
+                self.baseTable.delete(changed_by = changed_by, transaction=transaction, where=where, old_data_version = change['data_version'])
+
+        elif self._isUpdate(cur_base_state, prev_base_state, row_primary_keys): 
+        # If this operation is an UPDATE
+        # We will need to do an update to the previous change's state
+            log.debug("History.rollbackChange: reverting an UPDATE")
+            where = []
+            for i in range(0, len(self.base_primary_key)):
+                self_prim = getattr(self.baseTable, self.base_primary_key[i])
+                where.append((self_prim == row_primary_keys[i]))
+
+            what = prev_base_state
+            old_data_version = change['data_version']
+            self.baseTable.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
+        else:
+            log.debug("History.rollbackChange: ERROR, change doesn't correspond to any known operation")
+
 
 class Rules(AUSTable):
     def __init__(self, metadata, dialect):
@@ -522,6 +638,10 @@ class Rules(AUSTable):
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
 
+    def addRule(self, changed_by, what, transaction=None):
+        ret = self.insert(changed_by=changed_by, transaction=transaction, **what)
+        return ret.inserted_primary_key
+
     def getOrderedRules(self, transaction=None):
         """Returns all of the rules, sorted in ascending order"""
         return self.select(order_by=(self.priority, self.version, self.mapping), transaction=transaction)
@@ -566,6 +686,21 @@ class Rules(AUSTable):
                 log.debug("Rules.getRulesMatchingQuery: %s", r)
         return matchingRules
 
+    def getRuleById(self, rule_id, transaction=None):
+        """ Returns the unique rule that matches the give rule_id """
+        rules = self.select( where=[self.rule_id==rule_id], transaction=transaction)
+        found = len(rules)
+        if found > 1 or found == 0:
+            log.debug("Rules.getRuleById: Found %s rules, should have been 1", found)
+            return None
+        return rules[0]
+
+    def updateRule(self, changed_by, rule_id, what, old_data_version, transaction=None):
+        """ Update the rule given by rule_id with the parameter what """
+        where = [self.rule_id==rule_id]
+        self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
+
+
 class Releases(AUSTable):
     def __init__(self, metadata, dialect):
         self.table = Table('releases', metadata,
@@ -600,6 +735,16 @@ class Releases(AUSTable):
             row['data'] = blob
         return rows
 
+    def getReleaseNames(self, product=None, version=None, limit=None, transaction=None):
+        where = []
+        if product:
+            where.append(self.product==product)
+        if version:
+            where.append(self.version==version)
+        column = [self.name]
+        rows = self.select(where=where, columns=column, limit=limit, transaction=transaction)
+        return rows
+
     def getReleaseBlob(self, name, transaction=None):
         try:
             row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
@@ -626,7 +771,7 @@ class Releases(AUSTable):
         if blob:
             if not blob.isValid():
                 log.debug("Releases.updateRelease: invalid blob is %s" % blob)
-                raise ValueError("New blob is invalid.")
+                raise ValueError("Release blob is invalid.")
             what['data'] = blob.getJSON()
         log.debug("Releases.updateRelease: Updating %s with %s", name, what)
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
@@ -645,6 +790,8 @@ class Releases(AUSTable):
                     }
                 }
             }
+        if platform not in releaseBlob['platforms']:
+            releaseBlob['platforms'][platform] = dict(locales=dict())
         releaseBlob['platforms'][platform]['locales'][locale] = blob
         if not releaseBlob.isValid():
             log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)

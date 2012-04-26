@@ -1,13 +1,15 @@
 {% if releases %}
 Below is a complete list of all of the releases
 Click through to access the data field
-<table>
-    <tr>
+<table id="release_table">
+    <thead> <tr>
         <th>Name</th>
         <th>Product</th>
         <th>Version</th>
+        <th>Release ID</th>
         <th>Data</th>
-    </tr>
+    </tr> </thead>
+    <tbody>
     {% for name, form in releases.iteritems() %}
     <tr>
         <td>{{ name|safe }}</td>
@@ -16,6 +18,7 @@ Click through to access the data field
         <td> <a href='releases/{{ name|safe }}'>link</a></td>
     </tr>
     {% endfor %}
+    </tbody>
 </table>
 {% else %}
 There were no releases provided.
