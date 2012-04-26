@@ -153,7 +153,7 @@ class SingleReleaseView(AdminView):
         return jsonify(release)
 
     @requirelogin
-    @requirepermission('/releases/:name/builds/:platform/:locale', options=[])
+    @requirepermission('/releases/:name')
     def _post(self, release, changed_by, transaction):
         def exists(rel, product, version):
             if rel == release:
