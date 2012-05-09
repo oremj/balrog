@@ -1,6 +1,8 @@
 import simplejson as json
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField, validators, HiddenInput
+from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, FileInput, NumberRange, IntegerField, SelectField, FileField, file_required, validators, HiddenInput
+
+from auslib.blob import ReleaseBlobV1
 
 import logging
 log = logging.getLogger(__name__)
@@ -15,31 +17,47 @@ class DisableableTextInput(TextInput):
             kwargs['disabled'] = 'disabled'
         return TextInput.__call__(self, *args, **kwargs)
 
-class JSONTextField(TextField):
-    """TextField that parses incoming data as JSON."""
+class JSONFieldMixin(object):
     def process_formdata(self, valuelist):
         if valuelist and valuelist[0]:
-            log.debug("JSONTextField.process_formdata: valuelist[0] is: %s", valuelist[0])
             try:
-                self.data = json.loads(valuelist[0])
+                self._process_JSON_data(valuelist)
             # XXX: use JSONDecodeError when the servers support it
             except ValueError, e:
                 # WTForms catches ValueError, which JSONDecodeError is a child
                 # of. Because of this, we need to wrap this error in something
                 # else in order for it to be properly raised.
-                log.debug('JSONTextField.process_formdata: Caught JSONDecodeError')
+                log.debug('JSONTextField.process_formdata: Caught ValueError')
                 self.process_errors.append(e.message)
         else:
-            log.debug('JSONTextField: No value list, setting self.data to %s' % self.default)
-            try:
-                self.data = self.default()
-            except TypeError:
-                self.data = self.default
+            log.debug('JSONBlobField: No value list, setting self.data to default')
+            self._set_default()
 
+# We need to be sure that we list JSONFieldMixin BEFORE the FileField in the derived classes list
+# We want to use JSONFieldMixin's version of process_formdata instead of FileField's version.
+class JSONBlobFileField(JSONFieldMixin, TextField):
+    """FileField that parses incoming data as JSON and converts it into a blob"""
+    def _process_JSON_data(self, valuelist):
+        self.data = ReleaseBlobV1()
+        self.data.loadJSON(valuelist[0])
+        self.data.isValid()
+
+    def _set_default(self):
+        self.data = ReleaseBlobV1()
+
+# We need to be sure that we list JSONFieldMixin BEFORE the TextField in the derived classes list
+# We want to use JSONFieldMixin's version of process_formdata instead of TextField's version.
+class JSONTextField(JSONFieldMixin, TextField):
+    """TextField that parses incoming data as JSON."""
+    def _process_JSON_data(self, valuelist):
+        self.data = json.loads(valuelist[0])
+
+    def _set_default(self):
+        self.data = {}
+   
 class NullableTextField(TextField):
     """TextField that parses incoming data converting empty strings to None's."""
     def process_formdata(self, valuelist):
-        log.debug("NullableTextField.process_formdata: data %s", valuelist)
         if valuelist and valuelist[0]:
             if valuelist[0] == '':
                 log.debug("NullableTextField.process_formdata: data is empty string, setting it to NULL", valuelist[0])
@@ -91,3 +109,9 @@ class RuleForm(Form):
 
 class EditRuleForm(RuleForm, DbEditableForm):
     pass
+
+class NewReleaseForm(Form):
+    name = TextField('Name', validators=[Required()])
+    version = TextField('Version', validators=[Required()])
+    product = TextField('Product', validators=[Required()])
+    blob = JSONBlobFileField('Data', validators=[Required()], widget=FileInput())

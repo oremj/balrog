@@ -1,12 +1,14 @@
 import simplejson as json
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from flask import render_template, Response, jsonify, make_response
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.util.retry import retry
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
-from auslib.web.views.forms import ReleaseForm
+from auslib.web.views.forms import ReleaseForm, NewReleaseForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -70,7 +72,10 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     copyTo = form.copyTo.data
     old_data_version = form.data_version.data
 
-    for rel in [release] + copyTo:
+    allReleases = [release]
+    if copyTo:
+        allReleases += copyTo
+    for rel in allReleases:
         try:
             releaseInfo = retry(db.releases.getReleases, kwargs=dict(name=rel, transaction=transaction))[0]
             if existsCallback(rel, product, version):
@@ -118,7 +123,7 @@ class SingleLocaleView(AdminView):
         return jsonify(locale)
 
     @requirelogin
-    @requirepermission('/releases/:name/builds/:platform/:locale')
+    @requirepermission('/releases/:name/builds/:platform/:locale', options=[])
     def _put(self, release, platform, locale, changed_by, transaction):
         """Something important to note about this method is that using the
            "copyTo" field of the form, updates can be made to more than just
@@ -140,17 +145,35 @@ class SingleLocaleView(AdminView):
 class ReleasesPageView(AdminView):
     """ /releases.html """
     def get(self):
-        forms = {}
-        for release in db.releases.getReleases():
-            # XXX: prefix should probably be release['id'], when it exists
-            forms[release['name']] = ReleaseForm(prefix=release['name'], product=release['product'], version=release['version'])
-        return render_template('releases.html', releases=forms)
+        releases = db.releases.getReleases()
+        form = NewReleaseForm(prefix="new_release")
+        return render_template('releases.html', releases=releases, addForm=form)
+
+class SingleBlobView(AdminView):
+    """ /releases/[release]/data"""
+    def get(self, release):
+        release_blob = retry(db.releases.getReleaseBlob, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                kwargs=dict(name=release))
+        return jsonify(release_blob)
 
 class SingleReleaseView(AdminView):
     """ /releases/[release]"""
     def get(self, release):
-        release = db.releases.getReleaseBlob(release)
-        return jsonify(release)
+        release = retry(db.releases.getReleases, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                kwargs=dict(name=release, limit=1))
+        return render_template('fragments/release_row.html', row=release[0])
+
+
+    @requirelogin
+    @requirepermission('/releases/:name', options=[])
+    def _put(self, release, changed_by, transaction):
+        form = NewReleaseForm()
+        if not form.validate():
+            return Response(status=400, response=form.errors)
+
+        retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), 
+                kwargs=dict(name=release, product=form.product.data, version=form.version.data, blob=form.blob.data, changed_by=changed_by,  transaction=transaction))
+        return Response(status=201)
 
     @requirelogin
     @requirepermission('/releases/:name')
@@ -166,7 +189,7 @@ class SingleReleaseView(AdminView):
 
         return changeRelease(release, changed_by, transaction, exists, commit)
 
-
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
+app.add_url_rule('/releases/<release>/data', view_func=SingleBlobView.as_view('release_data'))
 app.add_url_rule('/releases/<release>', view_func=SingleReleaseView.as_view('release'))
 app.add_url_rule('/releases.html', view_func=ReleasesPageView.as_view('releases.html'))

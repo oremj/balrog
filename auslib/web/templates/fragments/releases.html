@@ -1,25 +1,21 @@
 {% if releases %}
-Below is a complete list of all of the releases
-Click through to access the data field
-<table id="release_table">
-    <thead> <tr>
+<h3>Below is a complete list of all of the releases. Click through to access the data field.</h3>
+<table id="Releases_table">
+    <tr>
         <th>Name</th>
         <th>Product</th>
         <th>Version</th>
-        <th>Release ID</th>
         <th>Data</th>
     </tr> </thead>
     <tbody>
-    {% for name, form in releases.iteritems() %}
-    <tr>
-        <td>{{ name|safe }}</td>
-        <td>{{ form.product()|safe }}</td>
-        <td>{{ form.version()|safe }}</td>
-        <td> <a href='releases/{{ name|safe }}'>link</a></td>
-    </tr>
+    {% for row in releases %}
+        {% include 'fragments/release_row.html' %}
     {% endfor %}
     </tbody>
 </table>
+</form>
 {% else %}
+
 There were no releases provided.
 {% endif %}
+
