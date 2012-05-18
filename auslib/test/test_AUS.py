@@ -1,7 +1,6 @@
 import mock
 from tempfile import NamedTemporaryFile
 import unittest
-from math import sqrt
 
 from auslib.AUS import AUS3
 

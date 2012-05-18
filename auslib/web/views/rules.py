@@ -1,6 +1,4 @@
-import simplejson as json
-
-from flask import render_template, request, Response, jsonify
+from flask import render_template, Response
 
 from mozilla_buildtools.retry import retry
 from sqlalchemy.exc import SQLAlchemyError

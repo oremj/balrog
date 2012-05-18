@@ -1,7 +1,5 @@
-import simplejson as json
-
 from auslib.web.base import db
-from auslib.test.web.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
+from auslib.test.web.views.base import ViewTest, HTMLTestMixin
 
 class TestRulesAPI_HTML(ViewTest, HTMLTestMixin):
     def testNewRulePost(self):

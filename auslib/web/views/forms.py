@@ -1,6 +1,6 @@
 import simplejson as json
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, FileInput, NumberRange, IntegerField, SelectField, FileField, file_required, validators, HiddenInput
+from flaskext.wtf import Form, TextField, Required, TextInput, FileInput, IntegerField, SelectField, FileField, validators, HiddenInput
 
 from auslib.blob import ReleaseBlobV1
 
