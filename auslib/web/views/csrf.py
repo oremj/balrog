@@ -13,6 +13,6 @@ class CSRFView(AdminView):
     """/csrf"""
     def get(self):
         form = Form()
-        return jsonify(dict(csrf_token=form.csrf.data))
+        return jsonify(csrf_token=form.csrf_token._value())
 
-app.add_url_rule('/csrf', view_func=CSRFView.as_view('csrf'))
+app.add_url_rule('/csrf_token', view_func=CSRFView.as_view('csrf'))
