@@ -124,7 +124,10 @@ class SingleLocaleView(AdminView):
             locale = db.releases.getLocale(release, platform, locale)
         except KeyError, e:
             return Response(status=404, response=e.args)
-        return Response(response=json.dumps(locale), mimetype='application/json', headers=get_csrf_headers())
+        data_version = db.releases.getReleases(name=release)[0]['data_version']
+        headers = {'X-Data-Version': data_version}
+        headers.update(get_csrf_headers())
+        return Response(response=json.dumps(locale), mimetype='application/json', headers=headers)
 
     @requirelogin
     @requirepermission('/releases/:name/builds/:platform/:locale', options=[])
