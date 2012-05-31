@@ -120,10 +120,13 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
 class SingleLocaleView(AdminView):
     """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
+        try:
+            locale = db.releases.getLocale(release, platform, locale)
+        except KeyError, e:
+            return Response(status=404, e.message)
         # Instantiating a Form makes sure there's a CSRF token available
         # and puts an hmac key in the session.
         form = Form()
-        locale = db.releases.getLocale(release, platform, locale)
         headers = {'X-CSRF-Token': form.csrf_token()}
         return Response(response=json.dumps(locale), mimetype='application/json', headers=headers)
 
