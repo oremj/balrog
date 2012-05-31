@@ -123,7 +123,7 @@ class SingleLocaleView(AdminView):
         try:
             locale = db.releases.getLocale(release, platform, locale)
         except KeyError, e:
-            return Response(status=404, e.message)
+            return Response(status=404, response=e.message)
         # Instantiating a Form makes sure there's a CSRF token available
         # and puts an hmac key in the session.
         form = Form()
