@@ -3,12 +3,12 @@ import simplejson as json
 from sqlalchemy.exc import SQLAlchemyError
 
 from flask import render_template, Response, jsonify, make_response
-from flaskext.wtf import Form
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.util.retry import retry
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
+from auslib.web.views.csrf import get_csrf_headers
 from auslib.web.views.forms import ReleaseForm, NewReleaseForm
 
 import logging
@@ -124,11 +124,7 @@ class SingleLocaleView(AdminView):
             locale = db.releases.getLocale(release, platform, locale)
         except KeyError, e:
             return Response(status=404, response=e.args)
-        # Instantiating a Form makes sure there's a CSRF token available
-        # and puts an hmac key in the session.
-        form = Form()
-        headers = {'X-CSRF-Token': form.csrf_token()}
-        return Response(response=json.dumps(locale), mimetype='application/json', headers=headers)
+        return Response(response=json.dumps(locale), mimetype='application/json', headers=get_csrf_headers())
 
     @requirelogin
     @requirepermission('/releases/:name/builds/:platform/:locale', options=[])

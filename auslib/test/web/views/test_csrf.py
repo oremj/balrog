@@ -4,9 +4,9 @@ import simplejson as json
 import flaskext.wtf.form
 
 from auslib.web.base import app
-from auslib.test.web.views.base import ViewTest, JSONTestMixin
+from auslib.test.web.views.base import ViewTest, HTMLTestMixin
 
-class TestCSRFEndpoint(ViewTest, JSONTestMixin):
+class TestCSRFEndpoint(ViewTest, HTMLTestMixin):
     def setUp(self):
         ViewTest.setUp(self)
         app.config['CSRF_ENABLED'] = True
@@ -24,4 +24,4 @@ class TestCSRFEndpoint(ViewTest, JSONTestMixin):
     def testCsrfGet(self):
         ret = self._get('/csrf_token')
         self.assertEquals(ret.status_code, 200)
-        self.assertEquals(json.loads(ret.data), dict(csrf_token=111))
+        self.assertEquals(ret.headers['X-CSRF-Token'], '111')
