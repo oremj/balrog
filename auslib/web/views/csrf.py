@@ -1,7 +1,6 @@
 from flask import Response
 from flaskext.wtf import Form
 
-from auslib.web.base import app
 from auslib.web.views.base import AdminView
 
 import logging
@@ -19,5 +18,3 @@ class CSRFView(AdminView):
     """/csrf"""
     def get(self):
         return Response(headers=get_csrf_headers())
-
-app.add_url_rule('/csrf_token', view_func=CSRFView.as_view('csrf'))

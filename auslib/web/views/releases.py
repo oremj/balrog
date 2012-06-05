@@ -6,7 +6,7 @@ from flask import render_template, Response, jsonify, make_response
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.util.retry import retry
-from auslib.web.base import app, db
+from auslib.web.base import db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
 from auslib.web.views.csrf import get_csrf_headers
 from auslib.web.views.forms import ReleaseForm, NewReleaseForm
@@ -195,8 +195,3 @@ class SingleReleaseView(AdminView):
             return retry(db.releases.updateRelease, kwargs=dict(name=rel, blob=releaseData, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction))
 
         return changeRelease(release, changed_by, transaction, exists, commit)
-
-app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
-app.add_url_rule('/releases/<release>/data', view_func=SingleBlobView.as_view('release_data'))
-app.add_url_rule('/releases/<release>', view_func=SingleReleaseView.as_view('release'))
-app.add_url_rule('/releases.html', view_func=ReleasesPageView.as_view('releases.html'))
