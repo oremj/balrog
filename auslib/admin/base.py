@@ -40,3 +40,7 @@ app.add_url_rule('/releases.html', view_func=ReleasesPageView.as_view('releases.
 app.add_url_rule('/rules.html', view_func=RulesPageView.as_view('rules.html'))
 app.add_url_rule('/rules', view_func=RulesAPIView.as_view('rules'))
 app.add_url_rule('/rules/<rule_id>', view_func=SingleRuleView.as_view('setrule'))
+
+# XXX: only include this if we're testing
+from auslib.admin.views.tests import TestsView
+app.add_url_rule('/tests.html', view_func=TestsView.as_view('tests'))
