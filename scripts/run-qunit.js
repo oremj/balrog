@@ -68,6 +68,17 @@ page.open(phantom.args[0], function(status){
                 } catch (e) { }
                 return 10000;
             });
+            page.evaluate(function() {
+                results = document.getElementById('qunit-tests').getElementsByTagName('li');
+                for (var i=0; i < results.length; i++) {
+                    var f = results[i].getElementsByClassName('fail')[0];
+                    if (f != null) {
+                        var name = results[i].getElementsByClassName('test-name')[0].innerHTML;
+                        var msg = results[i].getElementsByClassName('test-message')[0].innerHTML;
+                        console.log('FAIL: ' + name + ': ' + msg);
+                    }
+                }
+            });
             phantom.exit((parseInt(failedNum, 10) > 0) ? 1 : 0);
         });
     }
