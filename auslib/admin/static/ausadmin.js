@@ -1,6 +1,6 @@
 function handleError(response, code, error) {
     console.log(response);
-    alert(response.responseText);
+    console.log(response.responseText);
 }
 
 function getPermissionUrl(username, permission) {
