@@ -1,3 +1,4 @@
+import atexit
 from os import killpg, remove, setsid
 import random
 import signal
@@ -22,6 +23,13 @@ if __name__ == '__main__':
     if options.verbose:
         cmd.append('-v')
     balrog = Popen(cmd, stdout=PIPE, stderr=STDOUT, preexec_fn=setsid)
+    @atexit.register
+    def killbalrog():
+        killpg(balrog.pid, signal.SIGKILL)
+        balrog.wait()
+        remove(db)
+        print balrog.stdout.read()
+
     testsUrl = 'http://%s:%s@127.0.0.1:%d/tests.html' % (username, password, port)
     success = True
     attempts = 5
@@ -29,12 +37,11 @@ if __name__ == '__main__':
     while n <= attempts:
         tests_cmd = Popen(['phantomjs', 'scripts/run-qunit.js', testsUrl], stdout=PIPE, stderr=STDOUT)
         tests_cmd.wait()
+        output = tests_cmd.stdout.read()
         if tests_cmd.returncode != 0:
-            output = tests_cmd.stdout.read()
             if 'Unable to access network' in output:
-                if n == 5:
+                if n == attempts:
                     print "Balrog still not initialized, bailing..."
-                    print balrog.stdout.read()
                     success = False
                 else:
                     print "Balrog not initialized, sleeping and trying again..."
@@ -44,8 +51,5 @@ if __name__ == '__main__':
                 break
         n += 1
     print output
-    killpg(balrog.pid, signal.SIGKILL)
-    balrog.wait()
-    remove(db)
     if not success:
         sys.exit(1)

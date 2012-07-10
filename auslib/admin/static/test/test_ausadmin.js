@@ -1,3 +1,10 @@
+QUnit.testStart(function() {
+    $.ajax(SCRIPT_ROOT + '/reset', {'async': false})
+    .error(function() {
+        throw "Error resetting database";
+    });
+});
+
 asyncTest("testAddNewPermission", 1, function() {
     var ret = document.createElement('div');
     addNewPermission('foo', 'admin', null, ret)

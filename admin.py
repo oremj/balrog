@@ -19,14 +19,17 @@ if __name__ == '__main__':
     parser.add_option("-d", "--db", dest="db", help="database to use, relative to inputdir")
     parser.add_option("-p", "--port", dest="port", type="int", help="port for server")
     parser.add_option("--host", dest="host", default='127.0.0.1', help="host to listen on. for example, 0.0.0.0 binds on all interfaces.")
-    parser.add_option("--auth", dest="auth", default="bob:bob", help="username:password required. This user will also be added to the db as an admin. Default: bob:bob")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
         help="Verbose output")
     options, args = parser.parse_args()
-    username, password = options.auth.split(':')
 
     from auslib import log_format
     from auslib.admin.base import app, db
+
+    app.config['SECRET_KEY'] = 'abc123'
+    app.config['DEBUG'] = True
+
+    from auslib.admin.views.tests import TestsView
 
     log_level = logging.INFO
     if options.verbose:
@@ -35,12 +38,8 @@ if __name__ == '__main__':
 
     db.setDburi(options.db)
     db.createTables()
-    if not db.permissions.getPermission(username, 'admin'):
-        db.permissions.grantPermission('admin.py', username, 'admin')
 
-    app.config['SECRET_KEY'] = 'abc123'
-    app.config['DEBUG'] = True
-    def auth(environ, u, p):
-        return u == username and p == password
+    def auth(environ, username, password):
+        return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)
     app.run(port=options.port, host=options.host)
