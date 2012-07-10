@@ -74,7 +74,7 @@ page.open(phantom.args[0], function(status){
                     var f = results[i].getElementsByClassName('fail')[0];
                     if (f != null) {
                         var name = results[i].getElementsByClassName('test-name')[0].innerHTML;
-                        var msg = results[i].getElementsByClassName('test-message')[0].innerHTML;
+                        msg = f.innerText;
                         console.log('FAIL: ' + name + ': ' + msg);
                     }
                 }

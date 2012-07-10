@@ -17,7 +17,7 @@ function addNewPermission(username, permission, options, element) {
     data = {
         'options': options
     };
-    $.ajax(url, {'type': 'put', 'data': data})
+    return $.ajax(url, {'type': 'put', 'data': data})
     .error(handleError
     ).success(function(data) {
         $.get(url, {'format': 'html'})

@@ -3,6 +3,7 @@
 <head>
 <title>{% block title %}{% endblock %}</title>
 <script type='text/javascript'>var SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+<script type='text/javascript' src='{{ url_for('static', filename='jquery-1.6.4.js') }}'></script>
 <script type='text/javascript' src='{{ url_for('static', filename='qunit-1.5.0.js') }}'></script>
 <script type='text/javascript' src='{{ url_for('static', filename='ausadmin.js') }}'></script>
 <script type='text/javascript' src='{{ url_for('static', filename='test/test_ausadmin.js') }}'></script>
