@@ -12,7 +12,7 @@ function getReleaseUrl(release) {
     return SCRIPT_ROOT + '/releases/' + release;
 }
 
-function addNewPermission(username, permission, options, element) {
+function addNewPermission(username, permission, options, element, completeCb) {
     url = getPermissionUrl(username, permission);
     data = {
         'options': options
@@ -24,6 +24,11 @@ function addNewPermission(username, permission, options, element) {
         .error(handleError
         ).success(function(data) {
             element.append(data);
+        })
+        .complete(function() {
+            if (completeCb != null) {
+                completeCb();
+            }
         });
     });
 }
