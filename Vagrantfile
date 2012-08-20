@@ -1,8 +1,8 @@
 MOUNT_POINT = '/home/vagrant/project'
 
 Vagrant::Config.run do |config|
-    config.vm.box = "centos"
-    config.vm.box_url = "https://vagrant-centos-6.s3.amazonaws.com/centos-6.box"
+    config.vm.box = "centos-netboot"
+    config.vm.box_url = "http://dl.dropbox.com/u/9227672/CentOS-6.0-x86_64-netboot-4.1.6.box"
 
     config.vm.forward_port 8000, 8000
 

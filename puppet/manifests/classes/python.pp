@@ -3,14 +3,14 @@ class python {
     case $operatingsystem {
         centos: {
             package {
-                ["python26-devel", "python26-libs", "python26-distribute", "python26-mod_wsgi"]:
+                ["python-devel", "python-libs", "python-setuptools", "mod_wsgi"]:
                     ensure => installed;
             }
 
             exec { "pip-install":
                 command => "easy_install -U pip",
-                creates => "pip",
-                require => Package["python26-devel", "python26-distribute"]
+                creates => "/usr/local/bin/pip",
+                require => Package["python-devel", "python-setuptools"]
             }
 
             exec { "pip-install-compiled":
