@@ -8,8 +8,8 @@ $PROJ_DIR = "/home/vagrant/project"
 # You can make these less generic if you like, but these are box-specific
 # so it's not required.
 $DB_NAME = "balrog"
-$DB_USER = "root"
-$DB_PASS = "root"
+$DB_USER = "admin"
+$DB_PASS = "admin"
 $DB_RO_USER = "user"
 $DB_RO_PASS = "user"
 

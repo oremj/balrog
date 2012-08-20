@@ -21,12 +21,18 @@ class balrog {
     }
 
     exec { "grant_mysql_database":
-        command => "mysql -uroot -B -e'GRANT ALL PRIVILEGES ON $DB_NAME.* TO $DB_USER@localhost # IDENTIFIED BY \"$DB_PASS\"'",
+        command => "mysql -uroot -B -e'GRANT ALL PRIVILEGES ON $DB_NAME.* TO $DB_USER@localhost IDENTIFIED BY \"$DB_PASS\"'",
         unless  => "mysql -uroot -B --skip-column-names mysql -e 'select user from user' | grep '$DB_USER'",
         require => Exec["create_mysql_database"];
     }
+
+    exec { "create_tables":
+        command => "python $PROJ_DIR/scripts/manage-db.py --db mysql://$DB_USER:$DB_PASS@localhost/$DB_NAME create",
+        require => Exec["grant_mysql_database"];
+    }
+
     exec { "grant_ro_mysql_database":
-        command => "mysql -uroot -B -e'GRANT SELECT ON $DB_NAME.* TO $DB_RO_USER@localhost # IDENTIFIED BY \"$DB_RO_PASS\"'",
+        command => "mysql -uroot -B -e'GRANT SELECT ON $DB_NAME.* TO $DB_RO_USER@localhost IDENTIFIED BY \"$DB_RO_PASS\"'",
         unless  => "mysql -uroot -B --skip-column-names mysql -e 'select user from user' | grep '$DB_RO_USER'",
         require => Exec["create_mysql_database"];
     }
