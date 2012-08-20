@@ -3,9 +3,9 @@ class balrog {
     # create config files
     file {
         "/etc/aus/admin.ini":
-            content => template("vagrant/admin.ini.erb")
+            content => template("vagrant/admin.ini.erb");
         "/etc/aus/balrog.ini":
-            content => template("vagrant/balrog.ini.erb")
+            content => template("vagrant/balrog.ini.erb");
     }
     # import mysqldump
     exec { "create_mysql_database":
