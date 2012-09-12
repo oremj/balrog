@@ -1,6 +1,10 @@
 # Red Hat, CentOS, and Fedora think Apache is the only web server
 # ever, so we have to use a different package on CentOS than Ubuntu.
 class apache {
+    file {
+        "/var/log/httpd/aus4.mozilla.org":
+            ensure => directory;
+    }
     case $operatingsystem {
         centos: {
             package { "httpd-devel":

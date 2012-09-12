@@ -13,6 +13,16 @@ class balrog {
             content => template("$PROJ_DIR/puppet/templates/admin.ini.erb");
         "/etc/aus/balrog.ini":
             content => template("$PROJ_DIR/puppet/templates/balrog.ini.erb");
+        "/var/log/aus.log":
+            ensure => present,
+            owner => apache,
+            group => apache,
+            mode => 644;
+        "/var/log/ausadmin.log":
+            ensure => present,
+            owner => apache,
+            group => apache,
+            mode => 644;
     }
     # import mysqldump
     exec { "create_mysql_database":

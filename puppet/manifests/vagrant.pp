@@ -18,6 +18,11 @@ Exec {
 }
 
 class dev {
+    file {
+        "/home/vagrant":
+            ensure => directory,
+            mode => 755;
+    }
     class {
         init: before => Class[mysql];
         mysql: before  => Class[python];
