@@ -18,3 +18,10 @@ Vagrant::Config.run do |config|
         puppet.manifest_file  = "vagrant.pp"
     end
 end
+
+print "Balrog has two applications: the Firefox-facing one, and the Admin one.\n"
+print "They are accessed through different virtualhosts.\n"
+print "You must add the following entries to /etc/hosts to work with them:\n"
+print "127.0.0.1 balrog-admin.mozilla.dev\n"
+print "127.0.0.1 balrog.mozilla.dev\n"
+print "Once you've done that, you can access them by those names on port 8000.\n\n"
