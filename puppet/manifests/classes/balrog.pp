@@ -50,6 +50,6 @@ class balrog {
     exec {"import_sample_data":
         command => "/bin/cat $PROJ_DIR/puppet/files/sample-data.sql | mysql -uroot -D $DB_NAME && touch /home/vagrant/import-done",
         unless => "test -f /home/vagrant/import-done",
-        require => Exec["create_mysql_database"];
+        require => Exec["create_tables"];
     }
 }
