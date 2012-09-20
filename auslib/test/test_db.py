@@ -26,7 +26,10 @@ class NamedFileDatabaseMixin(object):
         http://www.sqlalchemy.org/trac/wiki/FAQ#IamusingmultipleconnectionswithaSQLitedatabasetypicallytotesttransactionoperationandmytestprogramisnotworking
        """
     def setUp(self):
-        self.dburi = 'sqlite:///%s' % NamedTemporaryFile().name
+        self.dburi = 'sqlite:///%s' % self.getTempfile()
+
+    def getTempfile(self):
+        return NamedTemporaryFile().name
 
 class TestAUSTransaction(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):
@@ -1021,3 +1024,12 @@ class TestDB(unittest.TestCase):
         db.createTables()
         insp = Inspector.from_engine(db.engine)
         self.assertNotEqual(insp.get_table_names(), [])
+
+class TestDBUpgrade(unittest.TestCase, NamedFileDatabaseMixin):
+    def setUp(self):
+        MemoryDatabaseMixin.setUp(self)
+        self.db = AUSDatabase(self.dburi)
+        self.db.createTables()
+
+    def testModelIsSameAsRepository(self):
+        versioning.api.compare_model_to_db(self.db.engine, self.db.migrate_repo, self.db.metadata)

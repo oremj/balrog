@@ -1,4 +1,5 @@
 from copy import copy
+from os import path
 import re
 import simplejson as json
 import sys
@@ -7,6 +8,8 @@ import time
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   CheckConstraint, create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
+
+from migrate import versioning
 
 from auslib.blob import ReleaseBlobV1
 
@@ -934,6 +937,7 @@ class Permissions(AUSTable):
 
 class AUSDatabase(object):
     engine = None
+    migrate_repo = path.join(path.dirname(__file__), "migrate")
 
     def __init__(self, dburi=None):
         """Create a new AUSDatabase. Before this object is useful, dburi must be
@@ -957,6 +961,9 @@ class AUSDatabase(object):
 
     def createTables(self):
         self.metadata.create_all()
+
+    def upgrade(self, version=None):
+        versioning.api.upgrade(self.dburi, self.migrate_repo, version)
 
     def reset(self):
         self.engine = None
