@@ -9,7 +9,7 @@ from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   CheckConstraint, create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
 
-from migrate import versioning
+import migrate.versioning.api
 
 from auslib.blob import ReleaseBlobV1
 
@@ -961,9 +961,10 @@ class AUSDatabase(object):
 
     def createTables(self):
         self.metadata.create_all()
+        migrate.versioning.api.version_control(self.dburi, self.migrate_repo)
 
     def upgrade(self, version=None):
-        versioning.api.upgrade(self.dburi, self.migrate_repo, version)
+        migrate.versioning.api.upgrade(self.dburi, self.migrate_repo, version)
 
     def reset(self):
         self.engine = None

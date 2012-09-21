@@ -19,14 +19,14 @@ rules = Table('rules', metadata,
     Column('distribution', String(100)),
     Column('distVersion', String(100)),
     Column('headerArchitecture', String(10)),
-    Column('comment', String(500))
+    Column('comment', String(500)),
     Column('data_version', Integer, nullable=False)
 )
 
 rules_history = Table('rules_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False)
+    Column('timestamp', BigInteger, nullable=False),
     Column('rule_id', Integer, nullable=True, autoincrement=True),
     Column('priority', Integer),
     Column('mapping', String(100)),
@@ -42,7 +42,7 @@ rules_history = Table('rules_history', metadata,
     Column('distribution', String(100)),
     Column('distVersion', String(100)),
     Column('headerArchitecture', String(10)),
-    Column('comment', String(500))
+    Column('comment', String(500)),
     Column('data_version', Integer, nullable=False)
 )
 
@@ -56,7 +56,7 @@ releases = Table('releases', metadata,
 releases_history = Table('releases_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False)
+    Column('timestamp', BigInteger, nullable=False),
     Column('name', String(100), nullable=True),
     Column('product', String(15), nullable=False),
     Column('version', String(25), nullable=False),
@@ -66,16 +66,16 @@ releases_history = Table('releases_history', metadata,
 permissions = Table('permissions', metadata,
     Column('permission', String(50), primary_key=True),
     Column('username', String(100), primary_key=True),
-    Column('options', Text)
+    Column('options', Text),
     Column('data_version', Integer, nullable=False)
 )
 permissions_history = Table('permissions_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False)
+    Column('timestamp', BigInteger, nullable=False),
     Column('permission', String(50), nullable=True),
     Column('username', String(100), nullable=True),
-    Column('options', Text)
+    Column('options', Text),
     Column('data_version', Integer, nullable=False)
 )
 
