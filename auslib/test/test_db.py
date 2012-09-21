@@ -1031,8 +1031,11 @@ class TestDBUpgrade(unittest.TestCase, NamedFileDatabaseMixin):
     def setUp(self):
         NamedFileDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
-        self.db.create()
+        self.db.metadata.create_all()
 
     def testModelIsSameAsRepository(self):
-        db2 = 'sqlite:///' + self.getTempfile()
-        migrate.versioning.api.compare_model_to_db(db2, self.db.migrate_repo, self.db.metadata)
+        db2 = AUSDatabase('sqlite:///' + self.getTempfile())
+        db2.create()
+        diff = migrate.versioning.api.compare_model_to_db(db2.engine, self.db.migrate_repo, self.db.metadata)
+        if diff:
+            self.fail(str(diff))
