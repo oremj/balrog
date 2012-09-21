@@ -32,6 +32,6 @@ if __name__ == "__main__":
 
     db = AUSDatabase(options.db)
     if action == 'create':
-        db.createTables()
+        db.create()
     elif action == 'upgrade':
         db.upgrade(options.version)

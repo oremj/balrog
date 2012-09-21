@@ -9,6 +9,7 @@ from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   CheckConstraint, create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
 
+import migrate.versioning.schema
 import migrate.versioning.api
 
 from auslib.blob import ReleaseBlobV1
@@ -944,6 +945,7 @@ class AUSDatabase(object):
            set, either through the constructor or setDburi()"""
         if dburi:
             self.setDburi(dburi)
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def setDburi(self, dburi):
         """Setup the database connection. Note that SQLAlchemy only opens a connection
@@ -959,12 +961,23 @@ class AUSDatabase(object):
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
 
-    def createTables(self):
-        self.metadata.create_all()
-        migrate.versioning.api.version_control(self.dburi, self.migrate_repo)
+    def create(self):
+        migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo)
+        self.upgrade()
 
     def upgrade(self, version=None):
-        migrate.versioning.api.upgrade(self.dburi, self.migrate_repo, version)
+        # This method was taken from Buildbot: https://github.com/buildbot/buildbot/blob/87108ec4088dc7fd5394ac3c1d0bd3b465300d92/master/buildbot/db/model.py#L455
+        # http://code.google.com/p/sqlalchemy-migrate/issues/detail?id=100
+        # means  we cannot use the migrate.versioning.api module.  So these
+        # methods perform similar wrapping functions to what is done by the API
+        # functions, but without disposing of the engine.
+        schema = migrate.versioning.schema.ControlledSchema(self.engine,
+                self.migrate_repo)
+        changeset = schema.changeset(version)
+        for version, change in changeset:
+            self.log.debug('migrating schema version %s -> %d'
+                    % (version, version + 1))
+            schema.runchange(version, change, 1)
 
     def reset(self):
         self.engine = None
