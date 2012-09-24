@@ -968,6 +968,9 @@ class AUSDatabase(object):
         self.metadata.bind = self.engine
 
     def create(self, version=None):
+        # Migrate's "create" merely declares a database to be under its control,
+        # it doesn't actually create tables or upgrade it. So we need to call it
+        # and then do the upgrade to get to the state we want.
         migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo, version)
         self.upgrade(version)
 
