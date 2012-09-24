@@ -19,7 +19,6 @@ rules = Table('rules', metadata,
     Column('distribution', String(100)),
     Column('distVersion', String(100)),
     Column('headerArchitecture', String(10)),
-    Column('comment', String(500)),
     Column('data_version', Integer, nullable=False)
 )
 
@@ -41,7 +40,6 @@ rules_history = Table('rules_history', metadata,
     Column('distribution', String(100)),
     Column('distVersion', String(100)),
     Column('headerArchitecture', String(10)),
-    Column('comment', String(500)),
     Column('data_version', Integer)
 )
 
