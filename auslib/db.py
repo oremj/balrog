@@ -967,9 +967,9 @@ class AUSDatabase(object):
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
 
-    def create(self):
-        migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo)
-        self.upgrade()
+    def create(self, version=None):
+        migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo, version)
+        self.upgrade(version)
 
     def upgrade(self, version=None):
         # This method was taken from Buildbot: https://github.com/buildbot/buildbot/blob/87108ec4088dc7fd5394ac3c1d0bd3b465300d92/master/buildbot/db/model.py#L455

@@ -20,7 +20,7 @@ if __name__ == "__main__":
     usage += "  upgrade: Upgrade an existing balrog table to a newer version."
     parser = OptionParser(usage=usage)
     parser.add_option("-d", "--db", dest="db", default=None, help="database to manage, in URI format")
-    parser.add_option("--version", dest="version", default=None, help="When upgrading, upgrade to this specific schema version rather than the latest.")
+    parser.add_option("--version", dest="version", default=None, help="Create/upgrade to this specific schema version rather than the latest.")
     options, args = parser.parse_args()
 
     if not options.db:
@@ -32,6 +32,6 @@ if __name__ == "__main__":
 
     db = AUSDatabase(options.db)
     if action == 'create':
-        db.create()
+        db.create(options.version)
     elif action == 'upgrade':
         db.upgrade(options.version)
