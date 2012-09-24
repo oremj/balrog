@@ -26,7 +26,6 @@ rules = Table('rules', metadata,
 rules_history = Table('rules_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False),
     Column('rule_id', Integer, nullable=False),
     Column('priority', Integer),
     Column('mapping', String(100)),
@@ -56,7 +55,6 @@ releases = Table('releases', metadata,
 releases_history = Table('releases_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False),
     Column('name', String(100), nullable=False),
     Column('product', String(15)),
     Column('version', String(25)),
@@ -72,7 +70,6 @@ permissions = Table('permissions', metadata,
 permissions_history = Table('permissions_history', metadata,
     Column('change_id', Integer, primary_key=True, autoincrement=True),
     Column('changed_by', String(100), nullable=False),
-    Column('timestamp', BigInteger, nullable=False),
     Column('permission', String(50), nullable=False),
     Column('username', String(100), nullable=False),
     Column('options', Text),
@@ -83,9 +80,16 @@ def upgrade(migrate_engine):
     metadata.bind = migrate_engine
     if migrate_engine.name == 'mysql':
         from sqlalchemy.dialects.mysql import LONGTEXT
-        dataType = LONGTEXT
+        textType = LONGTEXT
+        bigintType = BigInteger
+    elif migrate_engine.name == 'sqlite':
+        textType = Text
+        bigintType = Integer
     else:
-        dataType = Text
-    releases.append_column(Column('data', dataType, nullable=False))
-    releases_history.append_column(Column('data', dataType))
+        textType = Text
+    releases.append_column(Column('data', textType, nullable=False))
+    releases_history.append_column(Column('data', textType))
+    rules_history.append_column(Column('timestamp', bigintType, nullable=False))
+    releases_history.append_column(Column('timestamp', bigintType, nullable=False))
+    permissions_history.append_column(Column('timestamp', bigintType, nullable=False))
     metadata.create_all()

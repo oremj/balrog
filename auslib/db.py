@@ -128,7 +128,7 @@ class AUSTable(object):
                          updates.
        @type versioned: bool
     """
-    def __init__(self, history=True, versioned=True):
+    def __init__(self, dialect, history=True, versioned=True):
         self.t = self.table
         # Enable versioning, if required
         if versioned:
@@ -142,7 +142,7 @@ class AUSTable(object):
                 self.primary_key.append(col)
         # Set-up a history table to do logging in, if required
         if history:
-            self.history = History(self.t.metadata, self)
+            self.history = History(dialect, self.t.metadata, self)
         else:
             self.history = None
         self.log = logging.getLogger(self.__class__.__name__)
@@ -402,18 +402,24 @@ class History(AUSTable):
        will generate appropriate INSERTs to the History table given appropriate
        inputs, and are documented below. History tables are never versioned,
        and cannot have history of their own."""
-    def __init__(self, metadata, baseTable):
+    def __init__(self, dialect, metadata, baseTable):
         self.baseTable = baseTable
         self.table = Table('%s_history' % baseTable.t.name, metadata,
             Column('change_id', Integer, primary_key=True, autoincrement=True),
             Column('changed_by', String(100), nullable=False),
-            # Timestamps are stored as an integer, but actually contain
-            # precision down to the millisecond, achieved through
-            # multiplication.
-            # BigInteger is used here because SQLAlchemy's Integer translates
-            # to Integer(11) in MySQL, which is too small for our needs.
-            Column('timestamp', BigInteger, nullable=False)
         )
+        # Timestamps are stored as an integer, but actually contain
+        # precision down to the millisecond, achieved through
+        # multiplication.
+        # SQLAlchemy's SQLite dialect doesn't support fully support BigInteger.
+        # The Column will work, but it ends up being a NullType Column which
+        # breaks our upgrade unit tests. Because of this, we make sure to use
+        # a plain Integer column for SQLite. In MySQL, an Integer is
+        # Integer(11), which is too small for our needs.
+        if dialect == 'sqlite':
+            self.table.append_column(Column('timestamp', Integer, nullable=False))
+        else:
+            self.table.append_column(Column('timestamp', BigInteger, nullable=False))
         self.base_primary_key = [pk.name for pk in baseTable.primary_key]
         for col in baseTable.t.get_children():
             newcol = col.copy()
@@ -422,7 +428,7 @@ class History(AUSTable):
             else:
                 newcol.nullable = True
             self.table.append_column(newcol)
-        AUSTable.__init__(self, history=False, versioned=False)
+        AUSTable.__init__(self, dialect, history=False, versioned=False)
 
     def getTimestamp(self):
         t = int(time.time() * 1000)
@@ -600,7 +606,7 @@ class Rules(AUSTable):
             Column('headerArchitecture', String(10)),
             Column('comment', String(500))
         )
-        AUSTable.__init__(self)
+        AUSTable.__init__(self, dialect)
 
     def _matchesRegex(self, foo, bar):
         # Expand wildcards and use ^/$ to make sure we don't succeed on partial
@@ -709,7 +715,7 @@ class Releases(AUSTable):
         else:
             dataType = Text
         self.table.append_column(Column('data', dataType, nullable=False))
-        AUSTable.__init__(self)
+        AUSTable.__init__(self, dialect)
 
     def getReleases(self, name=None, product=None, version=None, limit=None, transaction=None):
         self.log.debug("Looking for releases with:")
@@ -836,7 +842,7 @@ class Permissions(AUSTable):
             Column('username', String(100), primary_key=True),
             Column('options', Text)
         )
-        AUSTable.__init__(self)
+        AUSTable.__init__(self, dialect)
 
     def assertPermissionExists(self, permission):
         if permission not in self.allPermissions.keys():

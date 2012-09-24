@@ -102,13 +102,13 @@ class TestTableMixin(object):
             def __init__(self, metadata):
                 self.table = Table('test', metadata, Column('id', Integer, primary_key=True, autoincrement=True),
                                                      Column('foo', Integer))
-                AUSTable.__init__(self)
+                AUSTable.__init__(self, 'sqlite')
         class TestAutoincrementTable(AUSTable):
             def __init__(self, metadata):
                 self.table = Table('test-autoincrement', metadata, 
                                                     Column('id', Integer, primary_key=True, autoincrement=True),
                                                     Column('foo', Integer))
-                AUSTable.__init__(self)
+                AUSTable.__init__(self, 'sqlite')
         self.test = TestTable(self.metadata)
         self.testAutoincrement = TestAutoincrementTable(self.metadata)
         self.metadata.create_all()
@@ -125,7 +125,7 @@ class TestMultiplePrimaryTableMixin(object):
                 self.table = Table('test', metadata, Column('id1', Integer, primary_key=True), 
                                                      Column('id2', Integer, primary_key=True),
                                                      Column('foo', Integer))
-                AUSTable.__init__(self)
+                AUSTable.__init__(self, 'sqlite')
         self.test = TestTable(self.metadata)
         self.metadata.create_all()
         self.test.t.insert().execute(id1=1, id2=1, foo=33, data_version=1)
