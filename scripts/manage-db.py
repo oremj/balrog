@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Our parent directory should contain the auslib module, so we add it to the
 # PYTHONPATH to make things easier on consumers.
 sys.path.append(path.join(path.dirname(__file__), ".."))
+sys.path.append(path.join(path.dirname(__file__), path.join("..", "vendor", "lib", "python")))
 
 from auslib.db import AUSDatabase
 
@@ -32,6 +33,6 @@ if __name__ == "__main__":
 
     db = AUSDatabase(options.db)
     if action == 'create':
-        db.create(options.version)
+        db.create(int(options.version))
     elif action == 'upgrade':
-        db.upgrade(options.version)
+        db.upgrade(int(options.version))

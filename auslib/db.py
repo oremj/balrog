@@ -970,8 +970,10 @@ class AUSDatabase(object):
     def create(self, version=None):
         # Migrate's "create" merely declares a database to be under its control,
         # it doesn't actually create tables or upgrade it. So we need to call it
-        # and then do the upgrade to get to the state we want.
-        migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo, version)
+        # and then do the upgrade to get to the state we want. We also have to
+        # tell create that we're creating at version 0 of the database, otherwise
+        # uprgade will do nothing!
+        migrate.versioning.schema.ControlledSchema.create(self.engine, self.migrate_repo, 0)
         self.upgrade(version)
 
     def upgrade(self, version=None):
@@ -980,12 +982,10 @@ class AUSDatabase(object):
         # means  we cannot use the migrate.versioning.api module.  So these
         # methods perform similar wrapping functions to what is done by the API
         # functions, but without disposing of the engine.
-        schema = migrate.versioning.schema.ControlledSchema(self.engine,
-                self.migrate_repo)
+        schema = migrate.versioning.schema.ControlledSchema(self.engine, self.migrate_repo)
         changeset = schema.changeset(version)
         for version, change in changeset:
-            self.log.debug('migrating schema version %s -> %d'
-                    % (version, version + 1))
+            self.log.debug('migrating schema version %s -> %d' % (version, version + 1))
             schema.runchange(version, change, 1)
 
     def reset(self):
