@@ -1007,13 +1007,6 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
         self.assertTrue(self.permissions.hasUrlPermission('bob', '/releases/:name', 'DELETE', dict(product='fake')))
 
 class TestDB(unittest.TestCase):
-    def testCreateTables(self):
-        db = AUSDatabase()
-        db.setDburi('sqlite:///:memory:')
-        db.create()
-        insp = Inspector.from_engine(db.engine)
-        self.assertNotEqual(insp.get_table_names(), [])
-
     def testSetDburiAlreadySetup(self):
         db = AUSDatabase('sqlite:///:memory:')
         self.assertRaises(AlreadySetupError, db.setDburi, 'sqlite:///:memory:')
