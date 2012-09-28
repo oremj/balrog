@@ -1,6 +1,7 @@
 import mock
+import os
 import simplejson as json
-from tempfile import NamedTemporaryFile
+from tempfile import mkstemp
 import unittest
 
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, select
@@ -28,10 +29,17 @@ class NamedFileDatabaseMixin(object):
         http://www.sqlalchemy.org/trac/wiki/FAQ#IamusingmultipleconnectionswithaSQLitedatabasetypicallytotesttransactionoperationandmytestprogramisnotworking
        """
     def setUp(self):
+        self.tmpfiles = []
         self.dburi = 'sqlite:///%s' % self.getTempfile()
 
+    def tearDown(self):
+        for t in tmpfiles:
+            os.remove(t)
+
     def getTempfile(self):
-        return NamedTemporaryFile().name
+        t = mkstemp()[1]
+        self.tmpfiles.append(t)
+        return t
 
 class TestAUSTransaction(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):

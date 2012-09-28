@@ -21,18 +21,18 @@ if __name__ == "__main__":
     usage += "  upgrade: Upgrade an existing balrog table to a newer version."
     parser = OptionParser(usage=usage)
     parser.add_option("-d", "--db", dest="db", default=None, help="database to manage, in URI format")
-    parser.add_option("--version", dest="version", default=None, help="Create/upgrade to this specific schema version rather than the latest.")
+    parser.add_option("--version", dest="version", default=None, type="int", help="Create/upgrade to this specific schema version rather than the latest.")
     options, args = parser.parse_args()
 
     if not options.db:
         parser.error("db is required")
     if len(args) != 1:
-        parser.error("need a singleaction to perform")
+        parser.error("need a single action to perform")
 
     action = args[0]
 
     db = AUSDatabase(options.db)
     if action == 'create':
-        db.create(int(options.version))
+        db.create(options.version)
     elif action == 'upgrade':
-        db.upgrade(int(options.version))
+        db.upgrade(options.version)
