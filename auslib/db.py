@@ -984,9 +984,9 @@ class AUSDatabase(object):
         # functions, but without disposing of the engine.
         schema = migrate.versioning.schema.ControlledSchema(self.engine, self.migrate_repo)
         changeset = schema.changeset(version)
-        for version, change in changeset:
-            self.log.debug('migrating schema version %s -> %d' % (version, version + 1))
-            schema.runchange(version, change, 1)
+        for step, change in changeset:
+            self.log.debug('migrating schema version %s -> %d' % (step, step + 1))
+            schema.runchange(step, change, 1)
 
     def reset(self):
         self.engine = None
