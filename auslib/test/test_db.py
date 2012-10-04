@@ -33,12 +33,13 @@ class NamedFileDatabaseMixin(object):
         self.dburi = 'sqlite:///%s' % self.getTempfile()
 
     def tearDown(self):
-        for t in tmpfiles:
+        for fd, t in tmpfiles:
+            os.close(fd)
             os.remove(t)
 
     def getTempfile(self):
-        t = mkstemp()[1]
-        self.tmpfiles.append(t)
+        fd, t = mkstemp()
+        self.tmpfiles.append((fd, t))
         return t
 
 class TestAUSTransaction(unittest.TestCase, MemoryDatabaseMixin):
