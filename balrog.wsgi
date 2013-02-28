@@ -27,4 +27,5 @@ AUS.setDb(cfg.getDburi())
 AUS.setSpecialHosts(cfg.getSpecialForceHosts())
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 
-sentry = Sentry(application)
+if application.config['SENTRY_DSN']:
+    sentry = Sentry(application)

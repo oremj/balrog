@@ -26,4 +26,5 @@ db.setDburi(cfg.getDburi())
 application.config['SECRET_KEY'] = cfg.getSecretKey()
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 
-sentry = Sentry(application)
+if application.config['SENTRY_DSN']:
+    sentry = Sentry(application)
