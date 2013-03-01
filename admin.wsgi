@@ -12,6 +12,7 @@ from raven.contrib.flask import Sentry
 from auslib import log_format
 from auslib.admin.base import db, app as application
 from auslib.config import AdminConfig
+from auslib.util.sentry import SanitizeHeadersProcessor
 
 cfg = AdminConfig('/etc/aus/admin.ini')
 errors = cfg.validate()
@@ -25,6 +26,7 @@ logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=l
 db.setDburi(cfg.getDburi())
 application.config['SECRET_KEY'] = cfg.getSecretKey()
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
+application.config['SENTRY_PROCESSORS'] = SanitizeHeadersProcessor
 
 if application.config['SENTRY_DSN']:
     sentry = Sentry(application)

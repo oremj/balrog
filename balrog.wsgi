@@ -13,6 +13,7 @@ from auslib import log_format
 from auslib.web.base import app as application
 from auslib.web.base import AUS
 from auslib.config import ClientConfig
+from auslib.util.sentry import SanitizeHeadersProcessor
 
 cfg = ClientConfig('/etc/aus/balrog.ini')
 errors = cfg.validate()
@@ -26,6 +27,7 @@ logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=l
 AUS.setDb(cfg.getDburi())
 AUS.setSpecialHosts(cfg.getSpecialForceHosts())
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
+application.config['SENTRY_PROCESSORS'] = SanitizeHeadersProcessor
 
 if application.config['SENTRY_DSN']:
     sentry = Sentry(application)
