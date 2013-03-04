@@ -8,7 +8,6 @@ mydir = path.dirname(path.abspath(__file__))
 site.addsitedir(mydir)
 site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 
-from raven.contrib.flask import Sentry
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
@@ -41,11 +40,7 @@ if __name__ == '__main__':
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-    app.config['SENTRY_PROCESSORS'] = ['auslib.util.sentry.SanitizeHeadersProcessor']
-    app.config['SENTRY_DSN'] = 'https://c980e68b8a0c456583a165d570770e51:8ce74a0adbb0461694b925a271bc2532@errormill.mozilla.org/12'
 
-    if app.config['SENTRY_DSN']:
-        sentry = Sentry(app)
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)
