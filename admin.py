@@ -40,7 +40,6 @@ if __name__ == '__main__':
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)
