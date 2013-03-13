@@ -1,10 +1,12 @@
+from collections import defaultdict
 import unittest
 from xml.dom import minidom
 
+from auslib.test.instruments import instrumentJSON, resetJSON
 from auslib.web.base import app, AUS
 from auslib.web.views.client import ClientRequestView
 
-class ClientTest(unittest.TestCase):
+class ClientTestBase(object):
     def setUp(self):
         app.config['DEBUG'] = True
         AUS.setDb('sqlite:///:memory:')
@@ -37,6 +39,8 @@ class ClientTest(unittest.TestCase):
 }
 """)
 
+
+class ClientTest(ClientTestBase, unittest.TestCase):
     def testGetHeaderArchitectureWindows(self):
         self.assertEqual(self.view.getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
 
@@ -45,6 +49,27 @@ class ClientTest(unittest.TestCase):
 
     def testGetHeaderArchitectureMacPPC(self):
         self.assertEqual(self.view.getHeaderArchitecture('Darwin_ppc-gcc3-u-ppc-i386', 'Firefox PPC Mac'), 'PPC')
+
+
+class InstrumentedClientTest(ClientTestBase, unittest.TestCase):
+    count = defaultdict(list)
+
+    @classmethod
+    def setUpClass(cls):
+        instrumentJSON(cls.count)
+
+    @classmethod
+    def tearDownClass(cls):
+        resetJSON()
+
+    def setUp(self):
+        ClientTestBase.setUp(self)
+        # We want to clear after setting up because we only care about
+        # measuring the test itself.
+        self.count.clear()
+
+    def tearDown(self):
+        print self.count
 
     def testGet(self):
         ret = self.client.get('/update/3/a/1/1/a/a/a/a/a/a/update.xml')

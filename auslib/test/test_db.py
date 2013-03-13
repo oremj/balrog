@@ -1,3 +1,4 @@
+from collections import defaultdict
 import mock
 import os
 import simplejson as json
@@ -12,6 +13,8 @@ import migrate.versioning.api
 from auslib.db import AUSDatabase, AUSTable, AlreadySetupError, \
   AUSTransaction, TransactionError, OutdatedDataError
 from auslib.blob import ReleaseBlobV1
+from auslib.test.instruments import instrumentJSON, resetJSON, \
+  instrumentAUSTable, resetAUSTable
 
 class MemoryDatabaseMixin(object):
     """Use this when writing tests that don't require multiple connections to
@@ -513,6 +516,18 @@ class RulesTestMixin(object):
         return rules
 
 class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
+    count = defaultdict(list)
+
+    @classmethod
+    def setUpClass(cls):
+        instrumentJSON(cls.count)
+        instrumentAUSTable(cls.count)
+
+    @classmethod
+    def tearDownClass(cls):
+        resetJSON()
+        resetAUSTable()
+
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -523,6 +538,12 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         self.paths.t.insert().execute(id=3, priority=100, version='3.5', buildTarget='a', throttle=100, mapping='a', update_type='z', data_version=1)
         self.paths.t.insert().execute(id=4, priority=80, buildTarget='d', throttle=100, mapping='a', update_type='z', data_version=1)
         self.paths.t.insert().execute(id=5, priority=80, buildTarget='d', version='3.3', throttle=0, mapping='c', update_type='z', data_version=1)
+        # We want to clear after setting up because we only care about
+        # measuring the test itself.
+        self.count.clear()
+
+    def tearDown(self):
+        print self.count
 
     def testGetOrderedRules(self):
         rules = self._stripNullColumns(self.paths.getOrderedRules())
@@ -637,6 +658,18 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
 
 
 class TestRulesSpecial(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
+    count = defaultdict(list)
+
+    @classmethod
+    def setUpClass(cls):
+        instrumentJSON(cls.count)
+        instrumentAUSTable(cls.count)
+
+    @classmethod
+    def tearDownClass(cls):
+        resetJSON()
+        resetAUSTable()
+
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -644,6 +677,10 @@ class TestRulesSpecial(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         self.rules = self.db.rules
         self.rules.t.insert().execute(id=1, priority=100, version='4.0*', throttle=100, update_type='z', data_version=1)
         self.rules.t.insert().execute(id=2, priority=100, channel='release*', throttle=100, update_type='z', data_version=1)
+        self.count.clear()
+
+    def tearDown(self):
+        print self.count
 
     def testGetRulesMatchingQueryVersionGlobbing(self):
         expected = [dict(rule_id=1, priority=100, throttle=100, version='4.0*', update_type='z', data_version=1)]
@@ -702,6 +739,18 @@ class TestRulesSpecial(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         self.assertEquals(rules, expected)
 
 class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
+    count = defaultdict(list)
+
+    @classmethod
+    def setUpClass(cls):
+        instrumentJSON(cls.count)
+        instrumentAUSTable(cls.count)
+
+    @classmethod
+    def tearDownClass(cls):
+        resetJSON()
+        resetAUSTable()
+
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -711,6 +760,10 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         self.releases.t.insert().execute(name='ab', product='a', version='a', data=json.dumps(dict(name=1)), data_version=1)
         self.releases.t.insert().execute(name='b', product='b', version='b', data=json.dumps(dict(name=2)), data_version=1)
         self.releases.t.insert().execute(name='c', product='c', version='c', data=json.dumps(dict(name=3)), data_version=1)
+        self.count.clear()
+
+    def tearDown(self):
+        print self.count
 
     def testGetReleases(self):
         self.assertEquals(len(self.releases.getReleases()), 4)
@@ -757,6 +810,18 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
 
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     """Tests for the Releases class that depend on version 1 of the blob schema."""
+    count = defaultdict(list)
+
+    @classmethod
+    def setUpClass(cls):
+        instrumentJSON(cls.count)
+        instrumentAUSTable(cls.count)
+
+    @classmethod
+    def tearDownClass(cls):
+        resetJSON()
+        resetAUSTable()
+
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -786,6 +851,10 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     "name": "b"
 }
 """)
+        self.count.clear()
+
+    def tearDown(self):
+        print self.count
 
     def testAddRelease(self):
         blob = ReleaseBlobV1(name=4)
