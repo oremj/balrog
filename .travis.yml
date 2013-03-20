@@ -1,0 +1,6 @@
+language: python
+
+python:
+    - "2.6"
+
+script: make ci-tests VIRTUALENV_DIR=venv COVERAGE=1
