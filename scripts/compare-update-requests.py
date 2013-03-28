@@ -9,7 +9,7 @@ site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python/vendor"))
 
 import requests
 
-from balrog.testing import compare_snippets
+from auslib.util.testing import compare_snippets
 
 
 if __name__ == '__main__':
