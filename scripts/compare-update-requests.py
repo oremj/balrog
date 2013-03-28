@@ -6,6 +6,7 @@ import sys
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python"))
 site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python/vendor"))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import requests
 
