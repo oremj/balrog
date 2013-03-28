@@ -3,10 +3,7 @@
 import itertools
 import os.path
 import site
-
-site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python"))
-
-from balrog.testing import generate_paths
+import sys
 
 
 DEFAULT_UPDATE_DATA = {
