@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from multiprocessing import Pool
 import os.path
 import site
 import sys
@@ -13,6 +14,10 @@ import requests
 from auslib.util.testing import compare_snippets
 
 
+def do_compare_wrapper(args):
+    return compare_snippets(*args)
+
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
@@ -20,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('aus_servers', metavar='aus_server', nargs=2,
         help='AUS Servers to make requests against. There must be two.')
     parser.add_argument('--paths-file', dest='paths_file', required=True)
+    parser.add_argument('-j', dest='concurrency', default=1, type=int)
 
     args = parser.parse_args()
 
@@ -31,14 +37,25 @@ if __name__ == '__main__':
     except ValueError:
         paths = open(args.paths_file).readlines()
 
+    p = Pool(processes=args.concurrency)
+
+    worker_args = []
+    for path in paths:
+        url1 = '%s/%s' % (server1, path)
+        url2 = '%s/%s' % (server2, path)
+        worker_args.append((url1, url2))
+
     rc = 0
-    for url1, xml1, url2, xml2, diff in compare_snippets(server1, server2, paths):
-        rc = 1
-        print 'Unmatched snippets:'
-        print url1.strip()
-        print url2.strip()
-        for line in diff:
-            print line
-        print '---- end of diff\n'
+
+    for res in p.map(do_compare_wrapper, worker_args):
+        url1, _, url2, _, diff = res
+        if diff:
+            rc = 1
+            print 'Unmatched snippets:'
+            print url1.strip()
+            print url2.strip()
+            for line in diff:
+                print line
+            print '---- end of diff\n'
 
     sys.exit(rc)
