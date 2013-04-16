@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-from multiprocessing import Pool
 import os.path
+from Queue import Queue
 import site
 import sys
+from threading import Thread
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python"))
 site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python/vendor"))
@@ -14,8 +15,10 @@ import requests
 from auslib.util.testing import compare_snippets
 
 
-def do_compare_wrapper(args):
-    return compare_snippets(*args)
+def worker(callback):
+    while not q.empty():
+        res = compare_snippets(*q.get())
+        callback(res)
 
 
 if __name__ == '__main__':
@@ -37,17 +40,12 @@ if __name__ == '__main__':
     except ValueError:
         paths = open(args.paths_file).readlines()
 
-    p = Pool(processes=args.concurrency)
-
-    worker_args = []
-    for path in paths:
-        url1 = '%s/%s' % (server1, path)
-        url2 = '%s/%s' % (server2, path)
-        worker_args.append((url1, url2))
-
+    count = 0
     rc = 0
 
-    for res in p.map(do_compare_wrapper, worker_args):
+    def printer(res):
+        global count, rc
+        count += 1
         url1, _, url2, _, diff = res
         if diff:
             rc = 1
@@ -58,4 +56,22 @@ if __name__ == '__main__':
                 print line
             print '---- end of diff\n'
 
+    q = Queue()
+    for path in paths:
+        url1 = '%s/%s' % (server1, path)
+        url2 = '%s/%s' % (server2, path)
+        q.put((url1, url2))
+
+    threads = []
+    for i in range(args.concurrency):
+        t = Thread(target=worker, args=(printer,))
+        t.daemon = True
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        while t.isAlive():
+            t.join(1)
+
+    print "Tested %d paths." % count
     sys.exit(rc)
