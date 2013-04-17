@@ -76,7 +76,7 @@ if __name__ == '__main__':
     q = Queue()
     for path in paths:
         count += 1
-        q.put(path.strip()
+        q.put(path.strip())
 
     threads = []
     for i in range(args.concurrency):
