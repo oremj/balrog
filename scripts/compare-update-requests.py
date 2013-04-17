@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     threads = []
     for i in range(args.concurrency):
-        t = Thread(target=worker, args=(printer, failure))
+        t = Thread(target=worker, args=(server1, server2, printer, failure))
         # Marking the threads as "daemon" means they can be killed. Without
         # this, the program will not exit until all threads exit naturally.
         # http://docs.python.org/2/library/threading.html#thread-objects
