@@ -46,11 +46,7 @@ if __name__ == '__main__':
     except ValueError:
         paths = open(args.paths_file).readlines()
 
-    count = 0
-    success = 0
-    fail = 0
-    error = 0
-    rc = 0
+    count = success = fail = error = rc = 0
 
     def printer(path, res):
         global success, fail, rc
@@ -93,4 +89,7 @@ if __name__ == '__main__':
             t.join(1)
 
     print "Tested %d paths." % count
+    print "Pass count: %d" % success
+    print "Fail count: %d" % fail
+    print "Error count: %d" % error
     sys.exit(rc)
