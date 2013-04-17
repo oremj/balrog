@@ -2,7 +2,7 @@ import unittest
 from xml.dom import minidom
 
 from auslib.web.base import app, AUS
-from auslib.web.views.client import ClientRequestView
+from auslib.web.views.client import ClientRequestView, getHeaderArchitecture
 
 class ClientTest(unittest.TestCase):
     def setUp(self):
@@ -37,15 +37,6 @@ class ClientTest(unittest.TestCase):
 }
 """)
 
-    def testGetHeaderArchitectureWindows(self):
-        self.assertEqual(self.view.getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
-
-    def testGetHeaderArchitectureMacIntel(self):
-        self.assertEqual(self.view.getHeaderArchitecture('Darwin_x86-gcc3-u-ppc-i386', 'Firefox Intel Mac'), 'Intel')
-
-    def testGetHeaderArchitectureMacPPC(self):
-        self.assertEqual(self.view.getHeaderArchitecture('Darwin_ppc-gcc3-u-ppc-i386', 'Firefox PPC Mac'), 'PPC')
-
     def testGet(self):
         ret = self.client.get('/update/3/a/1/1/a/a/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
@@ -67,3 +58,15 @@ class ClientTest(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+
+class TestGetHeaderArchitecture(unittest.TestCase):
+    def testWindows(self):
+        self.assertEqual(getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
+
+    def testMacIntel(self):
+        self.assertEqual(getHeaderArchitecture('Darwin_x86-gcc3-u-ppc-i386', 'Firefox Intel Mac'), 'Intel')
+
+    def testMacPPC(self):
+        self.assertEqual(getHeaderArchitecture('Darwin_ppc-gcc3-u-ppc-i386', 'Firefox PPC Mac'), 'PPC')
+
