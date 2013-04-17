@@ -12,7 +12,7 @@ def compare_snippets(url1, url2, retries=3, timeout=10, diff=True):
     if xml1 != xml2:
         if diff:
             difflines = []
-            for line in difflib.unified_diff(xml1, xml2, lineterm=""):
+            for line in difflib.unified_diff(xml1, xml2, url1, url2, lineterm=""):
                 difflines.append(line)
             ret.append(difflines)
         else:
