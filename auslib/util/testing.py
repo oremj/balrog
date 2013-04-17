@@ -1,5 +1,4 @@
 import difflib
-from multiprocessing import Pool
 
 import requests
 
