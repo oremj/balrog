@@ -4,6 +4,7 @@ import os.path
 from Queue import Queue
 import site
 import sys
+import traceback
 from threading import Thread
 
 site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python"))
@@ -15,11 +16,16 @@ import requests
 from auslib.util.testing import compare_snippets
 
 
-def worker(callback):
+def worker(server1, server2, callback, failure_callback):
     while not q.empty():
-        res = compare_snippets(*q.get())
-        callback(res)
-
+        try:
+            path = q.get()
+            url1 = '%s/%s' % (server1, path)
+            url2 = '%s/%s' % (server2, path)
+            res = compare_snippets(url1, url2)
+            callback(path, res)
+        except:
+            failure_callback(path, traceback.format_exc())
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -41,30 +47,43 @@ if __name__ == '__main__':
         paths = open(args.paths_file).readlines()
 
     count = 0
+    success = 0
+    fail = 0
+    error = 0
     rc = 0
 
-    def printer(res):
-        global count, rc
-        count += 1
+    def printer(path, res):
+        global success, fail, rc
         url1, _, url2, _, diff = res
         if diff:
+            fail += 1
             rc = 1
-            print 'Unmatched snippets:'
-            print url1.strip()
-            print url2.strip()
+            print 'FAIL: Unmatched snippets on %s:' % path
             for line in diff:
                 print line
             print '---- end of diff\n'
+        else:
+            success += 1
+            print 'PASS: %s' % path
+
+    def failure(path, tb):
+        global error, rc
+        error += 1
+        rc = 1
+        print 'ERROR: %s' % path
+        print tb
 
     q = Queue()
     for path in paths:
-        url1 = '%s/%s' % (server1, path)
-        url2 = '%s/%s' % (server2, path)
-        q.put((url1, url2))
+        count += 1
+        q.put(path)
 
     threads = []
     for i in range(args.concurrency):
-        t = Thread(target=worker, args=(printer,))
+        t = Thread(target=worker, args=(printer, failure))
+        # Marking the threads as "daemon" means they can be killed. Without
+        # this, the program will not exit until all threads exit naturally.
+        # http://docs.python.org/2/library/threading.html#thread-objects
         t.daemon = True
         t.start()
         threads.append(t)
