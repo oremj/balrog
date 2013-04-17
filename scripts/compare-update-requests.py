@@ -61,7 +61,7 @@ if __name__ == '__main__':
             print 'FAIL: Unmatched snippets on %s:' % path
             for line in diff:
                 print line
-            print '---- end of diff\n'
+            print '---- end of diff'
         else:
             success += 1
             print 'PASS: %s' % path
