@@ -1023,7 +1023,7 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEquals(len(query.execute().fetchall()), 0)
 
     def testGetAllUsers(self):
-        self.assertEquals(self.permissions.getAllUsers(), ['bill', 'bob', 'cathy'])
+        self.assertEquals(set(self.permissions.getAllUsers()), set(['bill', 'bob', 'cathy']))
 
     def testCountAllUsers(self):
         # bill, bob and cathy
