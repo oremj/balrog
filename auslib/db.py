@@ -669,10 +669,13 @@ class Rules(AUSTable):
             ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
             ((self.locale==updateQuery['locale']) | (self.locale==None)) &
             ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
-            ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
-            ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
             ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
         ]
+        if updateQuery in (3, 4):
+            where.extend([
+                ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
+                ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None))
+            ])
         if updateQuery['force'] == False:
             where.append(self.throttle > 0)
         rules = self.select(where=where, transaction=transaction)

@@ -27,4 +27,6 @@ def isa(error):
     log.debug("Request headers are: %s", request.headers)
     return error
 
+app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
 app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))
+app.add_url_rule('/update/<int:queryVersion>/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/<distribution>/<distVersion>/<platformVersion>/update.xml', view_func=ClientRequestView.as_view('clientrequest'))

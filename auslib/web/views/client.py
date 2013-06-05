@@ -20,28 +20,8 @@ class ClientRequestView(MethodView):
             return 'Intel'
 
     def getQueryFromURL(self, queryVersion, url):
-        """ Use regexp to turn
-                "update/3/Firefox/4.0b13pre/20110303122430/Darwin_x86_64-gcc-u-i386-x86_64/en-US/nightly/Darwin%2010.6.0/default/default/update.xml?force=1"
-            into
-                testUpdate = {
-                      'product': 'Firefox',
-                      'version': '4.0b13pre',
-                      'buildID': '20110303122430',
-                      'buildTarget': 'Darwin_x86_64-gcc-u-i386-x86_64',
-                      'locale': 'en-US',
-                      'channel': 'nightly',
-                      'osVersion': 'Darwin%2010.6.0',
-                      'distribution': 'default',
-                      'distVersion': 'default',
-                      'headerArchitecture': 'Intel',
-                      'force': True,
-                      'name': ''
-                     }
-        """
-        # TODO support older URL versions. catlee suggests splitting on /, easy to use conditional assignment then
         query = url.copy()
-        # TODO: Better way of dispatching different versions when we actually have to deal with them.
-        if queryVersion == 3:
+        if queryVersion in (2, 3, 4):
             query['name'] = AUS.identifyRequest(query)
             ua = request.headers.get('User-Agent')
             query['headerArchitecture'] = self.getHeaderArchitecture(query['buildTarget'], ua)
@@ -49,7 +29,6 @@ class ClientRequestView(MethodView):
             return query
         return {}
 
-    """/update/3/<product>/<version>/<buildID>/<build target>/<locale>/<channel>/<os version>/<distribution>/<distribution version>"""
     def get(self, queryVersion, **url):
         query = self.getQueryFromURL(queryVersion, url)
         self.log.debug("Got query: %s", query)
