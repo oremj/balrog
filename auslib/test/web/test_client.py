@@ -36,6 +36,32 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+        AUS.rules.t.insert().execute(throttle=100, mapping='c', update_type='minor', product='c',
+                                     distribution='default', data_version=1)
+        AUS.releases.t.insert().execute(name='c', product='c', version='c', data_version=1, data="""
+{
+    "name": "c",
+    "schema_version": 1,
+    "appv": "c",
+    "extv": "c",
+    "hashFunction": "sha512",
+    "platforms": {
+        "p": {
+            "buildID": 1,
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 1,
+                        "from": "*",
+                        "hashValue": "1",
+                        "fileUrl": "a"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
 
     def testGetHeaderArchitectureWindows(self):
         self.assertEqual(self.view.getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
@@ -77,6 +103,21 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" version="b" extensionVersion="b" buildID="1">
+        <patch type="complete" URL="a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testVersion2GetIgnoresRuleWithDistribution(self):
+        ret = self.client.get('/update/3/c/c/1/p/l/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="c" extensionVersion="c" buildID="1">
         <patch type="complete" URL="a" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>
