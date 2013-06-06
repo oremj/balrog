@@ -21,6 +21,8 @@ class ClientRequestView(MethodView):
 
     def getQueryFromURL(self, url):
         query = url.copy()
+        # Query versions 2, 3 and 4 are all roughly the same in contents,
+        # and all treated the same by Balrog.
         if url['queryVersion'] in (2, 3, 4):
             query['name'] = AUS.identifyRequest(query)
             ua = request.headers.get('User-Agent')
