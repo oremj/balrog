@@ -19,9 +19,9 @@ class ClientRequestView(MethodView):
         else:
             return 'Intel'
 
-    def getQueryFromURL(self, queryVersion, url):
+    def getQueryFromURL(self, url):
         query = url.copy()
-        if queryVersion in (2, 3, 4):
+        if url['queryVersion'] in (2, 3, 4):
             query['name'] = AUS.identifyRequest(query)
             ua = request.headers.get('User-Agent')
             query['headerArchitecture'] = self.getHeaderArchitecture(query['buildTarget'], ua)
@@ -29,8 +29,8 @@ class ClientRequestView(MethodView):
             return query
         return {}
 
-    def get(self, queryVersion, **url):
-        query = self.getQueryFromURL(queryVersion, url)
+    def get(self, **url):
+        query = self.getQueryFromURL(url)
         self.log.debug("Got query: %s", query)
         if query:
             rule = AUS.evaluateRules(query)

@@ -671,7 +671,7 @@ class Rules(AUSTable):
             ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
             ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
         ]
-        if updateQuery in (3, 4):
+        if updateQuery['queryVersion'] in (3, 4):
             where.extend([
                 ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
                 ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None))

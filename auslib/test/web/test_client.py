@@ -95,7 +95,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testVersion2Get(self):
-        ret = self.client.get('/update/3/b/b/1/p/l/a/a/update.xml')
+        ret = self.client.get('/update/2/b/b/1/p/l/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
@@ -110,7 +110,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testVersion2GetIgnoresRuleWithDistribution(self):
-        ret = self.client.get('/update/3/c/c/1/p/l/a/a/update.xml')
+        ret = self.client.get('/update/2/c/c/1/p/l/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
