@@ -671,9 +671,13 @@ class Rules(AUSTable):
             ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
             ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
         ]
-        # Only query versions 3 and 4 have distribution information.
-        # For other query versions (only version 2 at the time of this writing)
-        # we don't take the these columns into account when evaluating rules.
+        # Query version 2 doesn't have distribution information, and to keep
+        # us maximally flexible, we won't match any rules that have
+        # distribution update set.
+        if updateQuery['queryVersion'] == 2:
+            where.extend([(self.distribution==None) & (self.distVersion==None)])
+        # Only query versions 3 and 4 have distribution information, so we
+        # need to consider it.
         if updateQuery['queryVersion'] in (3, 4):
             where.extend([
                 ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
