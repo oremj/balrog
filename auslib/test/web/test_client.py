@@ -79,7 +79,7 @@ class ClientTest(unittest.TestCase):
         # An empty update contains an <updates> tag with a newline, which is what we're expecting here
         self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
-    def testGetWithUpdate(self):
+    def testVersion3GetWithUpdate(self):
         ret = self.client.get('/update/3/b/1/2/p/l/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
