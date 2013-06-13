@@ -1,6 +1,7 @@
 import mock
 from tempfile import NamedTemporaryFile
 import unittest
+from xml.dom import minidom
 
 from auslib.AUS import AUS3
 
@@ -29,7 +30,7 @@ def RandomAUSTest(AUS, throttle, force):
 class TestAUSThrottling(unittest.TestCase):
     def setUp(self):
         self.AUS = AUS3()
-        self.AUS.setDb('sqlite:///%s' % NamedTemporaryFile().name)
+        self.AUS.setDb('sqlite:///:memory:')
 
     def testThrottling100(self):
         (served, tested) = RandomAUSTest(self.AUS, throttle=100, force=False)
@@ -60,7 +61,8 @@ class TestAUS(unittest.TestCase):
     def setUp(self):
         self.AUS = AUS3()
         self.AUS.setSpecialHosts(('http://special.org/',))
-        self.AUS.setDb('sqlite:///%s' % NamedTemporaryFile().name)
+        self.AUS.setDomainWhitelist(('special.org',))
+        self.AUS.setDb('sqlite:///:memory:')
         self.AUS.db.create()
         self.AUS.db.releases.t.insert().execute(name='b', product='b', version='b', data_version=1, data="""
 {
@@ -150,3 +152,27 @@ class TestAUS(unittest.TestCase):
     def testIdentifyRequestMissingLocale(self):
         query = dict(buildTarget='p', buildID=1, locale='g', product='b', version='b')
         self.assertEqual(None, self.AUS.identifyRequest(query))
+
+    def testCreateXMLAllowedDomain(self):
+        xml = self.AUS.createXML(
+            dict(name=None, buildTarget='p', locale='l', channel='foo', force=False),
+            dict(mapping='b', update_type='minor'),
+        )
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(xml)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="b" extensionVersion="b" buildID="1">
+        <patch type="complete" URL="http://special.org/?foo=a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testCreateXMLForbiddenDomain(self):
+        xml = self.AUS.createXML(
+            dict(name=None, buildTarget='p', locale='m', channel='foo', force=False),
+            dict(mapping='b', update_type='minor'),
+        )
+        # An empty update contains an <updates> tag with a newline, which is what we're expecting here
+        self.assertEqual(minidom.parseString(xml).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')

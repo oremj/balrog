@@ -1,6 +1,7 @@
 import copy, re
 from collections import defaultdict
 from random import randint
+from urlparse import urlparse
 
 import logging
 
@@ -24,6 +25,8 @@ class AUS3:
         self.setDb(dbname)
         self.rand = AUSRandom()
         self.log = logging.getLogger(self.__class__.__name__)
+        self.specialForceHosts = None
+        self.domainWhitelist = None
 
     def setDb(self, dbname):
         if dbname == None:
@@ -34,6 +37,9 @@ class AUS3:
 
     def setSpecialHosts(self, specialForceHosts):
         self.specialForceHosts = specialForceHosts
+    
+    def setDomainWhitelist(self, domains):
+        self.domainWhitelist = domains
 
     def isSpecialURL(self, url):
         if not self.specialForceHosts:
@@ -227,17 +233,24 @@ class AUS3:
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
         if rel:
-            if rel['schema_version'] == 1:
-                updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
-                           (rel['type'], rel['appv'], rel['extv'], rel['build'])
-                if rel['detailsUrl']:
-                    updateLine += ' detailsURL="%s"' % rel['detailsUrl']
-                updateLine += '>'
-                xml.append(updateLine)
-                for patch in sorted(rel['patches']):
-                    xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
-                               (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
-                xml.append('    </update>')
+            forbidden = True
+            for p in rel['patches']:
+                domain = urlparse(p['URL'])[1]
+                if domain not in self.domainWhitelist:
+                    self.log.info('Not serving update because %s is not in domain whitelist', domain)
+                    break
+            else:
+                if rel['schema_version'] == 1:
+                    updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
+                            (rel['type'], rel['appv'], rel['extv'], rel['build'])
+                    if rel['detailsUrl']:
+                        updateLine += ' detailsURL="%s"' % rel['detailsUrl']
+                    updateLine += '>'
+                    xml.append(updateLine)
+                    for patch in sorted(rel['patches']):
+                        xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+                                (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
+                    xml.append('    </update>')
         xml.append('</updates>')
         # ensure valid xml by using the right entity for ampersand
         payload = re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
