@@ -246,14 +246,14 @@ class AUS3:
         if rel and self.isAllowedUpdateDomain(rel):
             if rel['schema_version'] == 1:
                 updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
-                        (rel['type'], rel['appv'], rel['extv'], rel['build'])
+                           (rel['type'], rel['appv'], rel['extv'], rel['build'])
                 if rel['detailsUrl']:
                     updateLine += ' detailsURL="%s"' % rel['detailsUrl']
                 updateLine += '>'
                 xml.append(updateLine)
                 for patch in sorted(rel['patches']):
                     xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
-                            (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
+                               (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
                 xml.append('    </update>')
         xml.append('</updates>')
         # ensure valid xml by using the right entity for ampersand
