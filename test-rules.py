@@ -169,6 +169,7 @@ if __name__ == "__main__":
         log.info("Testing %s", td)
         AUS = AUS3(dbname='sqlite:///:memory:')
         AUS.db.create()
+        AUS.setDomainWhitelist(('download.mozilla.org', 'stage-old.mozilla.org', 'ftp.mozilla.org', 'stage.mozilla.org'))
         populateDB(AUS, td)
         if options.dumprules:
             log.info("Rules are \n(id, priority, mapping, throttle, product, version, channel, buildTarget, buildID, locale, osVersion, distribution, distVersion, UA arch):")

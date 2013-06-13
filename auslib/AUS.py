@@ -26,7 +26,7 @@ class AUS3:
         self.rand = AUSRandom()
         self.log = logging.getLogger(self.__class__.__name__)
         self.specialForceHosts = None
-        self.domainWhitelist = None
+        self.domainWhitelist = []
 
     def setDb(self, dbname):
         if dbname == None:
@@ -37,7 +37,7 @@ class AUS3:
 
     def setSpecialHosts(self, specialForceHosts):
         self.specialForceHosts = specialForceHosts
-    
+
     def setDomainWhitelist(self, domains):
         self.domainWhitelist = domains
 
@@ -48,6 +48,13 @@ class AUS3:
             if url.startswith(s):
                 return True
         return False
+
+    def isAllowedUpdateDomain(self, updateData):
+        for patch in updateData['patches']:
+            domain = urlparse(patch['URL'])[1]
+            if domain not in self.domainWhitelist:
+                return False
+        return True
 
     def identifyRequest(self, updateQuery):
         self.log.debug("Got updateQuery: %s", updateQuery)
@@ -204,6 +211,10 @@ class AUS3:
             # of writing.
             return {"partial": "", "complete": ""}
 
+        if not self.isAllowedUpdateDomain(rel):
+            self.log.debug("Forbidden domain found, refusing to create snippets.")
+            return {"partial": "", "complete": ""}
+
         snippets = {}
         for patch in rel['patches']:
             snippet  = ["version=1",
@@ -232,25 +243,18 @@ class AUS3:
         # this will fall down all sorts of interesting ways by hardcoding fields
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
-        if rel:
-            forbidden = True
-            for p in rel['patches']:
-                domain = urlparse(p['URL'])[1]
-                if domain not in self.domainWhitelist:
-                    self.log.info('Not serving update because %s is not in domain whitelist', domain)
-                    break
-            else:
-                if rel['schema_version'] == 1:
-                    updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
-                            (rel['type'], rel['appv'], rel['extv'], rel['build'])
-                    if rel['detailsUrl']:
-                        updateLine += ' detailsURL="%s"' % rel['detailsUrl']
-                    updateLine += '>'
-                    xml.append(updateLine)
-                    for patch in sorted(rel['patches']):
-                        xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
-                                (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
-                    xml.append('    </update>')
+        if rel and self.isAllowedUpdateDomain(rel):
+            if rel['schema_version'] == 1:
+                updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
+                        (rel['type'], rel['appv'], rel['extv'], rel['build'])
+                if rel['detailsUrl']:
+                    updateLine += ' detailsURL="%s"' % rel['detailsUrl']
+                updateLine += '>'
+                xml.append(updateLine)
+                for patch in sorted(rel['patches']):
+                    xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+                            (patch['type'], patch['URL'], patch['hashFunction'], patch['hashValue'], patch['size']))
+                xml.append('    </update>')
         xml.append('</updates>')
         # ensure valid xml by using the right entity for ampersand
         payload = re.sub('&(?!amp;)','&amp;', '\n'.join(xml))

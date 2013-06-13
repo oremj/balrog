@@ -9,6 +9,7 @@ class ClientTest(unittest.TestCase):
         app.config['DEBUG'] = True
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
+        AUS.setDomainWhitelist('a.com')
         self.client = app.test_client()
         self.view = ClientRequestView()
         AUS.rules.t.insert().execute(throttle=100, mapping='b', update_type='minor', product='b', data_version=1)
@@ -28,7 +29,7 @@ class ClientTest(unittest.TestCase):
                         "filesize": 3,
                         "from": "*",
                         "hashValue": "4",
-                        "fileUrl": "z"
+                        "fileUrl": "http://a.com/z"
                     }
                 }
             }
@@ -54,7 +55,7 @@ class ClientTest(unittest.TestCase):
                         "filesize": 12,
                         "from": "*",
                         "hashValue": "13",
-                        "fileUrl": "y"
+                        "fileUrl": "http://a.com/y"
                     }
                 }
             }
@@ -88,7 +89,7 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" version="1" extensionVersion="1" buildID="2">
-        <patch type="complete" URL="z" hashFunction="sha512" hashValue="4" size="3"/>
+        <patch type="complete" URL="http://a.com/z" hashFunction="sha512" hashValue="4" size="3"/>
     </update>
 </updates>
 """)
@@ -103,7 +104,7 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" version="1" extensionVersion="1" buildID="2">
-        <patch type="complete" URL="z" hashFunction="sha512" hashValue="4" size="3"/>
+        <patch type="complete" URL="http://a.com/z" hashFunction="sha512" hashValue="4" size="3"/>
     </update>
 </updates>
 """)
@@ -125,7 +126,7 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" version="1" extensionVersion="1" buildID="2">
-        <patch type="complete" URL="z" hashFunction="sha512" hashValue="4" size="3"/>
+        <patch type="complete" URL="http://a.com/z" hashFunction="sha512" hashValue="4" size="3"/>
     </update>
 </updates>
 """)
