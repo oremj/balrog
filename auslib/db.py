@@ -744,7 +744,7 @@ class Releases(AUSTable):
     def setDomainWhitelist(self, domainWhitelist):
         self.domainWhitelist = domainWhitelist
 
-    def _containsForbiddenDomain(self, data):
+    def containsForbiddenDomain(self, data):
         """Returns True if "data" contains any file URLs that contain a
            domain that we're not allowed to serve updates to."""
         # Check the top level URLs, if the exist.
@@ -816,7 +816,7 @@ class Releases(AUSTable):
     def addRelease(self, name, product, version, blob, changed_by, transaction=None):
         if not blob.isValid():
             raise ValueError("Release blob is invalid.")
-        if self._containsForbiddenDomain(blob):
+        if self.containsForbiddenDomain(blob):
             raise ValueError("Release blob contains forbidden domain.")
 
         columns = dict(name=name, product=product, version=version, data=blob.getJSON())
@@ -832,7 +832,7 @@ class Releases(AUSTable):
         if blob:
             if not blob.isValid():
                 raise ValueError("Release blob is invalid.")
-            if self._containsForbiddenDomain(blob):
+            if self.containsForbiddenDomain(blob):
                 raise ValueError("Release blob contains forbidden domain.")
             what['data'] = blob.getJSON()
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
@@ -862,7 +862,7 @@ class Releases(AUSTable):
         releaseBlob['platforms'][platform]['locales'][locale] = data
         if not releaseBlob.isValid():
             raise ValueError("New release blob is invalid.")
-        if self._containsForbiddenDomain(releaseBlob):
+        if self.containsForbiddenDomain(releaseBlob):
             raise ValueError("Release blob contains forbidden domain.")
         where = [self.name==name]
         what = dict(data=releaseBlob.getJSON())

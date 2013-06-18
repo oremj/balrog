@@ -100,7 +100,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
             try:
                 releaseInfo = createRelease(rel, product, version, changed_by, transaction, dict(name=rel))
             except ValueError, e:
-                return Response(status=400, response="Couldn't update release: %s" % e.message)
+                return Response(status=400, response="Couldn't update release: %s" % e)
             old_data_version = 1
 
         # If the version doesn't match, just update it. This will be the case for nightlies
@@ -112,13 +112,13 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                     changed_by=changed_by, old_data_version=old_data_version,
                     transaction=transaction)
             except ValueError, e:
-                return Response(status=400, response="Couldn't update release: %s" % e.message)
+                return Response(status=400, response="Couldn't update release: %s" % e)
             old_data_version += 1
 
         try:
             commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version)
         except ValueError, e:
-            return Response(status=400, response="Couldn't update release: %s" % e.message)
+            return Response(status=400, response="Couldn't update release: %s" % e)
 
     new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
     if new:
@@ -198,7 +198,7 @@ class SingleReleaseView(AdminView):
                 version=form.version.data, blob=form.blob.data,
                 changed_by=changed_by, transaction=transaction)
         except ValueError, e:
-            return Response(status=400, response="Couldn't update release: %s" % e.message)
+            return Response(status=400, response="Couldn't update release: %s" % e)
         return Response(status=201)
 
     @requirelogin
@@ -296,6 +296,6 @@ class ReleaseHistoryView(HistoryAdminView):
                 version=change['version'], blob=blob,
                 old_data_version=old_data_version, transaction=transaction)
         except ValueError, e:
-            return Response(status=400, response="Couldn't update release: %s" % e.message)
+            return Response(status=400, response="Couldn't update release: %s" % e)
 
         return Response("Excellent!")

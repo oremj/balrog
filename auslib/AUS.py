@@ -45,12 +45,12 @@ class AUS3:
                 return True
         return False
 
-    def isAllowedUpdateDomain(self, updateData):
+    def containsForbiddenDomain(self, updateData):
         for patch in updateData['patches']:
             domain = urlparse(patch['URL'])[1]
             if domain not in self.db.domainWhitelist:
-                return False
-        return True
+                return True
+        return False
 
     def identifyRequest(self, updateQuery):
         self.log.debug("Got updateQuery: %s", updateQuery)
@@ -207,7 +207,7 @@ class AUS3:
             # of writing.
             return {"partial": "", "complete": ""}
 
-        if not self.isAllowedUpdateDomain(rel):
+        if self.containsForbiddenDomain(rel):
             self.log.debug("Forbidden domain found, refusing to create snippets.")
             return {"partial": "", "complete": ""}
 
@@ -239,7 +239,7 @@ class AUS3:
         # this will fall down all sorts of interesting ways by hardcoding fields
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
-        if rel and self.isAllowedUpdateDomain(rel):
+        if rel and not self.containsForbiddenDomain(rel):
             if rel['schema_version'] == 1:
                 updateLine='    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
                            (rel['type'], rel['appv'], rel['extv'], rel['build'])
