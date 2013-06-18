@@ -9,7 +9,7 @@ class ClientTest(unittest.TestCase):
         app.config['DEBUG'] = True
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
-        AUS.setDomainWhitelist('a.com')
+        AUS.db.setDomainWhitelist('a.com')
         self.client = app.test_client()
         self.view = ClientRequestView()
         AUS.rules.t.insert().execute(throttle=100, mapping='b', update_type='minor', product='b', data_version=1)

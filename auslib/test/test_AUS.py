@@ -61,8 +61,8 @@ class TestAUS(unittest.TestCase):
     def setUp(self):
         self.AUS = AUS3()
         self.AUS.setSpecialHosts(('http://special.org/',))
-        self.AUS.setDomainWhitelist(('special.org',))
         self.AUS.setDb('sqlite:///:memory:')
+        self.AUS.db.setDomainWhitelist(('special.org',))
         self.AUS.db.create()
         self.AUS.db.releases.t.insert().execute(name='b', product='b', version='b', data_version=1, data="""
 {

@@ -39,6 +39,7 @@ if __name__ == '__main__':
     from migrate.exceptions import DatabaseAlreadyControlledError
 
     db.setDburi(options.db)
+    db.setDomainWhitelist(options.whitelistedDomains)
     try:
         db.create()
     except DatabaseAlreadyControlledError:
@@ -46,7 +47,6 @@ if __name__ == '__main__':
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-    app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)

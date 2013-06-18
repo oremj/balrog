@@ -26,7 +26,6 @@ class AUS3:
         self.rand = AUSRandom()
         self.log = logging.getLogger(self.__class__.__name__)
         self.specialForceHosts = None
-        self.domainWhitelist = []
 
     def setDb(self, dbname):
         if dbname == None:
@@ -37,9 +36,6 @@ class AUS3:
 
     def setSpecialHosts(self, specialForceHosts):
         self.specialForceHosts = specialForceHosts
-
-    def setDomainWhitelist(self, domains):
-        self.domainWhitelist = domains
 
     def isSpecialURL(self, url):
         if not self.specialForceHosts:
@@ -52,7 +48,7 @@ class AUS3:
     def isAllowedUpdateDomain(self, updateData):
         for patch in updateData['patches']:
             domain = urlparse(patch['URL'])[1]
-            if domain not in self.domainWhitelist:
+            if domain not in self.db.domainWhitelist:
                 return False
         return True
 

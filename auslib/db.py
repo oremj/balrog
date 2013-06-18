@@ -1023,6 +1023,7 @@ class AUSDatabase(object):
         if dburi:
             self.setDburi(dburi)
         self.log = logging.getLogger(self.__class__.__name__)
+        self.domainWhitelist = []
 
     def setDburi(self, dburi):
         """Setup the database connection. Note that SQLAlchemy only opens a connection

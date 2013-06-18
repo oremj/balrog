@@ -33,7 +33,7 @@ if __name__ == "__main__":
     from auslib.web.base import app, AUS
 
     AUS.setDb(options.db)
-    AUS.setDomainWhitelist(options.whitelistedDomains)
+    AUS.db.setDomainWhitelist(options.whitelistedDomains)
     try:
         AUS.db.create()
     except DatabaseAlreadyControlledError:
