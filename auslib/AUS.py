@@ -25,7 +25,6 @@ class AUS3:
         self.setDb(dbname)
         self.rand = AUSRandom()
         self.log = logging.getLogger(self.__class__.__name__)
-        self.specialForceHosts = None
 
     def setDb(self, dbname):
         if dbname == None:
