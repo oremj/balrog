@@ -63,6 +63,31 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+        AUS.rules.t.insert().execute(throttle=100, mapping='d', update_type='minor', product='d', data_version=1)
+        AUS.releases.t.insert().execute(name='d', product='d', version='20', data_version=1, data="""
+{
+    "name": "d",
+    "schema_version": 1,
+    "appv": "20",
+    "extv": "20",
+    "hashFunction": "sha512",
+    "platforms": {
+        "p": {
+            "buildID": 21,
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 22,
+                        "from": "*",
+                        "hashValue": "23",
+                        "fileUrl": "http://evil.com/y"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
 
     def testGetHeaderArchitectureWindows(self):
         self.assertEqual(self.view.getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
@@ -131,3 +156,9 @@ class ClientTest(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testGetURLNotInWhitelist(self):
+        ret = self.client.get('/update/3/d/20/1/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
