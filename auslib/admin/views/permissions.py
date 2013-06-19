@@ -22,7 +22,7 @@ def permission2selector(permission):
 class UsersView(AdminView):
     """/users"""
     def get(self):
-        users = db.permissions.getAllUsers()
+        users = db.permissions.getUsers()
         self.log.debug("Found users: %s", users)
         fmt = request.args.get('format', 'html')
         if fmt == 'json':
@@ -114,7 +114,7 @@ class SpecificPermissionView(AdminView):
 class PermissionsPageView(AdminView):
     """/permissions.html"""
     def get(self):
-        users = db.permissions.getAllUsers()
+        users = db.permissions.getUsers()
         return render_template('permissions.html', users=users)
 
 class UserPermissionsPageView(AdminView):

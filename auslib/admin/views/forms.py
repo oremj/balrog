@@ -1,6 +1,6 @@
 import simplejson as json
 
-from flaskext.wtf import Form, TextField, Required, TextInput, FileInput, IntegerField, SelectField, validators, HiddenInput
+from flaskext.wtf import Form, TextField, Required, TextInput, FileInput, IntegerField, SelectField, validators, HiddenInput, BooleanField
 
 from auslib.blob import ReleaseBlobV1
 
@@ -78,6 +78,7 @@ class DbEditableForm(Form):
 
 class PermissionForm(DbEditableForm):
     options = JSONTextField('Options')
+    system = BooleanField('System', default=False)
 
 class NewPermissionForm(PermissionForm):
     permission = TextField('Permission', validators=[Required()])

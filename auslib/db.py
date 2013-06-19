@@ -6,7 +6,7 @@ import sys
 import time
 
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
-  CheckConstraint, create_engine, select, BigInteger
+  CheckConstraint, create_engine, select, BigInteger, Boolean
 from sqlalchemy.exc import SQLAlchemyError
 
 import migrate.versioning.schema
@@ -874,7 +874,8 @@ class Permissions(AUSTable):
         self.table = Table('permissions', metadata,
             Column('permission', String(50), primary_key=True),
             Column('username', String(100), primary_key=True),
-            Column('options', Text)
+            Column('options', Text),
+            Column('system', Boolean, default=False),
         )
         AUSTable.__init__(self, dialect)
 
@@ -887,21 +888,26 @@ class Permissions(AUSTable):
             if opt not in self.allPermissions[permission]:
                 raise ValueError('Unknown option "%s" for permission "%s"' % (opt, permission))
 
-    def getAllUsers(self, transaction=None):
-        res = self.select(columns=[self.username], distinct=True, transaction=transaction)
+    def getUsers(self, system=None, transaction=None):
+        where = []
+        if system:
+            where.append(self.system==system)
+        res = self.select(columns=[self.username], where=where, distinct=True, transaction=transaction)
         return [r['username'] for r in res]
 
     def countAllUsers(self, transaction=None):
         res = self.select(columns=[self.username], distinct=True, transaction=transaction)
         return len(res)
 
-    def grantPermission(self, changed_by, username, permission, options=None, transaction=None):
+    def grantPermission(self, changed_by, username, permission, options=None, system=None, transaction=None):
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
         columns = dict(username=username, permission=permission)
         if options:
             columns['options'] = json.dumps(options)
+        if system:
+            columns['system'] = system
         self.log.debug("granting %s to %s with options %s" % (permission, username, options))
         self.insert(changed_by=changed_by, transaction=transaction, **columns)
         self.log.debug("successfully granted %s to %s with options %s" % (permission, username, options))
@@ -930,13 +936,14 @@ class Permissions(AUSTable):
             return {}
 
     def getUserPermissions(self, username, transaction=None):
-        rows = self.select(columns=[self.permission, self.options, self.data_version], where=[self.username==username], transaction=transaction)
+        rows = self.select(columns=[self.permission, self.options, self.data_version, self.system], where=[self.username==username], transaction=transaction)
         ret = dict()
         for row in rows:
             perm = row['permission']
             opt = row['options']
             ret[perm] = dict()
             ret[perm]['data_version'] = row['data_version']
+            ret[perm]['system'] = row['system']
             if opt:
                 ret[perm]['options'] = json.loads(opt)
             else:

@@ -983,6 +983,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
 class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
+    maxDiff = 1000
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -991,20 +992,20 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
         self.permissions.t.insert().execute(permission='admin', username='bill', data_version=1)
         self.permissions.t.insert().execute(permission='/users/:id/permissions/:permission', username='bob', data_version=1)
         self.permissions.t.insert().execute(permission='/releases/:name', username='bob', options=json.dumps(dict(product='fake')), data_version=1)
-        self.permissions.t.insert().execute(permission='/rules', username='cathy', data_version=1)
+        self.permissions.t.insert().execute(permission='/rules', username='cathy', data_version=1, system=1)
         self.permissions.t.insert().execute(permission='/rules/:id', username='bob', options=json.dumps(dict(method='POST')), data_version=1)
 
     def testGrantPermissions(self):
         query = self.permissions.t.select().where(self.permissions.username=='jess')
         self.assertEquals(len(query.execute().fetchall()), 0)
         self.permissions.grantPermission('bob', 'jess', '/rules/:id')
-        self.assertEquals(query.execute().fetchall(), [('/rules/:id', 'jess', None, 1)])
+        self.assertEquals(query.execute().fetchall(), [('/rules/:id', 'jess', None, False, 1)])
 
     def testGrantPermissionsWithOptions(self):
-        self.permissions.grantPermission('bob', 'cathy', '/releases/:name', options=dict(product='SeaMonkey'))
+        self.permissions.grantPermission('bob', 'cathy', '/releases/:name', options=dict(product='SeaMonkey'), system=True)
         query = self.permissions.t.select().where(self.permissions.username=='cathy')
         query = query.where(self.permissions.permission=='/releases/:name')
-        self.assertEquals(query.execute().fetchall(), [('/releases/:name', 'cathy', json.dumps(dict(product='SeaMonkey')), 1)])
+        self.assertEquals(query.execute().fetchall(), [('/releases/:name', 'cathy', json.dumps(dict(product='SeaMonkey')), True, 1)])
 
     def testGrantPermissionsUnknownPermission(self):
         self.assertRaises(ValueError, self.permissions.grantPermission,
@@ -1022,8 +1023,11 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
         query = query.where(self.permissions.permission=='/releases/:name')
         self.assertEquals(len(query.execute().fetchall()), 0)
 
-    def testGetAllUsers(self):
-        self.assertEquals(set(self.permissions.getAllUsers()), set(['bill', 'bob', 'cathy']))
+    def testGetUsers(self):
+        self.assertEquals(set(self.permissions.getUsers()), set(['bill', 'bob', 'cathy']))
+
+    def testGetSystemUsers(self):
+        self.assertEquals(set(self.permissions.getUsers(system=True)), set(['cathy']))
 
     def testCountAllUsers(self):
         # bill, bob and cathy
@@ -1034,7 +1038,8 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
             'permission': '/releases/:name',
             'username': 'bob',
             'options': dict(product='fake'),
-            'data_version': 1
+            'data_version': 1,
+            'system': False,
         }
         self.assertEquals(self.permissions.getPermission('bob', '/releases/:name'), expected)
 
@@ -1042,9 +1047,9 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEquals(self.permissions.getPermission('bob', '/rules'), {})
 
     def testGetUserPermissions(self):
-        expected = {'/users/:id/permissions/:permission': dict(options=None, data_version=1),
-                    '/releases/:name': dict(options=dict(product='fake'), data_version=1),
-                    '/rules/:id': dict(options=dict(method='POST'), data_version=1)}
+        expected = {'/users/:id/permissions/:permission': dict(options=None, data_version=1, system=False),
+                    '/releases/:name': dict(options=dict(product='fake'), data_version=1, system=False),
+                    '/rules/:id': dict(options=dict(method='POST'), data_version=1, system=False)}
         self.assertEquals(self.permissions.getUserPermissions('bob'), expected)
 
     def testGetOptions(self):
