@@ -127,13 +127,22 @@ class AUSTable(object):
                          update. This is useful for detecting colliding
                          updates.
        @type versioned: bool
+       @param onChange: A list of callbacks to call whenever a change is made
+                        to the table. Each callback must accept two parameters.
+                        The first is a string indicating what type of change
+                        is being made (update, insert, or delete). The second
+                        is a dict containing the columns being changed and
+                        their new values. If any of the callbacks raise an
+                        Exception, the change will be aborted.
+       @type onChange: list of callables
     """
-    def __init__(self, dialect, history=True, versioned=True):
+    def __init__(self, dialect, history=True, versioned=True, onChange=[]):
         self.t = self.table
         # Enable versioning, if required
         if versioned:
             self.t.append_column(Column('data_version', Integer, nullable=False))
         self.versioned = versioned
+        self.onChange = onChange
         # Mirror the columns as attributes for easy access
         self.primary_key = []
         for col in self.table.get_children():
@@ -251,6 +260,9 @@ class AUSTable(object):
         """
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
+
+        for cb in self.onChange:
+            cb('insert', columns)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -385,6 +397,9 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
         if self.versioned and not old_data_version:
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
+
+        for cb in self.onChange:
+            cb('delete', what)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
