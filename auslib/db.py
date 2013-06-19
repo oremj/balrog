@@ -142,7 +142,7 @@ class AUSTable(object):
         if versioned:
             self.t.append_column(Column('data_version', Integer, nullable=False))
         self.versioned = versioned
-        self.onChange = onChange
+        self.onChange = copy(onChange)
         # Mirror the columns as attributes for easy access
         self.primary_key = []
         for col in self.table.get_children():
@@ -255,7 +255,10 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
 
         for cb in self.onChange:
-            cb('insert', columns, changed_by)
+            after = {}
+            for col in self.primary_key:
+                after[col.name] = columns[col.name]
+            cb(None, after, changed_by)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -325,7 +328,7 @@ class AUSTable(object):
         if self.onChange:
             toDelete = self.select(columns=self.primary_key, where=where)
             for cb in self.onChange:
-                cb('delete', toDelete, changed_by)
+                cb(toDelete, None, changed_by)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -397,7 +400,12 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         for cb in self.onChange:
-            cb('update', what, changed_by)
+            cols = set(self.primary_key)
+            cols.update(what.keys())
+            before = self.select(columns=cols, where=where)
+            after = copy(before)
+            after.update(what)
+            cb(before, what, changed_by)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)

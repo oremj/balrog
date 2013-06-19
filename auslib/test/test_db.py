@@ -201,11 +201,11 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
 
     def testInsertWithChangeCallback(self):
         shared = []
-        def doit(type_, content):
+        def doit(*content):
             shared.append(content)
         self.test.onChange.append(doit)
         self.test.insert(changed_by='bob', id=4, foo=1)
-        self.assertEquals(shared[0], {'id': 4, 'foo': 1})
+        self.assertEquals(shared[0], ({'data_version': None, 'foo': None, 'id': None}, {'id': 4, 'foo': 1}, 'bob'))
 
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
@@ -224,11 +224,11 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
 
     def testDeleteWithChangeCallback(self):
         shared = []
-        def doit(type_, content):
+        def doit(*content):
             shared.append(content)
         self.test.onChange.append(doit)
         self.test.delete(changed_by='bob', where=[self.test.id==1], old_data_version=1)
-        self.assertEquals(shared[0], [{'id': 1}])
+        self.assertEquals(shared[0], ([{'id': 1}], {'data_version': None, 'foo': None, 'id': None}, 'bob'))
 
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
@@ -244,6 +244,14 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
             self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=432), old_data_version=1)
             self.assertTrue(close.called, "Connection.close() never called by update()")
+
+    def testUpdateWithChangeCallback(self):
+        shared = []
+        def doit(*content):
+            shared.append(content)
+        self.test.onChange.append(doit)
+        self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123), old_data_version=1)
+        self.assertEquals(shared[0], ([{'foo': 33}], {'foo': 123}, 'bobu'))
 
 class TestAUSTableRequiresRealFile(unittest.TestCase, TestTableMixin, NamedFileDatabaseMixin):
     def setUp(self):
