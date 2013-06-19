@@ -229,12 +229,6 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
             self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=432), old_data_version=1)
             self.assertTrue(close.called, "Connection.close() never called by update()")
 
-    def testWherePkMatches(self):
-        expected = self.test.id==1
-        res = self.test.wherePkMatches(dict(id=1))
-        self.assertEquals(len(res), 1)
-        self.assertTrue(self.test.wherePkMatches(dict(id=1))[0].compare(expected))
-
 class TestAUSTableRequiresRealFile(unittest.TestCase, TestTableMixin, NamedFileDatabaseMixin):
     def setUp(self):
         NamedFileDatabaseMixin.setUp(self)

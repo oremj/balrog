@@ -161,13 +161,6 @@ class AUSTable(object):
     def getEngine(self):
         return self.t.metadata.bind
 
-    def wherePkMatches(self, primary_key_values):
-        """Generates a list of where clauses that match all of the key parts of this table."""
-        cond = []
-        for col in self.primary_key:
-            cond.append(col==primary_key_values[col.name])
-        return cond
-
     def _returnRowOrRaise(self, where, columns=None, transaction=None):
         """Return the row matching the where clause supplied. If no rows match or multiple rows match,
            a WrongNumberOfRowsError will be raised."""
@@ -299,6 +292,11 @@ class AUSTable(object):
             where = copy(where)
             where.append(self.data_version==old_data_version)
 
+        if self.onChange:
+            toDelete = self.select(columns=self.primary_key, where=where)
+            for cb in self.onChange:
+                cb('delete', toDelete)
+
         query = self._deleteStatement(where)
         ret = trans.execute(query)
         if ret.rowcount != 1:
@@ -399,7 +397,7 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         for cb in self.onChange:
-            cb('delete', what)
+            cb('update', what)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
