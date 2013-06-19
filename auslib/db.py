@@ -258,7 +258,7 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
 
         if self.onInsert:
-            self.onInsert(changed_by, columns)
+            self.onInsert(self, changed_by, columns)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -326,7 +326,7 @@ class AUSTable(object):
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
         if self.onDelete:
-            self.onDelete(changed_by, where)
+            self.onDelete(self, changed_by, where)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -398,7 +398,7 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         if self.onUpdate:
-            self.onUpdate(changed_by, where, what)
+            self.onUpdate(self, changed_by, where, what)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
@@ -994,12 +994,18 @@ class Permissions(AUSTable):
                 ret = False
         return ret
 
-def human_modification_notifier(aliens):
-    def checker(type_, data, changed_by):
-        if changed_by not in aliens:
-            print "a human has a made a change!"
-    return checker
 
+def getHumanModificationMonitors(aliens):
+    def onInsert(table, who, what):
+        if who not in aliens:
+            table.log.warning("Non-system account '%s' is inserting row '%s'", who, what)
+    def onDelete(table, who, where):
+        if who not in aliens:
+            table.log.warning("Non-system account '%s' is deleting rows matching '%s'", who, where)
+    def onUpdate(table, who, where, what):
+        if who not in aliens:
+            table.log.warning("Non-system account '%s' is modifying rows matching '%s' with new values '%s'", who, where, what)
+    return onInsert, onDelete, onUpdate
 
 class AUSDatabase(object):
     engine = None
@@ -1025,7 +1031,12 @@ class AUSDatabase(object):
         self.releasesTable = Releases(self.metadata, dialect)
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
-        self.releasesTable.onChange.append(human_modification_notifier(['ffxbld']))
+
+    def setupChangeNotifier(self):
+        # TODO
+        #aliens = self.permissions.getSystemUsers()
+        aliens = ['ffxbld']
+        self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = self.getHumanModificationMonitors(aliens)
 
     def create(self, version=None):
         # Migrate's "create" merely declares a database to be under its control,
