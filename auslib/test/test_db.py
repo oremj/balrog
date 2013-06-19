@@ -199,6 +199,14 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
                 pass
             self.assertTrue(close.called, "Connection.close() never called by insert()")
 
+    def testInsertWithChangeCallback(self):
+        shared = []
+        def doit(type_, content):
+            shared.append(content)
+        self.test.onChange.append(doit)
+        self.test.insert(changed_by='bob', id=4, foo=1)
+        self.assertEquals(shared[0], {'id': 4, 'foo': 1})
+
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
             old_data_version=1)
@@ -213,6 +221,14 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
             self.test.delete(changed_by='bill', where=[self.test.id==1], old_data_version=1)
             self.assertTrue(close.called, "Connection.close() never called by delete()")
+
+    def testDeleteWithChangeCallback(self):
+        shared = []
+        def doit(type_, content):
+            shared.append(content)
+        self.test.onChange.append(doit)
+        self.test.delete(changed_by='bob', where=[self.test.id==1], old_data_version=1)
+        self.assertEquals(shared[0], [{'id': 1}])
 
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
