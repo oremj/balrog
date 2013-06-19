@@ -1032,7 +1032,7 @@ class AUSDatabase(object):
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
 
-    def setupChangeNotifier(self):
+    def setupChangeMonitors(self):
         # TODO
         #aliens = self.permissions.getSystemUsers()
         aliens = ['ffxbld']
