@@ -255,7 +255,7 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
 
         for cb in self.onChange:
-            cb('insert', columns)
+            cb('insert', columns, changed_by)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -292,11 +292,6 @@ class AUSTable(object):
             where = copy(where)
             where.append(self.data_version==old_data_version)
 
-        if self.onChange:
-            toDelete = self.select(columns=self.primary_key, where=where)
-            for cb in self.onChange:
-                cb('delete', toDelete)
-
         query = self._deleteStatement(where)
         ret = trans.execute(query)
         if ret.rowcount != 1:
@@ -326,6 +321,11 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
+
+        if self.onChange:
+            toDelete = self.select(columns=self.primary_key, where=where)
+            for cb in self.onChange:
+                cb('delete', toDelete, changed_by)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -397,7 +397,7 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         for cb in self.onChange:
-            cb('update', what)
+            cb('update', what, changed_by)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
@@ -993,6 +993,13 @@ class Permissions(AUSTable):
                 ret = False
         return ret
 
+def human_modification_notifier(aliens):
+    def checker(type_, data, changed_by):
+        if changed_by not in aliens:
+            print "a human has a made a change!"
+    return checker
+
+
 class AUSDatabase(object):
     engine = None
     migrate_repo = path.join(path.dirname(__file__), "migrate")
@@ -1017,6 +1024,7 @@ class AUSDatabase(object):
         self.releasesTable = Releases(self.metadata, dialect)
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
+        self.releasesTable.onChange.append(human_modification_notifier(['ffxbld']))
 
     def create(self, version=None):
         # Migrate's "create" merely declares a database to be under its control,
