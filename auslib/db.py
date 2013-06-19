@@ -136,13 +136,16 @@ class AUSTable(object):
                         Exception, the change will be aborted.
        @type onChange: list of callables
     """
-    def __init__(self, dialect, history=True, versioned=True, onChange=[]):
+    def __init__(self, dialect, history=True, versioned=True, onInsert=None,
+                 onUpdate=None, onDelete=None):
         self.t = self.table
         # Enable versioning, if required
         if versioned:
             self.t.append_column(Column('data_version', Integer, nullable=False))
         self.versioned = versioned
-        self.onChange = copy(onChange)
+        self.onInsert = onInsert
+        self.onUpdate = onUpdate
+        self.onDelete = onDelete
         # Mirror the columns as attributes for easy access
         self.primary_key = []
         for col in self.table.get_children():
@@ -254,11 +257,8 @@ class AUSTable(object):
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
 
-        for cb in self.onChange:
-            after = {}
-            for col in self.primary_key:
-                after[col.name] = columns[col.name]
-            cb(None, after, changed_by)
+        if self.onInsert:
+            self.onInsert(changed_by, columns)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -325,10 +325,8 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
-        if self.onChange:
-            toDelete = self.select(columns=self.primary_key, where=where)
-            for cb in self.onChange:
-                cb(toDelete, None, changed_by)
+        if self.onDelete:
+            self.onDelete(changed_by, where)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -399,13 +397,8 @@ class AUSTable(object):
         if self.versioned and not old_data_version:
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
-        for cb in self.onChange:
-            cols = set(self.primary_key)
-            cols.update(what.keys())
-            before = self.select(columns=cols, where=where)
-            after = copy(before)
-            after.update(what)
-            cb(before, what, changed_by)
+        if self.onUpdate:
+            self.onUpdate(changed_by, where, what)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)

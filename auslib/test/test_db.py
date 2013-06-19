@@ -201,11 +201,10 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
 
     def testInsertWithChangeCallback(self):
         shared = []
-        def doit(*content):
-            shared.append(content)
-        self.test.onChange.append(doit)
-        self.test.insert(changed_by='bob', id=4, foo=1)
-        self.assertEquals(shared[0], ({'data_version': None, 'foo': None, 'id': None}, {'id': 4, 'foo': 1}, 'bob'))
+        self.test.onInsert = lambda *x: shared.extend(x)
+        what = {'id': 4, 'foo': 1}
+        self.test.insert(changed_by='bob', **what)
+        self.assertEquals(shared, ['bob', what])
 
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
@@ -224,11 +223,10 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
 
     def testDeleteWithChangeCallback(self):
         shared = []
-        def doit(*content):
-            shared.append(content)
-        self.test.onChange.append(doit)
-        self.test.delete(changed_by='bob', where=[self.test.id==1], old_data_version=1)
-        self.assertEquals(shared[0], ([{'id': 1}], {'data_version': None, 'foo': None, 'id': None}, 'bob'))
+        self.test.onDelete = lambda *x: shared.extend(x)
+        where = [self.test.id==1]
+        self.test.delete(changed_by='bob', where=where, old_data_version=1)
+        self.assertEquals(shared, ['bob', where])
 
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
@@ -247,11 +245,11 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
 
     def testUpdateWithChangeCallback(self):
         shared = []
-        def doit(*content):
-            shared.append(content)
-        self.test.onChange.append(doit)
-        self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123), old_data_version=1)
-        self.assertEquals(shared[0], ([{'foo': 33}], {'foo': 123}, 'bobu'))
+        self.test.onUpdate = lambda *x: shared.extend(x)
+        where = [self.test.id==1]
+        what = dict(foo=123)
+        self.test.update(changed_by='bob', where=where, what=what, old_data_version=1)
+        self.assertEquals(shared, ['bob', where, what])
 
 class TestAUSTableRequiresRealFile(unittest.TestCase, TestTableMixin, NamedFileDatabaseMixin):
     def setUp(self):
