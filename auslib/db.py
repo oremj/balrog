@@ -1033,7 +1033,7 @@ class AUSDatabase(object):
         self.metadata.bind = self.engine
 
     def setupChangeMonitors(self, systemAccounts):
-        self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = self.getHumanModificationMonitors(systemAccounts)
+        self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = getHumanModificationMonitors(systemAccounts)
 
     def create(self, version=None):
         # Migrate's "create" merely declares a database to be under its control,
