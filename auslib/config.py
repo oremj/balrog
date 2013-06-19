@@ -61,6 +61,12 @@ class AdminConfig(AUSConfig):
     def getSecretKey(self):
         return self.cfg.get("app", "secret_key")
 
+    def getSystemAccounts(self):
+        try:
+            return tuple(a.strip() for a in self.cfg.get('site-specific','system_accounts').split(','))
+        except (NoSectionError, NoOptionError):
+            return None
+
 class ClientConfig(AUSConfig):
     def getSpecialForceHosts(self):
         try:

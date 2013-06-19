@@ -995,15 +995,15 @@ class Permissions(AUSTable):
         return ret
 
 
-def getHumanModificationMonitors(aliens):
+def getHumanModificationMonitors(systemAccounts):
     def onInsert(table, who, what):
-        if who not in aliens:
+        if who not in systemAccounts:
             table.log.warning("Non-system account '%s' is inserting row '%s'", who, what)
     def onDelete(table, who, where):
-        if who not in aliens:
+        if who not in systemAccounts:
             table.log.warning("Non-system account '%s' is deleting rows matching '%s'", who, where)
     def onUpdate(table, who, where, what):
-        if who not in aliens:
+        if who not in systemAccounts:
             table.log.warning("Non-system account '%s' is modifying rows matching '%s' with new values '%s'", who, where, what)
     return onInsert, onDelete, onUpdate
 
@@ -1032,11 +1032,8 @@ class AUSDatabase(object):
         self.permissionsTable = Permissions(self.metadata, dialect)
         self.metadata.bind = self.engine
 
-    def setupChangeMonitors(self):
-        # TODO
-        #aliens = self.permissions.getSystemUsers()
-        aliens = ['ffxbld']
-        self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = self.getHumanModificationMonitors(aliens)
+    def setupChangeMonitors(self, systemAccounts):
+        self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = self.getHumanModificationMonitors(systemAccounts)
 
     def create(self, version=None):
         # Migrate's "create" merely declares a database to be under its control,

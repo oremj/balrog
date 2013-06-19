@@ -12,3 +12,6 @@ logfile=/var/log/aus.log
 [app]
 ; encryption key for session cookies. should be a few hundred bits
 secret_key=
+
+[site-specific]
+system_accounts=ffxbld
