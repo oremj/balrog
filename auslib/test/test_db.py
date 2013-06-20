@@ -33,7 +33,7 @@ class NamedFileDatabaseMixin(object):
         self.dburi = 'sqlite:///%s' % self.getTempfile()
 
     def tearDown(self):
-        for fd, t in tmpfiles:
+        for fd, t in self.tmpfiles:
             os.close(fd)
             os.remove(t)
 
@@ -797,7 +797,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 1234
+                        "filesize": "1234"
                     }
                 }
             }
@@ -858,7 +858,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
                 },
                 "l": {
                     "complete": {
-                        "filesize": 1234
+                        "filesize": "1234"
                     }
                 }
             }
@@ -871,8 +871,41 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 """)
         self.assertEqual(ret, expected)
 
+    def testAddLocaleToReleaseWithAlias(self):
+        data = dict(complete=dict(hashValue='abc'))
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', data=data, old_data_version=1, changed_by='bill', alias=['p3'])
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "c": {
+                    "complete": {
+                        "hashValue": "abc"
+                    }
+                },
+                "l": {
+                    "complete": {
+                        "filesize": "1234"
+                    }
+                }
+            }
+        },
+        "p2": {
+            "alias": "p"
+        },
+        "p3": {
+            "alias": "p"
+        }
+    }
+}
+""")
+        self.assertEqual(ret, expected)
+
     def testAddLocaleToReleaseOverride(self):
-        data = dict(complete=dict(hashValue=789))
+        data = dict(complete=dict(hashValue="789"))
         self.releases.addLocaleToRelease(name='a', platform='p', locale='l', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
@@ -883,7 +916,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "hashValue": 789
+                        "hashValue": "789"
                     }
                 }
             }
@@ -897,7 +930,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleasePlatformsDoesntExist(self):
-        data = dict(complete=dict(filesize=432))
+        data = dict(complete=dict(filesize="432"))
         self.releases.addLocaleToRelease(name='b', platform='q', locale='l', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='b').execute().fetchone()[0])
         expected = json.loads("""
@@ -908,7 +941,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 432
+                        "filesize": "432"
                     }
                 }
             }
@@ -919,7 +952,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleaseSecondPlatform(self):
-        data = dict(complete=dict(filesize=324))
+        data = dict(complete=dict(filesize="324"))
         self.releases.addLocaleToRelease(name='a', platform='q', locale='l', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
@@ -930,7 +963,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 1234
+                        "filesize": "1234"
                     }
                 }
             }
@@ -942,7 +975,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 324
+                        "filesize": "324"
                     }
                 }
             }
@@ -953,7 +986,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         self.assertEqual(ret, expected)
 
     def testAddLocaleToReleaseResolveAlias(self):
-        data = dict(complete=dict(filesize=444))
+        data = dict(complete=dict(filesize="444"))
         self.releases.addLocaleToRelease(name='a', platform='p2', locale='j', data=data, old_data_version=1, changed_by='bill')
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
@@ -964,12 +997,12 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 1234
+                        "filesize": "1234"
                     }
                 },
                 "j": {
                     "complete": {
-                        "filesize": 444
+                        "filesize": "444"
                     }
                 }
             }

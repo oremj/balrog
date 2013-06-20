@@ -22,11 +22,11 @@ class ClientTest(unittest.TestCase):
     "hashFunction": "sha512",
     "platforms": {
         "p": {
-            "buildID": 2,
+            "buildID": "2",
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 3,
+                        "filesize": "3",
                         "from": "*",
                         "hashValue": "4",
                         "fileUrl": "http://a.com/z"
@@ -48,11 +48,11 @@ class ClientTest(unittest.TestCase):
     "hashFunction": "sha512",
     "platforms": {
         "p": {
-            "buildID": 11,
+            "buildID": "11",
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": 12,
+                        "filesize": "12",
                         "from": "*",
                         "hashValue": "13",
                         "fileUrl": "http://a.com/y"
@@ -98,6 +98,12 @@ class ClientTest(unittest.TestCase):
     def testGetHeaderArchitectureMacPPC(self):
         self.assertEqual(self.view.getHeaderArchitecture('Darwin_ppc-gcc3-u-ppc-i386', 'Firefox PPC Mac'), 'PPC')
 
+    def testDontUpdateToYourself(self):
+        ret = self.client.get('/update/3/b/1/2/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
+
     def testVersion3Get(self):
         ret = self.client.get('/update/3/a/1/1/a/a/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
@@ -106,7 +112,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
     def testVersion3GetWithUpdate(self):
-        ret = self.client.get('/update/3/b/1/2/p/l/a/a/a/a/update.xml')
+        ret = self.client.get('/update/3/b/1/1/p/l/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
@@ -121,7 +127,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testVersion2Get(self):
-        ret = self.client.get('/update/2/b/1/2/p/l/a/a/update.xml')
+        ret = self.client.get('/update/2/b/1/0/p/l/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.

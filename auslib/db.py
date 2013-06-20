@@ -699,9 +699,6 @@ class Rules(AUSTable):
             if not self._channelMatchesRule(rule['channel'], updateQuery['channel'], fallbackChannel):
                 self.log.debug("%s doesn't match %s", rule['channel'], updateQuery['channel'])
                 continue
-            # Drop any rules which would update ourselves to the same version
-            if rule['mapping'] == updateQuery['name']:
-                continue
             matchingRules.append(rule)
         self.log.debug("Reduced matches:")
         if self.log.isEnabledFor(logging.DEBUG):
@@ -837,7 +834,7 @@ class Releases(AUSTable):
             what['data'] = blob.getJSON()
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
 
-    def addLocaleToRelease(self, name, platform, locale, data, old_data_version, changed_by, transaction=None):
+    def addLocaleToRelease(self, name, platform, locale, data, old_data_version, changed_by, transaction=None, alias=None):
         """Adds or update's the existing data for a specific platform + locale
            combination, in the release identified by 'name'. The data is
            validated before commiting it, and a ValueError is raised if it is
@@ -860,6 +857,13 @@ class Releases(AUSTable):
         else:
             releaseBlob['platforms'][platform] = dict(locales=dict())
         releaseBlob['platforms'][platform]['locales'][locale] = data
+
+        # we don't allow modification of existing platforms (aliased or not)
+        if alias:
+            for a in alias:
+                if a not in releaseBlob['platforms']:
+                    releaseBlob['platforms'][a] = {'alias': platform}
+
         if not releaseBlob.isValid():
             raise ValueError("New release blob is invalid.")
         if self.containsForbiddenDomain(releaseBlob):

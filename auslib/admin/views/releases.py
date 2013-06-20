@@ -1,7 +1,5 @@
 import simplejson as json
 
-from sqlalchemy.exc import SQLAlchemyError
-
 from flask import render_template, Response, jsonify, make_response, request
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
@@ -69,8 +67,10 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
         return Response(status=400, response=form.errors)
     product = form.product.data
     version = form.version.data
+    hashFunction = form.hashFunction.data
     incomingData = form.data.data
     copyTo = form.copyTo.data
+    alias = form.alias.data
     old_data_version = form.data_version.data
 
     allReleases = [release]
@@ -91,16 +91,21 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                 # If the product we're given doesn't match the one in the DB, panic.
                 if product != releaseInfo['product']:
                     return Response(status=400, response="Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseInfo['product'], rel))
+                if 'hashFunction' in releaseInfo['data'] and hashFunction != releaseInfo['data']['hashFunction']:
+                    return Response(status=400, response="hashFunction '%s' doesn't match the one on the release object ('%s') for release '%s'" % (hashFunction, releaseInfo['data']['hashFunction'], rel))
             # If this isn't the release in the URL...
             else:
                 # Use the data_version we just grabbed from the db.
                 old_data_version = releaseInfo['data_version']
         except IndexError:
             # If the release doesn't already exist, create it, and set old_data_version appropriately.
+            newReleaseData = dict(name=rel)
+            if hashFunction:
+                newReleaseData['hashFunction'] = hashFunction
             try:
-                releaseInfo = createRelease(rel, product, version, changed_by, transaction, dict(name=rel))
+                releaseInfo = createRelease(rel, product, version, changed_by, transaction, newReleaseData)
             except ValueError, e:
-                return Response(status=400, response="Couldn't update release: %s" % e)
+                return Response(status=400, response="Couldn't create release: %s" % e)
             old_data_version = 1
 
         # If the version doesn't match, just update it. This will be the case for nightlies
@@ -115,8 +120,11 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                 return Response(status=400, response="Couldn't update release: %s" % e)
             old_data_version += 1
 
+        extraArgs = {}
+        if alias:
+            extraArgs['alias'] = alias
         try:
-            commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version)
+            commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version, extraArgs)
         except ValueError, e:
             return Response(status=400, response="Couldn't update release: %s" % e)
 
@@ -156,9 +164,9 @@ class SingleLocaleView(AdminView):
                     locale=locale, transaction=transaction)
             return False
 
-        def commit(rel, product, version, localeData, releaseData, old_data_version):
+        def commit(rel, product, version, localeData, releaseData, old_data_version, extraArgs):
             return db.releases.addLocaleToRelease(name=rel, platform=platform,
-                locale=locale, data=localeData, old_data_version=old_data_version,
+                locale=locale, data=localeData, alias=extraArgs.get('alias'), old_data_version=old_data_version,
                 changed_by=changed_by, transaction=transaction)
 
         return changeRelease(release, changed_by, transaction, exists, commit, self.log)
@@ -209,7 +217,7 @@ class SingleReleaseView(AdminView):
                 return True
             return False
 
-        def commit(rel, product, version, newReleaseData, releaseData, old_data_version):
+        def commit(rel, product, version, newReleaseData, releaseData, old_data_version, extraArgs):
             releaseData.update(newReleaseData)
             return db.releases.updateRelease(name=rel, blob=releaseData,
                 changed_by=changed_by, old_data_version=old_data_version,
