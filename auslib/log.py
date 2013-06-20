@@ -3,17 +3,9 @@ from logging import Logger
 from flask import request
 
 log_format = "%(asctime)s - %(levelname)s - PID: %(process)s - Request: %(requestid)s - %(name)s.%(funcName)s#%(lineno)s: %(message)s"
-maximum_line_length = 200
-
-def truncate(msg):
-    if len(msg) < maximum_line_length:
-        return msg
-    return msg[:maximum_line_length] += ' <truncated>'
-
 
 class BalrogLogger(Logger):
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
-        if len(msg) > maximum_line_length
         if extra == None:
             extra = {}
         if 'requestid' not in extra:
