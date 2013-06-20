@@ -8,6 +8,7 @@ import time
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   CheckConstraint, create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql.expression import literal
 
 import migrate.versioning.schema
 import migrate.versioning.api
@@ -668,7 +669,7 @@ class Rules(AUSTable):
             ((self.buildTarget==updateQuery['buildTarget']) | (self.buildTarget==None)) &
             ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
             ((self.locale==updateQuery['locale']) | (self.locale==None)) &
-            ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
+            ((literal(updateQuery['osVersion']).startswith(self.osVersion)) | (self.osVersion==None)) &
             ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
         ]
         # Query version 2 doesn't have distribution information, and to keep

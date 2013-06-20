@@ -523,12 +523,14 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         self.paths.t.insert().execute(id=3, priority=100, version='3.5', buildTarget='a', throttle=100, mapping='a', update_type='z', data_version=1)
         self.paths.t.insert().execute(id=4, priority=80, buildTarget='d', throttle=100, mapping='a', update_type='z', data_version=1)
         self.paths.t.insert().execute(id=5, priority=80, buildTarget='d', version='3.3', throttle=0, mapping='c', update_type='z', data_version=1)
+        self.paths.t.insert().execute(id=6, priority=100, buildTarget='d', mapping='a', throttle=100, osVersion='foo 1', update_type='z', data_version=1)
 
     def testGetOrderedRules(self):
         rules = self._stripNullColumns(self.paths.getOrderedRules())
         expected = [
             dict(rule_id=4, priority=80, throttle=100, buildTarget='d', mapping='a', update_type='z', data_version=1),
             dict(rule_id=5, priority=80, throttle=0, version='3.3', buildTarget='d', mapping='c', update_type='z', data_version=1),
+            dict(rule_id=6, priority=100, buildTarget='d', mapping='a', throttle=100, osVersion='foo 1', update_type='z', data_version=1),
             dict(rule_id=2, priority=100, throttle=100, version='3.3', buildTarget='d', mapping='b', update_type='z', data_version=1),
             dict(rule_id=3, priority=100, throttle=100, version='3.5', buildTarget='a', mapping='a', update_type='z', data_version=1),
             dict(rule_id=1, priority=100, throttle=100, version='3.5', buildTarget='d', mapping='c', update_type='z', data_version=1),
@@ -537,7 +539,7 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
 
     def testGetRulesMatchingQuery(self):
         rules = self.paths.getRulesMatchingQuery(
-            dict(name='', product='', version='3.5', channel='',
+            dict(product='', version='3.5', channel='',
                  buildTarget='a', buildID='', locale='', osVersion='',
                  distribution='', distVersion='', headerArchitecture='',
                  force=False, queryVersion=3,
@@ -550,7 +552,7 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
 
     def testGetRulesMatchingQueryWithNullColumn(self):
         rules = self.paths.getRulesMatchingQuery(
-            dict(name='', product='', version='3.5', channel='',
+            dict(product='', version='3.5', channel='',
                  buildTarget='d', buildID='', locale='', osVersion='',
                  distribution='', distVersion='', headerArchitecture='',
                  force=False, queryVersion=3,
@@ -566,7 +568,7 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
 
     def testGetRulesMatchingQueryDontReturnThrottled(self):
         rules = self.paths.getRulesMatchingQuery(
-            dict(name='', product='', version='3.3', channel='',
+            dict(product='', version='3.3', channel='',
                  buildTarget='d', buildID='', locale='', osVersion='',
                  distribution='', distVersion='', headerArchitecture='',
                  force=False, queryVersion=3,
@@ -582,7 +584,7 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
 
     def testGetRulesMatchingQueryReturnThrottled(self):
         rules = self.paths.getRulesMatchingQuery(
-            dict(name='', product='', version='3.3', channel='',
+            dict(product='', version='3.3', channel='',
                  buildTarget='d', buildID='', locale='', osVersion='',
                  distribution='', distVersion='', headerArchitecture='',
                  force=True, queryVersion=3,
@@ -593,7 +595,23 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         expected = [
             dict(rule_id=2, priority=100, throttle=100, version='3.3', buildTarget='d', mapping='b', update_type='z', data_version=1),
             dict(rule_id=4, priority=80, throttle=100, buildTarget='d', mapping='a', update_type='z', data_version=1),
-            dict(rule_id=5, priority=80, throttle=0, version='3.3', buildTarget='d', mapping='c', update_type='z', data_version=1)
+            dict(rule_id=5, priority=80, throttle=0, version='3.3', buildTarget='d', mapping='c', update_type='z', data_version=1),
+        ]
+        self.assertEquals(rules, expected)
+
+    def testGetRulesMatchingQueryOsVersionSubstring(self):
+        rules = self.paths.getRulesMatchingQuery(
+            dict(product='', version='5', channel='', buildTarget='d',
+                 buildID='', locale='', osVersion='foo 1.2.3', distribution='',
+                 distVersion='', headerArchitecture='', force=False,
+                 queryVersion=3,
+            ),
+            fallbackChannel='',
+        )
+        rules = self._stripNullColumns(rules)
+        expected = [
+            dict(rule_id=4, priority=80, throttle=100, buildTarget='d', mapping='a', update_type='z', data_version=1),
+            dict(rule_id=6, priority=100, buildTarget='d', mapping='a', throttle=100, osVersion='foo 1', update_type='z', data_version=1)
         ]
         self.assertEquals(rules, expected)
 
@@ -632,8 +650,8 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         self.assertEquals(rule, expected)
 
     def testGetNumberOfRules(self):
-        # because 5 rules were set up in the setUp()
-        self.assertEquals(self.paths.countRules(), 5)
+        # because 6 rules were set up in the setUp()
+        self.assertEquals(self.paths.countRules(), 6)
 
 
 class TestRulesSpecial(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
