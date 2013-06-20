@@ -996,15 +996,23 @@ class Permissions(AUSTable):
 
 
 def getHumanModificationMonitors(systemAccounts):
+    # Long lines from "what" get truncated to avoid printing out massive
+    # release blobs ty the logs.
     def onInsert(table, who, what):
         if who not in systemAccounts:
-            table.log.warning("Non-system account '%s' is inserting row '%s'", who, what)
+            truncated = str(what)[:100]
+            if len(str(what)) > 100:
+                truncated += ' <truncated>'
+            table.log.warning("Non-system account '%s' is inserting row '%s'", who, truncated)
     def onDelete(table, who, where):
         if who not in systemAccounts:
             table.log.warning("Non-system account '%s' is deleting rows matching '%s'", who, where)
     def onUpdate(table, who, where, what):
         if who not in systemAccounts:
-            table.log.warning("Non-system account '%s' is modifying rows matching '%s' with new values '%s'", who, where, what)
+            truncated = str(what)[:100]
+            if len(str(what)) > 100:
+                truncated += ' <truncated>'
+            table.log.warning("Non-system account '%s' is modifying rows matching '%s' with new values '%s'", who, where, truncated)
     return onInsert, onDelete, onUpdate
 
 class AUSDatabase(object):

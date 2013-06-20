@@ -65,7 +65,7 @@ class AdminConfig(AUSConfig):
         try:
             return tuple(a.strip() for a in self.cfg.get('site-specific','system_accounts').split(','))
         except (NoSectionError, NoOptionError):
-            return None
+            return ()
 
 class ClientConfig(AUSConfig):
     def getSpecialForceHosts(self):
