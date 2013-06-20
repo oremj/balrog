@@ -249,7 +249,7 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         where = [self.test.id==1]
         what = dict(foo=123)
         self.test.update(changed_by='bob', where=where, what=what, old_data_version=1)
-        self.assertEquals(shared, [self.test, 'bob', where, what])
+        self.assertEquals(shared, [self.test, 'bob', what, where])
 
 class TestAUSTableRequiresRealFile(unittest.TestCase, TestTableMixin, NamedFileDatabaseMixin):
     def setUp(self):
