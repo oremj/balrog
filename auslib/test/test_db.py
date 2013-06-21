@@ -514,8 +514,6 @@ class RulesTestMixin(object):
 
 class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
     def setUp(self):
-        import logging
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
         self.db.create()
