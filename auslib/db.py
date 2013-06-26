@@ -129,15 +129,14 @@ class AUSTable(object):
                          updates.
        @type versioned: bool
        @param onInsert: A callback that will be called whenever an insert is
-                        made to the table. It must accept the following 3
+                        made to the table. It must accept the following 2
                         parameters:
-                         * The table object itself
                          * The name of the user making the change
                          * The row data that will be inserted
                         If the callback raises an exception the change will
                         be aborted.
        @type onInsert: callable
-       @param onDelete: Like onInsert, but the third argument that the callable
+       @param onDelete: Like onInsert, but the second argument that the callable
                         receives will be the conditions used in deciding which
                         rows to delete, rather than row data.
        @type onDelete: callable
@@ -268,7 +267,7 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
 
         if self.onInsert:
-            self.onInsert(self, changed_by, columns)
+            self.onInsert(changed_by, columns)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -336,7 +335,7 @@ class AUSTable(object):
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
         if self.onDelete:
-            self.onDelete(self, changed_by, where)
+            self.onDelete(changed_by, where)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -408,7 +407,7 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         if self.onUpdate:
-            self.onUpdate(self, changed_by, what, where)
+            self.onUpdate(changed_by, what, where)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
@@ -1049,16 +1048,16 @@ def getHumanModificationMonitors(systemAccounts):
             truncated = str(what)[:100]
             if len(str(what)) > 100:
                 truncated += ' <truncated>'
-            table.log.warning("Non-system account '%s' is inserting row '%s'", who, truncated)
+            # TODO: cef logging
     def onDelete(table, who, where):
         if who not in systemAccounts:
-            table.log.warning("Non-system account '%s' is deleting rows matching '%s'", who, where)
+            # TODO: cef logging
     def onUpdate(table, who, where, what):
         if who not in systemAccounts:
             truncated = str(what)[:100]
             if len(str(what)) > 100:
                 truncated += ' <truncated>'
-            table.log.warning("Non-system account '%s' is modifying rows matching '%s' with new values '%s'", who, where, truncated)
+            # TODO: cef logging
     return onInsert, onDelete, onUpdate
 
 class AUSDatabase(object):
