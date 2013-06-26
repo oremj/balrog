@@ -15,3 +15,5 @@ secret_key=
 
 [site-specific]
 system_accounts=ffxbld
+; domains that are allowed in update data, comma separated
+domain_whitelist=download.mozilla.org,stage.mozilla.org,ftp.mozilla.org
