@@ -38,7 +38,7 @@ CEF_WARN = 6
 CEF_ALERT = 8
 CEF_EMERG = 10
 
-def cef_event(config, name, severity, **custom_exts):
+def cef_event(name, severity, **custom_exts):
     # Extra values need to be in the format csNLabel=xxx, csN=yyy
     extra_exts = {}
     n = 2
@@ -50,7 +50,7 @@ def cef_event(config, name, severity, **custom_exts):
         n += 1
 
     username = request.environ.get('REMOTE_USER', 'Unknown User')
-    cef.log_cef(name, severity, request.environ, config, username=username, **extra_exts)
+    cef.log_cef(name, severity, request.environ, auslib.app.config, username=username, **extra_exts)
 
 def admin_cef_event(*args, **kwargs):
     from auslib.admin.base import app

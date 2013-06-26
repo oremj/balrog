@@ -770,6 +770,7 @@ class Releases(AUSTable):
         for url in data.get('fileUrls', {}).values():
             domain = urlparse(url)[1]
             if domain not in self.domainWhitelist:
+                cef_event('Forbidden domain "%s" found in update data' % domain, CEF_ALERT, data=data)
                 return True
 
         # And also the locale-level URLs.
@@ -779,6 +780,7 @@ class Releases(AUSTable):
                     if type_ in locale and 'fileUrl' in locale[type_]:
                         domain = urlparse(locale[type_]['fileUrl'])[1]
                         if domain not in self.domainWhitelist:
+                            cef_event('Forbidden domain "%s" found in update data' % domain, CEF_ALERT, data=data)
                             return True
 
         return False
@@ -1052,6 +1054,7 @@ def getHumanModificationMonitors(systemAccounts):
     def onDelete(table, who, where):
         if who not in systemAccounts:
             # TODO: cef logging
+            pass
     def onUpdate(table, who, where, what):
         if who not in systemAccounts:
             truncated = str(what)[:100]
