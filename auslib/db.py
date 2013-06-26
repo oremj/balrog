@@ -14,6 +14,7 @@ import migrate.versioning.schema
 import migrate.versioning.api
 
 from auslib.blob import ReleaseBlobV1
+from auslib.log import cef_event, CEF_ALERT
 
 import logging
 
@@ -267,7 +268,7 @@ class AUSTable(object):
             raise ValueError("changed_by must be passed for Tables that have history")
 
         if self.onInsert:
-            self.onInsert(changed_by, columns)
+            self.onInsert(self, changed_by, columns)
 
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
@@ -1047,20 +1048,13 @@ def getHumanModificationMonitors(systemAccounts):
     # release blobs ty the logs.
     def onInsert(table, who, what):
         if who not in systemAccounts:
-            truncated = str(what)[:100]
-            if len(str(what)) > 100:
-                truncated += ' <truncated>'
-            # TODO: cef logging
+            cef_event('Non-system user "%s" is inserting to "%s" table' % (who, table.name), CEF_ALERT, what=what)
     def onDelete(table, who, where):
         if who not in systemAccounts:
-            # TODO: cef logging
-            pass
+            cef_event('Non-system user "%s" is deleting from "%s" table' % (who, table.name), CEF_ALERT, where=where)
     def onUpdate(table, who, where, what):
         if who not in systemAccounts:
-            truncated = str(what)[:100]
-            if len(str(what)) > 100:
-                truncated += ' <truncated>'
-            # TODO: cef logging
+            cef_event('Non-system user "%s" is modifying "%s" table' % (who, table.name), CEF_ALERT, where=where, what=what)
     return onInsert, onDelete, onUpdate
 
 class AUSDatabase(object):

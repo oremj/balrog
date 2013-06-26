@@ -4,6 +4,7 @@ from flask import request, Response
 from flask.views import MethodView
 
 from auslib.admin.base import db
+from auslib.log import cef_event, CEF_ALERT, CEF_WARN
 from auslib.util.timesince import timesince
 
 import logging
@@ -12,6 +13,7 @@ def requirelogin(f):
     def decorated(*args, **kwargs):
         username = request.environ.get('REMOTE_USER')
         if not username:
+            cef_event('Login Required', CEF_WARN)
             return Response(status=401)
         return f(*args, changed_by=username, **kwargs)
     return decorated
@@ -27,6 +29,7 @@ def requirepermission(url, options=['product']):
                     return Response(status=400, response="Couldn't find required option %s in form" % opt)
                 extra[opt] = request.form[opt]
             if not db.permissions.hasUrlPermission(username, url, method, urlOptions=extra):
+                cef_event('Unauthorized user %s tried to %s to %s' % (username, method, url), CEF_ALERT)
                 return Response(status=401,
                     response="%s is not allowed to access %s by %s" % (username, url, method))
             return f(*args, **kwargs)
