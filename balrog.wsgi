@@ -25,6 +25,7 @@ if errors:
 logging.setLoggerClass(BalrogLogger)
 logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=log_format)
 
+import auslib
 from auslib.web.base import app as application
 from auslib.web.base import AUS
 
@@ -33,6 +34,8 @@ AUS.setSpecialHosts(cfg.getSpecialForceHosts())
 AUS.db.setDomainWhitelist(cfg.getDomainWhitelist())
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 application.config['SENTRY_PROCESSORS'] = ['auslib.util.sentry.SanitizeHeadersProcessor']
+
+auslib.app = application
 
 if application.config['SENTRY_DSN']:
     sentry = Sentry(application)

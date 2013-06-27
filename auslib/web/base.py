@@ -9,8 +9,6 @@ from auslib.AUS import AUS3
 app = Flask(__name__)
 AUS = AUS3()
 
-auslib.app = app
-
 from auslib.web.views.client import ClientRequestView
 
 @app.errorhandler(404)

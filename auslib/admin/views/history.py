@@ -44,7 +44,7 @@ class FieldView(AdminView):
         try:
             value = self.get_value(type_, change_id, field)
         except KeyError, msg:
-            cef_event(msg, CEF_ALERT)
+            cef_event(str(msg), CEF_ALERT, field=field)
             return Response(status=400, response=str(msg))
         except ValueError, msg:
             return Response(status=404, response=str(msg))

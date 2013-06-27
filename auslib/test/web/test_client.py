@@ -1,12 +1,14 @@
 import unittest
 from xml.dom import minidom
 
+import auslib
 from auslib.web.base import app, AUS
 from auslib.web.views.client import ClientRequestView
 
 class ClientTest(unittest.TestCase):
     def setUp(self):
         app.config['DEBUG'] = True
+        auslib.app = app
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
         AUS.db.setDomainWhitelist('a.com')

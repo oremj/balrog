@@ -52,14 +52,6 @@ def cef_event(name, severity, **custom_exts):
     username = request.environ.get('REMOTE_USER', 'Unknown User')
     cef.log_cef(name, severity, request.environ, auslib.app.config, username=username, **extra_exts)
 
-def admin_cef_event(*args, **kwargs):
-    from auslib.admin.base import app
-    cef_event(app.config, *args, **kwargs)
-
-def balrog_cef_event(*args, **kwargs):
-    from auslib.web.base import app
-    cef_event(app.config, *args, **kwargs)
-
 def cef_config(logfile):
     return {
         'cef.file': logfile,

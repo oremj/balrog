@@ -336,7 +336,7 @@ class AUSTable(object):
             raise ValueError("old_data_version must be passed for Tables that are versioned")
 
         if self.onDelete:
-            self.onDelete(changed_by, where)
+            self.onDelete(self, changed_by, where)
 
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
@@ -408,7 +408,7 @@ class AUSTable(object):
             raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         if self.onUpdate:
-            self.onUpdate(changed_by, what, where)
+            self.onUpdate(self, changed_by, what, where)
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)

@@ -9,8 +9,6 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 db = AUSDatabase()
 
-auslib.app = app
-
 from auslib.admin.views.csrf import CSRFView
 from auslib.admin.views.permissions import UsersView, PermissionsView, \
   SpecificPermissionView, PermissionsPageView, UserPermissionsPageView

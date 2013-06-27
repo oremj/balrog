@@ -204,7 +204,7 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.test.onInsert = lambda *x: shared.extend(x)
         what = {'id': 4, 'foo': 1}
         self.test.insert(changed_by='bob', **what)
-        self.assertEquals(shared, ['bob', what])
+        self.assertEquals(shared, [self.test, 'bob', what])
 
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
@@ -226,7 +226,7 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.test.onDelete = lambda *x: shared.extend(x)
         where = [self.test.id==1]
         self.test.delete(changed_by='bob', where=where, old_data_version=1)
-        self.assertEquals(shared, ['bob', where])
+        self.assertEquals(shared, [self.test, 'bob', where])
 
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
@@ -249,7 +249,7 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         where = [self.test.id==1]
         what = dict(foo=123)
         self.test.update(changed_by='bob', where=where, what=what, old_data_version=1)
-        self.assertEquals(shared, ['bob', what, where])
+        self.assertEquals(shared, [self.test, 'bob', what, where])
 
 class TestAUSTableRequiresRealFile(unittest.TestCase, TestTableMixin, NamedFileDatabaseMixin):
     def setUp(self):

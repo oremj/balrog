@@ -31,6 +31,7 @@ if __name__ == "__main__":
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=log_format)
 
+    import auslib
     from auslib.web.base import app, AUS
 
     AUS.setDb(options.db)
@@ -43,4 +44,5 @@ if __name__ == "__main__":
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
     app.config.update(cef_config(options.cefLog))
+    auslib.app = app
     app.run(port=options.port, host=options.host)

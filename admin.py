@@ -36,6 +36,7 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=log_format)
 
+    import auslib
     from auslib.admin.base import app, db
     from migrate.exceptions import DatabaseAlreadyControlledError
 
@@ -52,4 +53,5 @@ if __name__ == '__main__':
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)
+    auslib.app = app
     app.run(port=options.port, host=options.host)
