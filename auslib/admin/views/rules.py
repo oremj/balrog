@@ -7,7 +7,7 @@ from auslib.admin.views.base import (
     requirelogin, requirepermission, AdminView, HistoryAdminView
 )
 from auslib.admin.views.forms import EditRuleForm, RuleForm
-from auslib.log import cef_event, CEF_ALERT
+from auslib.log import cef_event, CEF_WARN
 from auslib.util import getPagination
 
 class RulesPageView(AdminView):
@@ -62,7 +62,7 @@ class RulesAPIView(AdminView):
         form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
         form.mapping.choices.insert(0, ('', 'NULL' ) )
         if not form.validate():
-            cef_event(form.errors, CEF_ALERT)
+            cef_event(form.errors, CEF_WARN)
             return Response(status=400, response=form.errors)
 
         what = dict(backgroundRate=form.backgroundRate.data,
@@ -133,7 +133,7 @@ class SingleRuleView(AdminView):
         form.mapping.choices.insert(0, ('', 'NULL' ))
 
         if not form.validate():
-            cef_event(form.errors, CEF_ALERT)
+            cef_event(form.errors, CEF_WARN)
             return Response(status=400, response=form.errors)
         what = dict(backgroundRate=form.backgroundRate.data,
                     mapping=form.mapping.data,
@@ -177,7 +177,7 @@ class RuleHistoryView(HistoryAdminView):
             limit = int(request.args.get('limit', 10))
             assert page >= 1
         except (ValueError, AssertionError), msg:
-            cef_event(msg, CEF_ALERT)
+            cef_event(msg, CEF_WARN)
             return Response(status=400, response=str(msg))
         offset = limit * (page - 1)
         total_count, = (table.t.count()
@@ -219,7 +219,7 @@ class RuleHistoryView(HistoryAdminView):
 
         change_id = request.form.get('change_id')
         if not change_id:
-            cef_event('no change_id', CEF_ALERT)
+            cef_event('no change_id', CEF_WARN)
             return Response(status=400, response='no change_id')
         change = db.rules.history.getChange(change_id=change_id)
         if change is None:

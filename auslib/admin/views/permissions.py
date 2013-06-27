@@ -5,7 +5,7 @@ from flask import render_template, request, Response, jsonify, make_response
 from auslib.admin.base import db
 from auslib.admin.views.base import requirelogin, requirepermission, AdminView
 from auslib.admin.views.forms import NewPermissionForm, ExistingPermissionForm
-from auslib.log import cef_event, CEF_ALERT
+from auslib.log import cef_event, CEF_WARN
 
 __all__ = ["UsersView", "PermissionsView", "SpecificPermissionView", "PermissionsPageView", "UserPermissionsPageView"]
 
@@ -80,7 +80,7 @@ class SpecificPermissionView(AdminView):
                 db.permissions.grantPermission(changed_by, username, permission, form.options.data, transaction=transaction)
                 return make_response(json.dumps(dict(new_data_version=1)), 201)
         except ValueError, e:
-            cef_event(e.args, CEF_ALERT)
+            cef_event(e.args, CEF_WARN)
             return Response(status=400, response=e.args)
 
     @setpermission
@@ -95,7 +95,7 @@ class SpecificPermissionView(AdminView):
             new_data_version = db.permissions.getPermission(username=username, permission=permission, transaction=transaction)['data_version']
             return make_response(json.dumps(dict(new_data_version=new_data_version)), 200)
         except ValueError, e:
-            cef_event(e.args, CEF_ALERT)
+            cef_event(e.args, CEF_WARN)
             return Response(status=400, response=e.args)
 
     @setpermission
@@ -112,7 +112,7 @@ class SpecificPermissionView(AdminView):
             db.permissions.revokePermission(changed_by, username, permission, form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
-            cef_event(e.args, CEF_ALERT)
+            cef_event(e.args, CEF_WARN)
             return Response(status=400, response=e.args)
 
 class PermissionsPageView(AdminView):

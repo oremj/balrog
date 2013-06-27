@@ -26,7 +26,7 @@ def requirepermission(url, options=['product']):
             extra = dict()
             for opt in options:
                 if opt not in request.form:
-                    cef_event("Couldn't find required option %s in form" % opt, CEF_ALERT)
+                    cef_event("Couldn't find required option %s in form" % opt, CEF_WARN)
                     return Response(status=400, response="Couldn't find required option %s in form" % opt)
                 extra[opt] = request.form[opt]
             if not db.permissions.hasUrlPermission(username, url, method, urlOptions=extra):
