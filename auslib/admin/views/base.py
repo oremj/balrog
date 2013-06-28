@@ -26,13 +26,14 @@ def requirepermission(url, options=['product']):
             extra = dict()
             for opt in options:
                 if opt not in request.form:
-                    cef_event("Couldn't find required option %s in form" % opt, CEF_WARN)
-                    return Response(status=400, response="Couldn't find required option %s in form" % opt)
+                    msg = "Couldn't find required option %s in form" % opt
+                    cef_event("Bad input", CEF_WARN, msg=msg)
+                    return Response(status=400, response=msg)
                 extra[opt] = request.form[opt]
             if not db.permissions.hasUrlPermission(username, url, method, urlOptions=extra):
-                cef_event('Unauthorized user %s tried to %s to %s' % (username, method, url), CEF_ALERT)
-                return Response(status=401,
-                    response="%s is not allowed to access %s by %s" % (username, url, method))
+                msg = "%s is not allowed to access %s by %s" % (username, url, method)
+                cef_event('Unauthorized access attempt', CEF_ALERT, msg=msg)
+                return Response(status=401, response=msg)
             return f(*args, **kwargs)
         return decorated
     return wrap

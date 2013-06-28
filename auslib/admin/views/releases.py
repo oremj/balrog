@@ -65,7 +65,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     new = True
     form = ReleaseForm()
     if not form.validate():
-        cef_event("Form didn't validate", CEF_WARN, errors=form.errors)
+        cef_event("Bad input", CEF_WARN, errors=form.errors)
         return Response(status=400, response=form.errors)
     product = form.product.data
     version = form.version.data
@@ -90,16 +90,16 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                 # Make sure that old_data_version is provided, because we need to verify it when updating.
                 if not old_data_version:
                     msg = "Release exists, data_version must be provided"
-                    cef_event(msg, CEF_WARN, release=rel)
+                    cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
                     return Response(status=400, response=msg)
                 # If the product we're given doesn't match the one in the DB, panic.
                 if product != releaseInfo['product']:
                     msg = "Product name '%s' doesn't match the one on the release object ('%s') for release '%s'" % (product, releaseInfo['product'], rel)
-                    cef_event(msg, CEF_WARN, release=rel)
+                    cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
                     return Response(status=400, response=msg)
                 if 'hashFunction' in releaseInfo['data'] and hashFunction != releaseInfo['data']['hashFunction']:
                     msg = "hashFunction '%s' doesn't match the one on the release object ('%s') for release '%s'" % (hashFunction, releaseInfo['data']['hashFunction'], rel)
-                    cef_event(msg, CEF_WARN)
+                    cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
                     return Response(status=400, response=msg)
             # If this isn't the release in the URL...
             else:
@@ -114,7 +114,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                 releaseInfo = createRelease(rel, product, version, changed_by, transaction, newReleaseData)
             except ValueError, e:
                 msg = "Couldn't create release: %s" % e
-                cef_event(msg, CEF_WARN)
+                cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
                 return Response(status=400, response=msg)
             old_data_version = 1
 
@@ -128,7 +128,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                     transaction=transaction)
             except ValueError, e:
                 msg = "Couldn't update release: %s" % e
-                cef_event(msg, CEF_WARN)
+                cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
                 return Response(status=400, response=msg)
             old_data_version += 1
 
@@ -139,7 +139,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
             commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version, extraArgs)
         except ValueError, e:
             msg = "Couldn't update release: %s" % e
-            cef_event(msg, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
             return Response(status=400, response=msg)
 
     new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
@@ -213,7 +213,7 @@ class SingleReleaseView(AdminView):
     def _put(self, release, changed_by, transaction):
         form = NewReleaseForm()
         if not form.validate():
-            cef_event("Form didn't validate", CEF_WARN, errors=form.errors)
+            cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=form.errors)
 
         try:
@@ -222,7 +222,7 @@ class SingleReleaseView(AdminView):
                 changed_by=changed_by, transaction=transaction)
         except ValueError, e:
             msg = "Couldn't update release: %s" % e
-            cef_event(msg, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, errors=msg)
             return Response(status=400, response=msg)
         return Response(status=201)
 
@@ -259,7 +259,7 @@ class ReleaseHistoryView(HistoryAdminView):
             limit = int(request.args.get('limit', 10))
             assert page >= 1
         except (ValueError, AssertionError), msg:
-            cef_event(msg, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, errors=msg)
             return Response(status=400, response=str(msg))
         offset = limit * (page - 1)
         total_count, = (table.t.count()
@@ -301,7 +301,7 @@ class ReleaseHistoryView(HistoryAdminView):
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')
         if not change_id:
-            cef_event('no change id', CEF_WARN, release=release)
+            cef_event("Bad input", CEF_WARN, errors="no change id", release=release)
             return Response(status=400, response='no change_id')
         change = db.releases.history.getChange(change_id=change_id)
         if change is None:
@@ -323,8 +323,7 @@ class ReleaseHistoryView(HistoryAdminView):
                 version=change['version'], blob=blob,
                 old_data_version=old_data_version, transaction=transaction)
         except ValueError, e:
-            msg = "Couldn't update release: %s" % e
-            cef_event(msg, CEF_WARN)
-            return Response(status=400, response=msg)
+            cef_event("Bad input", CEF_WARN, errors=e.args)
+            return Response(status=400, response=e.args)
 
         return Response("Excellent!")

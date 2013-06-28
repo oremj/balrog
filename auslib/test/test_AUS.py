@@ -1,6 +1,5 @@
 import simplejson as json
 import mock
-from tempfile import NamedTemporaryFile
 import unittest
 from xml.dom import minidom
 
@@ -181,6 +180,7 @@ class TestAUS(unittest.TestCase):
         # See http://docs.python.org/dev/library/unittest.mock#id4 for why
         # AUS.cef_event is patched instead of log.cef_event
         with mock.patch('auslib.AUS.cef_event') as c:
+            c.return_value = None
             xml = self.AUS.createXML(
                 dict(name=None, buildTarget='p', locale='m', channel='foo', force=False),
                 self.relData['b'],

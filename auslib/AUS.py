@@ -49,7 +49,7 @@ class AUS3:
         for patch in updateData['patches']:
             domain = urlparse(patch['URL'])[1]
             if domain not in self.db.domainWhitelist:
-                cef_event('Forbidden domain "%s" found in update data' % domain, CEF_ALERT, updateData=updateData)
+                cef_event('Forbidden domain', CEF_ALERT, domain=domain, updateData=updateData)
                 return True
         return False
 

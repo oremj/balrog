@@ -55,8 +55,8 @@ def cef_event(name, severity, **custom_exts):
 def cef_config(logfile):
     return {
         'cef.file': logfile,
-        'cef.version': auslib.version,
+        'cef.version': 0, # This is the CEF format version
         'cef.product': 'Balrog',
         'cef.vendor': 'Mozilla',
-        'cef.device_version': 'N/A',
+        'cef.device_version': auslib.version,
     }

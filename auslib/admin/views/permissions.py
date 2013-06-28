@@ -80,7 +80,7 @@ class SpecificPermissionView(AdminView):
                 db.permissions.grantPermission(changed_by, username, permission, form.options.data, transaction=transaction)
                 return make_response(json.dumps(dict(new_data_version=1)), 201)
         except ValueError, e:
-            cef_event(e.args, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, errors=e.args)
             return Response(status=400, response=e.args)
 
     @setpermission
@@ -95,7 +95,7 @@ class SpecificPermissionView(AdminView):
             new_data_version = db.permissions.getPermission(username=username, permission=permission, transaction=transaction)['data_version']
             return make_response(json.dumps(dict(new_data_version=new_data_version)), 200)
         except ValueError, e:
-            cef_event(e.args, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, errors=e.args)
             return Response(status=400, response=e.args)
 
     @setpermission
@@ -112,7 +112,7 @@ class SpecificPermissionView(AdminView):
             db.permissions.revokePermission(changed_by, username, permission, form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
-            cef_event(e.args, CEF_WARN)
+            cef_event("Bad input", CEF_WARN, e.args)
             return Response(status=400, response=e.args)
 
 class PermissionsPageView(AdminView):

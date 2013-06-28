@@ -9,7 +9,6 @@ from urlparse import urlparse
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   create_engine, select, BigInteger
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.sql.expression import literal
 
 import migrate.versioning.schema
 import migrate.versioning.api
@@ -790,7 +789,7 @@ class Releases(AUSTable):
         for url in data.get('fileUrls', {}).values():
             domain = urlparse(url)[1]
             if domain not in self.domainWhitelist:
-                cef_event('Forbidden domain "%s" found in update data' % domain, CEF_ALERT, data=data)
+                cef_event('Forbidden domain', CEF_ALERT, domain=domain, updateData=data)
                 return True
 
         # And also the locale-level URLs.
@@ -800,7 +799,7 @@ class Releases(AUSTable):
                     if type_ in locale and 'fileUrl' in locale[type_]:
                         domain = urlparse(locale[type_]['fileUrl'])[1]
                         if domain not in self.domainWhitelist:
-                            cef_event('Forbidden domain "%s" found in update data' % domain, CEF_ALERT, data=data)
+                            cef_event('Forbidden domain', CEF_ALERT, domain=domain, updateData=data)
                             return True
 
         return False
@@ -1067,13 +1066,13 @@ def getHumanModificationMonitors(systemAccounts):
     # release blobs ty the logs.
     def onInsert(table, who, what):
         if who not in systemAccounts:
-            cef_event('Non-system user "%s" is inserting to "%s" table' % (who, table.name), CEF_ALERT, what=what)
+            cef_event('Human modification', CEF_ALERT, user=who, what=what, table=table.name, type='insert')
     def onDelete(table, who, where):
         if who not in systemAccounts:
-            cef_event('Non-system user "%s" is deleting from "%s" table' % (who, table.name), CEF_ALERT, where=where)
+            cef_event('Human modification', CEF_ALERT, user=who, where=where, table=table.name, type='delete')
     def onUpdate(table, who, where, what):
         if who not in systemAccounts:
-            cef_event('Non-system user "%s" is modifying "%s" table' % (who, table.name), CEF_ALERT, where=where, what=what)
+            cef_event('Human modification', CEF_ALERT, user=who, what=what, where=where, table=table.name, type='update')
     return onInsert, onDelete, onUpdate
 
 class AUSDatabase(object):
