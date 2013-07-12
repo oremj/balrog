@@ -45,9 +45,9 @@ class AUSConfig(object):
     def getDburi(self):
         return self.cfg.get('database', 'dburi')
 
-    def getCefConfig(self):
-        if self.cfg.has_option('logging', 'cef_config'):
-            return self.cfg.get('logging', 'cef_config')
+    def getCefLogfile(self):
+        if self.cfg.has_option('logging', 'cef_logfile'):
+            return self.cfg.get('logging', 'cef_logfile')
         else:
             return None
 

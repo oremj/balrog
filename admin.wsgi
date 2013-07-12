@@ -28,7 +28,7 @@ logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=a
 import auslib
 from auslib.admin.base import db, app as application
 
-auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefConfig())
+auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 db.setDburi(cfg.getDburi())
 db.setupChangeMonitors(cfg.getSystemAccounts())
 db.setDomainWhitelist(cfg.getDomainWhitelist())

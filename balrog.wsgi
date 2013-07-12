@@ -29,7 +29,7 @@ import auslib
 from auslib.web.base import app as application
 from auslib.web.base import AUS
 
-auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefConfig())
+auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 AUS.setDb(cfg.getDburi())
 AUS.setSpecialHosts(cfg.getSpecialForceHosts())
 AUS.db.setDomainWhitelist(cfg.getDomainWhitelist())
