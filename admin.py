@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # Logging needs to get set-up before importing the application
     # to make sure that logging done from other modules uses our Logger.
-    from auslib.log import log_format, BalrogLogger, cef_config
+    from auslib.log import log_format, BalrogLogger, get_cef_config
 
     logging.setLoggerClass(BalrogLogger)
     log_level = logging.INFO
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     from auslib.admin.base import app, db
     from migrate.exceptions import DatabaseAlreadyControlledError
 
+    auslib.log.cef_config = get_cef_config(options.cefLog)
     db.setDburi(options.db)
     db.setDomainWhitelist(options.whitelistedDomains)
     try:
@@ -49,7 +50,6 @@ if __name__ == '__main__':
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-    app.config.update(cef_config(options.cefLog))
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)

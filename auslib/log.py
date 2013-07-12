@@ -4,9 +4,10 @@ from flask import request
 
 import cef
 
-import auslib
-
 log_format = "%(asctime)s - %(levelname)s - PID: %(process)s - Request: %(requestid)s - %(name)s.%(funcName)s#%(lineno)s: %(message)s"
+
+# Needs to be set by entry points.
+cef_config = {}
 
 class BalrogLogger(Logger):
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
@@ -50,9 +51,9 @@ def cef_event(name, severity, **custom_exts):
         n += 1
 
     username = request.environ.get('REMOTE_USER', 'Unknown User')
-    cef.log_cef(name, severity, request.environ, auslib.app.config, username=username, **extra_exts)
+    cef.log_cef(name, severity, request.environ, cef_config, username=username, **extra_exts)
 
-def cef_config(logfile):
+def get_cef_config(logfile):
     return {
         'cef.file': logfile,
         'cef.version': 0, # This is the CEF format version

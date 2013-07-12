@@ -45,6 +45,12 @@ class AUSConfig(object):
     def getDburi(self):
         return self.cfg.get('database', 'dburi')
 
+    def getCefConfig(self):
+        if self.cfg.has_option('logging', 'cef_config'):
+            return self.cfg.get('logging', 'cef_config')
+        else:
+            return None
+
     def getSentryDsn(self):
         if self.cfg.has_option('logging', 'sentry_dsn'):
             return self.cfg.get('logging', 'sentry_dsn')

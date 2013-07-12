@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # Logging needs to get set-up before importing the application
     # to make sure that logging done from other modules uses our Logger.
-    from auslib.log import log_format, BalrogLogger, cef_config
+    from auslib.log import log_format, BalrogLogger, get_cef_config
 
     logging.setLoggerClass(BalrogLogger)
     log_level = logging.INFO
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     import auslib
     from auslib.web.base import app, AUS
 
+    auslib.log.cef_config = get_cef_config(options.cefLog)
     AUS.setDb(options.db)
     AUS.db.setDomainWhitelist(options.whitelistedDomains)
     try:
@@ -43,6 +44,5 @@ if __name__ == "__main__":
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-    app.config.update(cef_config(options.cefLog))
     auslib.app = app
     app.run(port=options.port, host=options.host)
