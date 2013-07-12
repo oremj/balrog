@@ -10,7 +10,7 @@ site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 from raven.contrib.flask import Sentry
 
 from auslib.config import AdminConfig
-from auslib.log import log_format, BalrogLogger, get_cef_config
+import auslib.log
 
 cfg = AdminConfig('/etc/aus/admin.ini')
 errors = cfg.validate()
@@ -22,13 +22,13 @@ if errors:
 
 # Logging needs to get set-up before importing the application
 # to make sure that logging done from other modules uses our Logger.
-logging.setLoggerClass(BalrogLogger)
-logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=log_format)
+logging.setLoggerClass(auslib.log.BalrogLogger)
+logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=auslib.log.log_format)
 
 import auslib
 from auslib.admin.base import db, app as application
 
-auslib.log.cef_config = get_cef_config(cfg.getCefConfig())
+auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefConfig())
 db.setDburi(cfg.getDburi())
 db.setupChangeMonitors(cfg.getSystemAccounts())
 db.setDomainWhitelist(cfg.getDomainWhitelist())

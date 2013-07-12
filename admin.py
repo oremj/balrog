@@ -28,19 +28,19 @@ if __name__ == '__main__':
 
     # Logging needs to get set-up before importing the application
     # to make sure that logging done from other modules uses our Logger.
-    from auslib.log import log_format, BalrogLogger, get_cef_config
+    import auslib.log
 
-    logging.setLoggerClass(BalrogLogger)
+    logging.setLoggerClass(auslib.log.BalrogLogger)
     log_level = logging.INFO
     if options.verbose:
         log_level = logging.DEBUG
-    logging.basicConfig(level=log_level, format=log_format)
+    logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
     import auslib
     from auslib.admin.base import app, db
     from migrate.exceptions import DatabaseAlreadyControlledError
 
-    auslib.log.cef_config = get_cef_config(options.cefLog)
+    auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
     db.setDburi(options.db)
     db.setDomainWhitelist(options.whitelistedDomains)
     try:

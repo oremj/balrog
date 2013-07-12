@@ -7,7 +7,7 @@ from flask import Response
 
 import auslib
 from auslib.admin.base import app, db
-from auslib.log import cef_config
+import auslib.log
 
 # When running tests, there's no web server to convert uncaught exceptions to
 # 500 errors, so we need to do it here. Maybe we should just do it globally
@@ -24,7 +24,7 @@ class ViewTest(unittest.TestCase):
         app.config['SECRET_KEY'] = 'abc123'
         app.config['DEBUG'] = True
         app.config['CSRF_ENABLED'] = False
-        app.config.update(cef_config(self.cef_file))
+        auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
         auslib.app = app
         db.setDburi('sqlite:///:memory:')
         db.setDomainWhitelist(['good.com'])
