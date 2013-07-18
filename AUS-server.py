@@ -44,5 +44,4 @@ if __name__ == "__main__":
 
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
-    auslib.app = app
     app.run(port=options.port, host=options.host)

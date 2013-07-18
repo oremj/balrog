@@ -53,5 +53,4 @@ if __name__ == '__main__':
     def auth(environ, username, password):
         return username == password
     app.wsgi_app = AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth)
-    auslib.app = app
     app.run(port=options.port, host=options.host)

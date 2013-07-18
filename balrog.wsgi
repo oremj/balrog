@@ -36,7 +36,5 @@ AUS.db.setDomainWhitelist(cfg.getDomainWhitelist())
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 application.config['SENTRY_PROCESSORS'] = ['auslib.util.sentry.SanitizeHeadersProcessor']
 
-auslib.app = application
-
 if application.config['SENTRY_DSN']:
     sentry = Sentry(application)
