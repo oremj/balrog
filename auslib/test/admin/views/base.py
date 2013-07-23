@@ -5,7 +5,6 @@ import unittest
 
 from flask import Response
 
-import auslib
 from auslib.admin.base import app, db
 import auslib.log
 
@@ -25,7 +24,6 @@ class ViewTest(unittest.TestCase):
         app.config['DEBUG'] = True
         app.config['CSRF_ENABLED'] = False
         auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
-        auslib.app = app
         db.setDburi('sqlite:///:memory:')
         db.setDomainWhitelist(['good.com'])
         db.create()

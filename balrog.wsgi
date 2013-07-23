@@ -10,7 +10,7 @@ site.addsitedir(path.join(mydir, 'vendor/lib/python'))
 from raven.contrib.flask import Sentry
 
 from auslib.config import ClientConfig
-import auslib
+import auslib.log
 
 cfg = ClientConfig('/etc/aus/balrog.ini')
 errors = cfg.validate()
@@ -25,7 +25,6 @@ if errors:
 logging.setLoggerClass(auslib.log.BalrogLogger)
 logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=auslib.log.log_format)
 
-import auslib
 from auslib.web.base import app as application
 from auslib.web.base import AUS
 
