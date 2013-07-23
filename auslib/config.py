@@ -49,7 +49,7 @@ class AUSConfig(object):
         if self.cfg.has_option('logging', 'cef_logfile'):
             return self.cfg.get('logging', 'cef_logfile')
         else:
-            return None
+            return "syslog"
 
     def getSentryDsn(self):
         if self.cfg.has_option('logging', 'sentry_dsn'):
