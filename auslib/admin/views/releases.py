@@ -3,6 +3,7 @@ import simplejson as json
 from flask import render_template, Response, jsonify, make_response, request
 
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
+from auslib.db import OutdatedDataError
 from auslib.log import cef_event, CEF_WARN
 from auslib.util import getPagination
 from auslib.admin.base import db
@@ -137,10 +138,10 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
             extraArgs['alias'] = alias
         try:
             commitCallback(rel, product, version, incomingData, releaseInfo['data'], old_data_version, extraArgs)
-        except ValueError, e:
+        except (OutdatedDataError, ValueError), e:
             msg = "Couldn't update release: %s" % e
             cef_event("Bad input", CEF_WARN, errors=msg, release=rel)
-            return Response(status=400, response=msg)
+            return Response(status=400, response=msg % e)
 
     new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
     if new:

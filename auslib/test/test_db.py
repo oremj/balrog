@@ -851,6 +851,8 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
 
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     """Tests for the Releases class that depend on version 1 of the blob schema."""
+
+    maxDiff = 1000
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
         self.db = AUSDatabase(self.dburi)
@@ -871,6 +873,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         },
         "p2": {
             "alias": "p"
+        },
+        "p3": {
         }
     }
 }
@@ -932,6 +936,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         },
         "p2": {
             "alias": "p"
+        },
+        "p3": {
         }
     }
 }
@@ -940,7 +946,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 
     def testAddLocaleToReleaseWithAlias(self):
         data = dict(complete=dict(hashValue='abc'))
-        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', data=data, old_data_version=1, changed_by='bill', alias=['p3'])
+        self.releases.addLocaleToRelease(name='a', platform='p', locale='c', data=data, old_data_version=1, changed_by='bill', alias=['p4'])
         ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
         expected = json.loads("""
 {
@@ -964,6 +970,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "alias": "p"
         },
         "p3": {
+        },
+        "p4": {
             "alias": "p"
         }
     }
@@ -990,6 +998,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         },
         "p2": {
             "alias": "p"
+        },
+        "p3": {
         }
     }
 }
@@ -1005,6 +1015,40 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     "name": "b",
     "platforms": {
         "q": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": "432"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        self.assertEqual(ret, expected)
+
+    def testAddLocaleToReleaseNoLocales(self):
+        data = dict(complete=dict(filesize="432"))
+        self.releases.addLocaleToRelease(name='a', platform='p3', locale='l', data=data, old_data_version=1, changed_by='bill')
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": "1234"
+                    }
+                }
+            }
+        },
+        "p2": {
+            "alias": "p"
+        },
+        "p3": {
             "locales": {
                 "l": {
                     "complete": {
@@ -1037,6 +1081,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         },
         "p2": {
             "alias": "p"
+        },
+        "p3": {
         },
         "q": {
             "locales": {
@@ -1076,6 +1122,8 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
         },
         "p2": {
             "alias": "p"
+        },
+        "p3": {
         }
     }
 }
