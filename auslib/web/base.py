@@ -22,6 +22,9 @@ def fourohfour(error):
 
 @app.errorhandler(Exception)
 def generic(error):
+    # Log the error with Sentry before eating it (see bug 885173 for background)
+    if sentry.client:
+        sentry.captureException()
     response = make_response('<?xml version="1.0"?>\n<updates>\n</updates>')
     response.mimetype = 'text/xml'
     return response
