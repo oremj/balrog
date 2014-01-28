@@ -1,13 +1,15 @@
 import logging
 log = logging.getLogger(__name__)
 
-from flask import Flask, make_response, request
+from flask import Flask, make_response
 
-import auslib
+from raven.contrib.flask import Sentry
+
 from auslib.AUS import AUS3
 
 app = Flask(__name__)
 AUS = AUS3()
+sentry = Sentry()
 
 from auslib.web.views.client import ClientRequestView
 
