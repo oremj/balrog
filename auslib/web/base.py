@@ -3,7 +3,7 @@ log = logging.getLogger(__name__)
 
 from flask import Flask, make_response, request
 
-from auslib import version
+import auslib
 from auslib.AUS import AUS3
 
 app = Flask(__name__)
