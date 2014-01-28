@@ -30,7 +30,6 @@ class ClientRequestView(MethodView):
         return query
 
     def get(self, **url):
-        raise Exception('blah')
         query = self.getQueryFromURL(url)
         self.log.debug("Got query: %s", query)
         release, update_type = AUS.evaluateRules(query)
