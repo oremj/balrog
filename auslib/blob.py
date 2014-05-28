@@ -176,7 +176,7 @@ class ReleaseBlobV2(Blob):
          * appv, extv become appVersion, platformVersion, displayVersion
         Added:
          * actions, billboardURL, openURL, notificationURL,
-           alertURL, showPrompt, showSurvey, showNeverForVersion
+           alertURL, showPrompt, showSurvey, showNeverForVersion, isOSUpdate
     """
     format_ = {
         'name': None,
@@ -204,6 +204,7 @@ class ReleaseBlobV2(Blob):
         'showPrompt': None,
         'showNeverForVersion': None,
         'showSurvey': None,
+        'isOSUpdate': None,
         'platforms': {
             '*': {
                 'alias': None,
