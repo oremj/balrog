@@ -204,11 +204,11 @@ class ReleaseBlobV2(Blob):
         'showPrompt': None,
         'showNeverForVersion': None,
         'showSurvey': None,
-        'isOSUpdate': None,
         'platforms': {
             '*': {
                 'alias': None,
                 'buildID': None,
+                'isOSUpdate': None,
                 'OS_BOUNCER': None,
                 'OS_FTP': None,
                 'locales': {
