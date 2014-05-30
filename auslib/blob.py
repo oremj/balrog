@@ -208,11 +208,11 @@ class ReleaseBlobV2(Blob):
             '*': {
                 'alias': None,
                 'buildID': None,
-                'isOSUpdate': None,
                 'OS_BOUNCER': None,
                 'OS_FTP': None,
                 'locales': {
                     '*': {
+                        'isOSUpdate': None,
                         'buildID': None,
                         'appVersion': None,
                         'displayVersion': None,
