@@ -1,11 +1,15 @@
 import mock
+import os
+from tempfile import mkstemp
 import unittest
 from xml.dom import minidom
 
+import auslib.log
 from auslib.web.base import app, AUS
 from auslib.web.views.client import ClientRequestView
 
 class ClientTest(unittest.TestCase):
+    maxDiff=1000000
     @classmethod
     def setUpClass(cls):
         # Error handlers are removed in order to give us better debug messages
@@ -18,12 +22,14 @@ class ClientTest(unittest.TestCase):
         app.error_handler_spec = cls.error_spec
 
     def setUp(self):
+        self.cef_fd, self.cef_file = mkstemp()
         app.config['DEBUG'] = True
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
         AUS.db.setDomainWhitelist('a.com')
         self.client = app.test_client()
         self.view = ClientRequestView()
+        auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
         AUS.rules.t.insert().execute(backgroundRate=100, mapping='b', update_type='minor', product='b', data_version=1)
         AUS.releases.t.insert().execute(name='b', product='b', version='1.0', data_version=1, data="""
 {
@@ -85,7 +91,7 @@ class ClientTest(unittest.TestCase):
     "hashFunction": "sha512",
     "platforms": {
         "p": {
-            "buildID": 21,
+            "buildID": "21",
             "locales": {
                 "l": {
                     "complete": {
@@ -109,7 +115,7 @@ class ClientTest(unittest.TestCase):
     "hashFunction": "sha512",
     "platforms": {
         "p": {
-            "buildID": 25,
+            "buildID": "25",
             "locales": {
                 "l": {
                     "complete": {
@@ -132,7 +138,10 @@ class ClientTest(unittest.TestCase):
     "schema_version": 3,
     "platforms": {
         "p": {
-            "buildID": 5
+            "buildID": "5",
+            "locales": {
+                "l": {}
+            }
         }
     }
 }
@@ -143,7 +152,10 @@ class ClientTest(unittest.TestCase):
     "schema_version": 3,
     "platforms": {
         "p": {
-            "buildID": 6
+            "buildID": "6",
+            "locales": {
+                "l": {}
+            }
         }
     }
 }
@@ -153,9 +165,12 @@ class ClientTest(unittest.TestCase):
     "name": "f3",
     "schema_version": 3,
     "hashFunction": "sha512",
+    "appVersion": "25.0",
+    "displayVersion": "25.0",
+    "platformVersion": "25.0",
     "platforms": {
         "p": {
-            "buildID": 29,
+            "buildID": "29",
             "locales": {
                 "l": {
                     "partials": [
@@ -192,6 +207,10 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+
+    def tearDown(self):
+        os.close(self.cef_fd)
+        os.remove(self.cef_file)
 
     def testGetHeaderArchitectureWindows(self):
         self.assertEqual(self.view.getHeaderArchitecture('WINNT_x86-msvc', 'Firefox Intel Windows'), 'Intel')
@@ -306,8 +325,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
-        <patch type="partial" URL="http://a.com/p1" hashFunction="sha512" hashValue="3" size="2"/>
         <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
+        <patch type="partial" URL="http://a.com/p1" hashFunction="sha512" hashValue="3" size="2"/>
     </update>
 </updates>
 """)
@@ -321,8 +340,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
-        <patch type="partial" URL="http://a.com/p2" hashFunction="sha512" hashValue="3" size="2"/>
         <patch type="complete" URL="http://a.com/c1" hashFunction="sha512" hashValue="6" size="29"/>
+        <patch type="partial" URL="http://a.com/p2" hashFunction="sha512" hashValue="5" size="4"/>
     </update>
 </updates>
 """)

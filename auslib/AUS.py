@@ -175,53 +175,64 @@ class AUS:
         if 'licenseUrl' in relData:
             updateData['licenseUrl'] = relData['licenseUrl'].replace('%LOCALE%',updateQuery['locale'])
 
+        possiblePatches = {"partial": [], "complete": []}
         # evaluate types of updates and see if we can use them
         for patchKey in relDataPlatLoc:
-            if patchKey not in ('partial','complete'):
-                self.log.debug("Skipping patchKey '%s'", patchKey)
-                continue
-            patch = relDataPlatLoc[patchKey]
-            # This is factored out to avoid querying the db when from is '*'
-            def hasAPartial():
-                try:
-                    release = self.releases.getReleases(name=patch['from'], limit=1)[0]
-                    return self.queryMatchesRelease(updateQuery, release)
-                except IndexError:
-                    return False
+            if patchKey == 'partial':
+                possiblePatches["partial"].append(relDataPlatLoc[patchKey])
+            if patchKey == 'complete':
+                possiblePatches["complete"].append(relDataPlatLoc[patchKey])
+            if patchKey == 'partials':
+                possiblePatches["partial"].extend(relDataPlatLoc[patchKey])
+            if patchKey == 'completes':
+                possiblePatches["complete"].extend(relDataPlatLoc[patchKey])
 
-            if patch['from'] == '*' or hasAPartial():
-                if 'fileUrl' in patch:
-                    url = patch['fileUrl']
-                else:
-                    # When we're using a fallback channel it's unlikely
-                    # we'll have a fileUrl specifically for it, but we
-                    # should try nonetheless. Non-fallback cases shouldn't
-                    # be hitting any exceptions here.
+
+        for patchKey in possiblePatches:
+            for patch in possiblePatches[patchKey]:
+                # This is factored out to avoid querying the db when from is '*'
+                def matches():
                     try:
-                        url = relData['fileUrls'][updateQuery['channel']]
-                    except KeyError:
-                        url = relData['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
-                    url = url.replace('%LOCALE%', updateQuery['locale'])
-                    url = url.replace('%OS_FTP%', relDataPlat['OS_FTP'])
-                    url = url.replace('%FILENAME%', relData['ftpFilenames'][patchKey])
-                    url = url.replace('%PRODUCT%', relData['bouncerProducts'][patchKey])
-                    url = url.replace('%OS_BOUNCER%', relDataPlat['OS_BOUNCER'])
-                # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
-                if updateQuery['force'] and self.isSpecialURL(url):
-                    if '?' in url:
-                        url += '&force=1'
-                    else:
-                        url += '?force=1'
+                        release = self.releases.getReleases(name=patch['from'], limit=1)[0]
+                        return self.queryMatchesRelease(updateQuery, release)
+                    except IndexError:
+                        return False
 
-                updateData['patches'].append({
-                    'type': patchKey,
-                    'URL':  url,
-                    'hashFunction': relData['hashFunction'],
-                    'hashValue': patch['hashValue'],
-                    'size': patch['filesize']
-                })
-            else:
-                self.log.debug("Didn't add patch for patchKey '%s'; from is '%s'", patchKey, patch['from'])
+                if patch['from'] == '*' or matches():
+                    if 'fileUrl' in patch:
+                        url = patch['fileUrl']
+                    else:
+                        # When we're using a fallback channel it's unlikely
+                        # we'll have a fileUrl specifically for it, but we
+                        # should try nonetheless. Non-fallback cases shouldn't
+                        # be hitting any exceptions here.
+                        try:
+                            url = relData['fileUrls'][updateQuery['channel']]
+                        except KeyError:
+                            url = relData['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+                        url = url.replace('%LOCALE%', updateQuery['locale'])
+                        url = url.replace('%OS_FTP%', relDataPlat['OS_FTP'])
+                        url = url.replace('%FILENAME%', relData['ftpFilenames'][patchKey])
+                        url = url.replace('%PRODUCT%', relData['bouncerProducts'][patchKey])
+                        url = url.replace('%OS_BOUNCER%', relDataPlat['OS_BOUNCER'])
+                    # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
+                    if updateQuery['force'] and self.isSpecialURL(url):
+                        if '?' in url:
+                            url += '&force=1'
+                        else:
+                            url += '?force=1'
+
+                    updateData['patches'].append({
+                        'type': patchKey,
+                        'URL':  url,
+                        'hashFunction': relData['hashFunction'],
+                        'hashValue': patch['hashValue'],
+                        'size': patch['filesize']
+                    })
+                    # We got an update for this patch type, we don't want another!
+                    break
+                else:
+                    self.log.debug("Didn't add patch for patchKey '%s'; from is '%s'", patchKey, patch['from'])
 
         # older branches required a <partial> in the update.xml, which we
         # used to fake by repeating the complete data.

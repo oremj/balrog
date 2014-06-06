@@ -352,3 +352,6 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
+
+    def getApplicationVersion(self, platform, locale):
+        return NewStyleVersionsMixin.getApplicationVersion(self, platform, locale)
