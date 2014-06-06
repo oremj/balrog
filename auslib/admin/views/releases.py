@@ -80,6 +80,8 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
         # should be set here doing PUT at SingleLocaleView
         # but some SingleLocaleView tests use the except
         schema_version = form.schema_version.data
+        if schema_version is None:
+            raise AttributeError()
     except AttributeError:
         # should be set when doing POST on SingleReleaseView
         schema_version = incomingData.get('schema_version')

@@ -156,7 +156,7 @@ class AUS:
         if relData['schema_version'] == 1:
             updateData['appv'] = relData.getAppv(buildTarget, locale)
             updateData['extv'] = relData.getExtv(buildTarget, locale)
-        elif relData['schema_version'] == 2:
+        elif relData['schema_version'] in (2, 3):
             updateData['displayVersion'] = relData.getDisplayVersion(buildTarget, locale)
             updateData['appVersion'] = relData.getAppVersion(buildTarget, locale)
             updateData['platformVersion'] = relData.getPlatformVersion(buildTarget, locale)
@@ -249,7 +249,8 @@ class AUS:
 
         if rel['schema_version'] == 1:
             return self.createSnippetV1(updateQuery, rel, update_type)
-        elif rel['schema_version'] == 2:
+        # Schema 2 and 3 differences are handled in evaluateRules/expandRelease.
+        elif rel['schema_version'] in (2, 3):
             return self.createSnippetV2(updateQuery, rel, update_type)
         else:
             return {"partial": "", "complete": ""}
@@ -326,7 +327,8 @@ class AUS:
                     updateLine += '>'
                     xml.append(updateLine)
 
-                if rel['schema_version'] == 2:
+                # Schema 2 and 3 differences are handled in evaluateRules/expandRelease.
+                if rel['schema_version'] in (2, 3):
                     updateLine='    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
                                 (rel['type'], rel['displayVersion'], rel['appVersion'], rel['platformVersion'], rel['build'])
                     if rel['detailsUrl']:
