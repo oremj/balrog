@@ -171,7 +171,22 @@ class ReleaseBlobV1(Blob):
         return self.getExtv(platform, locale)
 
 
-class ReleaseBlobV2(Blob):
+class NewStyleVersionsMixin(object):
+    def getAppVersion(self, platform, locale):
+        return self.getLocaleOrTopLevelParam(platform, locale, 'appVersion')
+
+    def getDisplayVersion(self, platform, locale):
+        return self.getLocaleOrTopLevelParam(platform, locale, 'displayVersion')
+
+    def getPlatformVersion(self, platform, locale):
+        return self.getLocaleOrTopLevelParam(platform, locale, 'platformVersion')
+
+    def getApplicationVersion(self, platform, locale):
+        """ For v2 schema, appVersion really is the app version """
+        return self.getAppVersion(platform, locale)
+
+
+class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV1:
          * appv, extv become appVersion, platformVersion, displayVersion
         Added:
@@ -245,15 +260,84 @@ class ReleaseBlobV2(Blob):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
-    def getAppVersion(self, platform, locale):
-        return self.getLocaleOrTopLevelParam(platform, locale, 'appVersion')
-
-    def getDisplayVersion(self, platform, locale):
-        return self.getLocaleOrTopLevelParam(platform, locale, 'displayVersion')
-
-    def getPlatformVersion(self, platform, locale):
-        return self.getLocaleOrTopLevelParam(platform, locale, 'platformVersion')
-
     def getApplicationVersion(self, platform, locale):
-        """ For v2 schema, appVersion really is the app version """
-        return self.getAppVersion(platform, locale)
+        return NewStyleVersionsMixin.getApplicationVersion(self, platform, locale)
+
+
+class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
+    """ Changes from ReleaseBlobV2:
+         * support multiple partials
+           * remove "partial" and "complete" from locale level
+           * add "partials" and "completes"
+    """
+    format_ = {
+        'name': None,
+        'schema_version': None,
+        'appVersion': None,
+        'displayVersion': None,
+        'platformVersion': None,
+        'fileUrls': {
+            '*': None
+        },
+        'ftpFilenames': {
+            '*': None
+        },
+        'bouncerProducts': {
+            '*': None
+        },
+        'hashFunction': None,
+        'detailsUrl': None,
+        'licenseUrl': None,
+        'actions': None,
+        'billboardURL': None,
+        'openURL': None,
+        'notificationURL': None,
+        'alertURL': None,
+        'showPrompt': None,
+        'showNeverForVersion': None,
+        'showSurvey': None,
+        'platforms': {
+            '*': {
+                'alias': None,
+                'buildID': None,
+                'OS_BOUNCER': None,
+                'OS_FTP': None,
+                'locales': {
+                    '*': {
+                        'isOSUpdate': None,
+                        'buildID': None,
+                        'appVersion': None,
+                        'displayVersion': None,
+                        'platformVersion': None,
+                        # TODO: add comment about why lists
+                        'partials': [
+                            {
+                                'filesize': None,
+                                'from': None,
+                                'hashValue': None,
+                                'fileUrl': None
+                            }
+                        ],
+                        'completes': [
+                            {
+                                'filesize': None,
+                                'from': None,
+                                'hashValue': None,
+                                'fileUrl': None
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    # for the benefit of createXML and createSnippetv2
+    optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
+                 'showSurvey', 'actions', 'openURL', 'notificationURL',
+                 'alertURL')
+
+    def __init__(self, **kwargs):
+        # ensure schema_version is set if we init ReleaseBlobV2 directly
+        Blob.__init__(self, **kwargs)
+        if 'schema_version' not in self.keys():
+            self['schema_version'] = 3
