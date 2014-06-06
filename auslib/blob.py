@@ -18,8 +18,9 @@ def isValidBlob(format_, blob, topLevel=True):
     # If there's no format at all, we assume the blob is valid.
     if not format_:
         return True
-    # If the blob isn't a dictionary-like object, it's not valid!
-    if not hasattr(blob, 'keys') or not callable(blob.keys):
+    # If the blob isn't a dictionary-like or list-like object, it's not valid!
+    if (not hasattr(blob, 'keys') or not callable(blob.keys)) and \
+       (not hasattr(blob, '__iter__') or not callable(blob.__iter__)):
         return False
     # If the blob format has a schema_version then that's a mandatory int
     if topLevel and 'schema_version' in format_:
@@ -27,18 +28,28 @@ def isValidBlob(format_, blob, topLevel=True):
             log.debug("blob is not valid because schema_version is not defined, or non-integer")
             return False
     # check the blob against the format
-    for key in blob.keys():
-        # A '*' key in the format means that all key names in the blob are accepted.
-        if '*' in format_:
-            # But we still need to validate the sub-blob, if it exists.
-            if format_['*'] and not isValidBlob(format_['*'], blob[key], topLevel=False):
+    if hasattr(blob, 'keys'):
+        for key in blob.keys():
+            # A '*' key in the format means that all key names in the blob are accepted.
+            if '*' in format_:
+                # But we still need to validate the sub-blob, if it exists.
+                if format_['*'] and not isValidBlob(format_['*'], blob[key], topLevel=False):
+                    log.debug("blob is not valid because of key '%s'" % key)
+                    return False
+            # If there's no '*' key, we need to make sure the key name is valid
+            # and the sub-blob is valid, if it exists.
+            elif key not in format_ or not isValidBlob(format_[key], blob[key], topLevel=False):
                 log.debug("blob is not valid because of key '%s'" % key)
                 return False
-        # If there's no '*' key, we need to make sure the key name is valid
-        # and the sub-blob is valid, if it exists.
-        elif key not in format_ or not isValidBlob(format_[key], blob[key], topLevel=False):
-            log.debug("blob is not valid because of key '%s'" % key)
+    else:
+        # Empty lists are not allowed. These can be represented by leaving out the key entirely.
+        if len(blob) == 0:
             return False
+        for subBlob in blob:
+            # Other than the empty list check above, we can hand off the rest
+            # of the validation to another isValidBlob call!
+            if not isValidBlob(format_[0], subBlob, topLevel=False):
+                return False
     return True
 
 def createBlob(data):
@@ -309,7 +320,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
                         'appVersion': None,
                         'displayVersion': None,
                         'platformVersion': None,
-                        # TODO: add comment about why lists
+                        # TODO: add comment about why lists are desired
                         'partials': [
                             {
                                 'filesize': None,

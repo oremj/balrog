@@ -21,6 +21,15 @@ class BlobWithWildcard(Blob):
         }
     }
 
+class BlobWithList(Blob):
+    format_ = {
+        'foo': [
+            {
+                'bar': None
+            }
+        ]
+    }
+
 class TestBlob(unittest.TestCase):
     def testSimpleValid(self):
         blob = SimpleBlob(foo='bar')
@@ -87,6 +96,18 @@ class TestBlob(unittest.TestCase):
         blob = SimpleBlob(platforms=dict(c=dict(buildID=9, locales=dict(d=dict()))))
         self.assertRaises(KeyError, blob.getBuildID, 'c', 'a')
     # XXX: should we support the locale overriding the platform? this should probably be invalid
+
+    def testBlobWithList(self):
+        blob = BlobWithList(foo=[dict(bar=1)])
+        self.assertTrue(blob.isValid())
+
+    def testBlobWithEmptyList(self):
+        blob = BlobWithList(foo=[])
+        self.assertFalse(blob.isValid())
+
+    def testBlobWithMissingList(self):
+        blob = BlobWithList()
+        self.assertTrue(blob.isValid())
 
 class TestReleaseBlobV1(unittest.TestCase):
     def testGetAppv(self):
