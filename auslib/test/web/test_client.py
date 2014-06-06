@@ -125,7 +125,7 @@ class ClientTest(unittest.TestCase):
 }
 """)
 
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='f', update_type='minor', product='f', data_version=1)
+        AUS.rules.t.insert().execute(backgroundRate=100, mapping='f3', update_type='minor', product='f', data_version=1)
         AUS.releases.t.insert().execute(name='f1', product='f', version='22.0', data_version=1, data="""
 {
     "name": "f1",
@@ -167,16 +167,23 @@ class ClientTest(unittest.TestCase):
                         },
                         {
                             "filesize": 4,
-                            "from", "f2",
+                            "from": "f2",
                             "hashValue": 5,
                             "fileUrl": "http://a.com/p2"
+                        }
                     ],
                     "completes": [
+                        {
+                            "filesize": 29,
+                            "from": "f2",
+                            "hashValue": 6,
+                            "fileUrl": "http://a.com/c1"
+                        },
                         {
                             "filesize": 30,
                             "from": "*",
                             "hashValue": "31",
-                            "fileUrl": "http://a.com/y"
+                            "fileUrl": "http://a.com/c2"
                         }
                     ]
                 }
@@ -290,7 +297,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(ret.mimetype, 'text/plain')
         self.assertTrue('User-agent' in ret.data)
 
-    def testSchema3MultiplePartials(self):
+    def testSchema3MultipleUpdates(self):
         ret = self.client.get('/update/3/f/22.0/5/p/l/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
@@ -300,7 +307,7 @@ class ClientTest(unittest.TestCase):
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
         <patch type="partial" URL="http://a.com/p1" hashFunction="sha512" hashValue="3" size="2"/>
-        <patch type="complete" URL="http://a.com/y" hashFunction="sha512" hashValue="31" size="30"/>
+        <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
     </update>
 </updates>
 """)
@@ -314,8 +321,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
-        <patch type="partial" URL="http://a.com/p1" hashFunction="sha512" hashValue="3" size="2"/>
-        <patch type="complete" URL="http://a.com/y" hashFunction="sha512" hashValue="31" size="30"/>
+        <patch type="partial" URL="http://a.com/p2" hashFunction="sha512" hashValue="3" size="2"/>
+        <patch type="complete" URL="http://a.com/c1" hashFunction="sha512" hashValue="6" size="29"/>
     </update>
 </updates>
 """)
