@@ -3,8 +3,6 @@ import simplejson as json
 import logging
 log = logging.getLogger(__name__)
 
-CURRENT_SCHEMA_VERSION=1
-
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
        Validation follows these rules:
@@ -61,6 +59,8 @@ def createBlob(data):
             return ReleaseBlobV1(**data)
         elif data['schema_version'] == 2:
             return ReleaseBlobV2(**data)
+        elif data['schema_version'] == 3:
+            return ReleaseBlobV3(**data)
         else:
             raise ValueError("schema_version is unknown")
     except KeyError:

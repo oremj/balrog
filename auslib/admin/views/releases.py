@@ -2,7 +2,7 @@ import simplejson as json
 
 from flask import render_template, Response, jsonify, make_response, request
 
-from auslib.blob import createBlob, CURRENT_SCHEMA_VERSION
+from auslib.blob import createBlob
 from auslib.db import OutdatedDataError
 from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 from auslib.util import getPagination
@@ -85,7 +85,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
         schema_version = incomingData.get('schema_version')
     # otherwise try the default, the blob validator will save us
     if schema_version is None:
-        schema_version = CURRENT_SCHEMA_VERSION
+        return Response(status=400, response="schema_version is required")
 
     allReleases = [release]
     if copyTo:
