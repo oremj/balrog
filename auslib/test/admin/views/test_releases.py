@@ -347,7 +347,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutCantChangeProduct(self):
         data = json.dumps(dict(complete=dict(filesize=435)))
-        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='b', version='a'))
+        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='b', version='a', schema_version=1))
         self.assertStatusCode(ret, 400)
 
     def testLocaleRevertsPartialUpdate(self):

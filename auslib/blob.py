@@ -17,8 +17,7 @@ def isValidBlob(format_, blob, topLevel=True):
     if not format_:
         return True
     # If the blob isn't a dictionary-like or list-like object, it's not valid!
-    if (not hasattr(blob, 'keys') or not callable(blob.keys)) and \
-       (not hasattr(blob, '__iter__') or not callable(blob.__iter__)):
+    if not isinstance(blob, (dict,list)):
         return False
     # If the blob format has a schema_version then that's a mandatory int
     if topLevel and 'schema_version' in format_:
@@ -348,7 +347,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
                  'alertURL')
 
     def __init__(self, **kwargs):
-        # ensure schema_version is set if we init ReleaseBlobV2 directly
+        # ensure schema_version is set if we init ReleaseBlobV3 directly
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3

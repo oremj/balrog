@@ -76,12 +76,12 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     alias = form.alias.data
     old_data_version = form.data_version.data
 
+    # schema_version is an attribute at the root level of a blob.
+    # Endpoints that receive an entire blob can find it there.
+    # Those that don't have to pass it as a form element instead.
     if getattr(form.schema_version, "data", None):
-        # should be set here doing PUT at SingleLocaleView
-        # but some SingleLocaleView tests use the except
         schema_version = form.schema_version.data
     elif incomingData.get("schema_version"):
-        # should be set when doing POST on SingleReleaseView
         schema_version = incomingData.get("schema_version")
     else:
         return Response(status=400, response="schema_version is required")
