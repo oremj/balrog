@@ -25,7 +25,7 @@ def isValidBlob(format_, blob, topLevel=True):
             log.debug("blob is not valid because schema_version is not defined, or non-integer")
             return False
     # check the blob against the format
-    if hasattr(blob, 'keys'):
+    if isinstance(blob, dict):
         for key in blob.keys():
             # A '*' key in the format means that all key names in the blob are accepted.
             if '*' in format_:
