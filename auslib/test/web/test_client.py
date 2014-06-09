@@ -9,7 +9,6 @@ from auslib.web.base import app, AUS
 from auslib.web.views.client import ClientRequestView
 
 class ClientTest(unittest.TestCase):
-    maxDiff=1000000
     @classmethod
     def setUpClass(cls):
         # Error handlers are removed in order to give us better debug messages
@@ -347,6 +346,20 @@ class ClientTest(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
+    def testSchema3NoPartial(self):
+        ret = self.client.get('/update/3/f/20.0/1/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
+        <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
 
 class ClientTestWithErrorHandlers(unittest.TestCase):
     """Most of the tests are run without the error handler because it gives more
