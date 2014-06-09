@@ -109,6 +109,10 @@ class TestBlob(unittest.TestCase):
         blob = BlobWithList()
         self.assertTrue(blob.isValid())
 
+    def testBlobWithInvalidSublist(self):
+        blob = BlobWithList(foo=[dict(blah=2)])
+        self.assertFalse(blob.isValid())
+
 class TestReleaseBlobV1(unittest.TestCase):
     def testGetAppv(self):
         blob = ReleaseBlobV1(appv=1)
@@ -127,7 +131,7 @@ class TestReleaseBlobV1(unittest.TestCase):
         self.assertEquals(blob.getExtv('f', 'g'), blob.getApplicationVersion('f', 'g'))
 
 
-class TestReleaseBlobV2(unittest.TestCase):
+class TestNewStyleVersionBlob(unittest.TestCase):
     def testGetAppVersion(self):
         blob = ReleaseBlobV2(appVersion=1)
         self.assertEquals(1, blob.getAppVersion('p', 'l'))

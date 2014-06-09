@@ -110,10 +110,6 @@ class Blob(dict):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def getApplicationVersion(self, platform, locale):
-        """ Implemented by versioned blobs, which subclass the Blob class"""
-        pass
-
 
 class ReleaseBlobV1(Blob):
     format_ = {
