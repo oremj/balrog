@@ -175,30 +175,30 @@ class AUS:
         if 'licenseUrl' in relData:
             updateData['licenseUrl'] = relData['licenseUrl'].replace('%LOCALE%',updateQuery['locale'])
 
-        possiblePatches = {"partial": [], "complete": []}
+        possiblePatches = defaultdict(list)
         # evaluate types of updates and see if we can use them
         for patchKey in relDataPlatLoc:
-            if patchKey == 'partial':
-                possiblePatches["partial"].append(relDataPlatLoc[patchKey])
-            elif patchKey == 'complete':
-                possiblePatches["complete"].append(relDataPlatLoc[patchKey])
-            elif patchKey == 'partials':
-                possiblePatches["partial"].extend(relDataPlatLoc[patchKey])
-            elif patchKey == 'completes':
-                possiblePatches["complete"].extend(relDataPlatLoc[patchKey])
-
+            if patchKey in ('partial', 'complete'):
+                possiblePatches[patchKey].append(relDataPlatLoc[patchKey])
+            if patchKey in ('partials', 'completes'):
+                possiblePatches[patchKey].extend(relDataPlatLoc[patchKey])
 
         for patchKey in possiblePatches:
             for patch in possiblePatches[patchKey]:
+                from_ = patch['from']
+                if 'partial' in patchKey:
+                    type_ = 'partial'
+                else:
+                    type_ = 'complete'
                 # This is factored out to avoid querying the db when from is '*'
                 def matches():
                     try:
-                        release = self.releases.getReleases(name=patch['from'], limit=1)[0]
+                        release = self.releases.getReleases(name=from_, limit=1)[0]
                         return self.queryMatchesRelease(updateQuery, release)
                     except IndexError:
                         return False
 
-                if patch['from'] == '*' or matches():
+                if from_ == '*' or matches():
                     if 'fileUrl' in patch:
                         url = patch['fileUrl']
                     else:
@@ -210,10 +210,18 @@ class AUS:
                             url = relData['fileUrls'][updateQuery['channel']]
                         except KeyError:
                             url = relData['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+
+                        if relData['schema_version'] in (1,2):
+                            ftpFilename = relData['ftpFilenames'][patchKey]
+                            bouncerProduct = relData['bouncerProducts'][patchKey]
+                        else:
+                            ftpFilename = relData['ftpFilenames'][patchKey][from_]
+                            bouncerProduct = relData['bouncerProducts'][patchKey][from_]
+
                         url = url.replace('%LOCALE%', updateQuery['locale'])
                         url = url.replace('%OS_FTP%', relDataPlat['OS_FTP'])
-                        url = url.replace('%FILENAME%', relData['ftpFilenames'][patchKey])
-                        url = url.replace('%PRODUCT%', relData['bouncerProducts'][patchKey])
+                        url = url.replace('%FILENAME%', ftpFilename)
+                        url = url.replace('%PRODUCT%', bouncerProduct)
                         url = url.replace('%OS_BOUNCER%', relDataPlat['OS_BOUNCER'])
                     # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
                     if updateQuery['force'] and self.isSpecialURL(url):
@@ -223,7 +231,7 @@ class AUS:
                             url += '?force=1'
 
                     updateData['patches'].append({
-                        'type': patchKey,
+                        'type': type_,
                         'URL':  url,
                         'hashFunction': relData['hashFunction'],
                         'hashValue': patch['hashValue'],
@@ -232,7 +240,7 @@ class AUS:
                     # We got an update for this patch type, we don't want another!
                     break
                 else:
-                    self.log.debug("Didn't add patch for patchKey '%s'; from is '%s'", patchKey, patch['from'])
+                    self.log.debug("Didn't add patch for patchKey '%s'; from is '%s'", patchKey, from_)
 
         # older branches required a <partial> in the update.xml, which we
         # used to fake by repeating the complete data.

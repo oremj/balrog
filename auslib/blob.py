@@ -274,7 +274,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV2:
          * support multiple partials
            * remove "partial" and "complete" from locale level
-           * add "partials" and "completes"
+           * add "partials" and "completes" to locale level, ftpFilenames, and bouncerProducts
     """
     format_ = {
         'name': None,
@@ -283,10 +283,20 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         'displayVersion': None,
         'platformVersion': None,
         'fileUrls': {
-            '*': None
+            'partials': {
+                '*': None
+            },
+            'completes': {
+                '*': None
+            }
         },
         'ftpFilenames': {
-            '*': None
+            'partials': {
+                '*': None
+            },
+            'completes': {
+                '*': None
+            }
         },
         'bouncerProducts': {
             '*': None

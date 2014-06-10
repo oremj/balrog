@@ -206,6 +206,76 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+        AUS.rules.t.insert().execute(backgroundRate=100, mapping='g2', update_type='minor', product='g', data_version=1)
+        AUS.releases.t.insert().execute(name='g1', product='g', version='23.0', data_version=1, data="""
+{
+    "name": "g1",
+    "schema_version": 3,
+    "platforms": {
+        "p": {
+            "buildID": "8",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        AUS.releases.t.insert().execute(name='g2', product='g', version='26.0', data_version=1, data="""
+{
+    "name": "g2",
+    "schema_version": 3,
+    "hashFunction": "sha512",
+    "appVersion": "26.0",
+    "displayVersion": "26.0",
+    "platformVersion": "26.0",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%",
+        "c2": "http://a.com/%PRODUCT%"
+    },
+    "ftpFilenames": {
+        "partials": {
+            "g1": "g1-partial.mar"
+        },
+        "completes": {
+            "*": "complete.mar"
+        }
+    },
+    "bouncerProducts": {
+        "partials": {
+            "g1": "g1-partial"
+        },
+        "completes": {
+            "*": "complete"
+        }
+    },
+    "platforms": {
+        "p": {
+            "buildID": "40",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "partials": [
+                        {
+                            "filesize": 4,
+                            "from": "g1",
+                            "hashValue": 5
+                        }
+                    ],
+                    "completes": [
+                        {
+                            "filesize": 34,
+                            "from": "*",
+                            "hashValue": "35"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+""")
 
     def tearDown(self):
         os.close(self.cef_fd)
@@ -356,6 +426,38 @@ class ClientTest(unittest.TestCase):
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
         <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema3BouncerSubstitutions(self):
+        ret = self.client.get('/update/3/g/23.0/8/p/l/c1/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="35" size="34"/>
+        <patch type="partial" URL="http://a.com/g1-partial.mar" hashFunction="sha512" hashValue="5" size="4"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema3FtpSubstitutions(self):
+        ret = self.client.get('/update/3/g/23.0/8/p/l/c2/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
+        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="35" size="34"/>
+        <patch type="partial" URL="http://a.com/g1-partial" hashFunction="sha512" hashValue="5" size="4"/>
     </update>
 </updates>
 """)
