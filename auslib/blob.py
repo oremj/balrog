@@ -280,12 +280,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         'displayVersion': None,
         'platformVersion': None,
         'fileUrls': {
-            'partials': {
-                '*': None
-            },
-            'completes': {
-                '*': None
-            }
+            '*': None
         },
         'ftpFilenames': {
             'partials': {
@@ -296,7 +291,12 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
             }
         },
         'bouncerProducts': {
-            '*': None
+            'partials': {
+                '*': None
+            },
+            'completes': {
+                '*': None
+            }
         },
         'hashFunction': None,
         'detailsUrl': None,
