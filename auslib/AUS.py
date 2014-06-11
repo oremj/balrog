@@ -180,7 +180,7 @@ class AUS:
         for patchKey in relDataPlatLoc:
             if patchKey in ('partial', 'complete'):
                 possiblePatches[patchKey].append(relDataPlatLoc[patchKey])
-            if patchKey in ('partials', 'completes'):
+            elif patchKey in ('partials', 'completes'):
                 possiblePatches[patchKey].extend(relDataPlatLoc[patchKey])
 
         for patchKey in possiblePatches:
