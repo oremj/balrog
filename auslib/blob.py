@@ -266,9 +266,6 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
-    def getApplicationVersion(self, platform, locale):
-        return NewStyleVersionsMixin.getApplicationVersion(self, platform, locale)
-
 
 class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV2:
@@ -325,7 +322,15 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
                         'appVersion': None,
                         'displayVersion': None,
                         'platformVersion': None,
-                        # TODO: add comment about why lists are desired
+                        # Using lists instead of dicts for multiple updates
+                        # gives us a way to reduce load a bit. As this is
+                        # iterated over, each "from" release is looked up
+                        # in the database. If the "from" releases that we
+                        # we expect to be the most common are earlier in the
+                        # list, we can avoid looking up every single entry.
+                        # The server doesn't know anything about which order is
+                        # best, so we assume the client will make the right
+                        # decision about this.
                         'partials': [
                             {
                                 'filesize': None,
@@ -357,6 +362,3 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
-
-    def getApplicationVersion(self, platform, locale):
-        return NewStyleVersionsMixin.getApplicationVersion(self, platform, locale)

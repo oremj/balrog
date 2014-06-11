@@ -186,6 +186,9 @@ class AUS:
         for patchKey in possiblePatches:
             for patch in possiblePatches[patchKey]:
                 from_ = patch['from']
+                # XXX: this is a bit of a hack because patch keys don't match
+                # update types in schema v3. should be cleaned up when this
+                # code moves into the blob objects
                 if 'partial' in patchKey:
                     type_ = 'partial'
                 else:
