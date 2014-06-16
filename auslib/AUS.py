@@ -212,7 +212,11 @@ class AUS:
                         try:
                             url = relData['fileUrls'][updateQuery['channel']]
                         except KeyError:
-                            url = relData['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+                            try:
+                                url = relData['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+                            except KeyError:
+                                log.debug("Couldn't find fileUrl for")
+                                raise
 
                         if relData['schema_version'] in (1,2):
                             ftpFilename = relData['ftpFilenames'][patchKey]
