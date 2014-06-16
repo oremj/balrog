@@ -431,7 +431,7 @@ class ClientTest(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
-    def testSchema3BouncerSubstitutions(self):
+    def testSchema3FtpSubstitutions(self):
         ret = self.client.get('/update/3/g/23.0/8/p/l/c1/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
@@ -447,7 +447,7 @@ class ClientTest(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
-    def testSchema3FtpSubstitutions(self):
+    def testSchema3BouncerSubstitutions(self):
         ret = self.client.get('/update/3/g/23.0/8/p/l/c2/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
