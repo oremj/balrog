@@ -25,7 +25,8 @@ class ClientTest(unittest.TestCase):
         app.config['DEBUG'] = True
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
-        AUS.db.setDomainWhitelist('a.com')
+        AUS.db.setDomainWhitelist(('a.com', 'boring.com'))
+        # TODO: set special bullshit
         self.client = app.test_client()
         self.view = ClientRequestView()
         auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
@@ -276,6 +277,41 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+        AUS.rules.t.insert().execute(backgroundRate=100, mapping='h', update_type='minor', product='h', data_version=1)
+        AUS.releases.t.insert().execute(name='h', product='h', version='1.0', data_version=1, data="""
+{
+    "name": "b",
+    "schema_version": 1,
+    "appv": "1.0",
+    "extv": "1.0",
+    "hashFunction": "sha512",
+    "detailsUrl": "http://example.org/details",
+    "licenseUrl": "http://example.org/license",
+    "platforms": {
+        "p": {
+            "buildID": 1,
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 1,
+                        "from": "*",
+                        "hashValue": "1",
+                        "fileUrl": "http://a.com/?foo=a"
+                    }
+                },
+                "m": {
+                    "complete": {
+                        "filesize": 1,
+                        "from": "*",
+                        "hashValue": "1",
+                        "fileUrl": "http://boring.com/a"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
 
     def tearDown(self):
         os.close(self.cef_fd)
@@ -462,6 +498,83 @@ class ClientTest(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSpecialQueryParam(self):
+        ret = self.client.get('/update/3/h/0.5/0/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+        <patch type="complete" URL="http://a.com/?foo=a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSpecialQueryParamForced(self):
+        ret = self.client.get('/update/3/h/0.5/0/p/l/a/a/a/a/update.xml?force=1')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+        <patch type="complete" URL="http://a.com/?foo=a&amp;force=1" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testNonSpecialQueryParam(self):
+        ret = self.client.get('/update/3/h/0.5/0/p/m/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+        <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testNonSpecialQueryParamForced(self):
+        ret = self.client.get('/update/3/h/0.5/0/p/m/a/a/a/a/update.xml?force=1')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+        <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testNoSpecialDefined(self):
+        # TODO: unset special bullshit
+        ret = self.client.get('/update/3/h/0.5/0/p/m/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+        <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
 
 class ClientTestWithErrorHandlers(unittest.TestCase):
     """Most of the tests are run without the error handler because it gives more
