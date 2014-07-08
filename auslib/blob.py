@@ -1,3 +1,4 @@
+import re
 import simplejson as json
 
 import logging
@@ -84,6 +85,9 @@ class Blob(dict):
         """Returns a JSON formatted version of this blob."""
         return json.dumps(self)
 
+    def getFallbackChannel(self, channel):
+        return channel.split('-cck-')[0]
+
     def getResolvedPlatform(self, platform):
         return self['platforms'][platform].get('alias', platform)
 
@@ -110,6 +114,37 @@ class Blob(dict):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
+    def getUrl(self, updateQuery, patch, force, ftpFilename=None, bouncerProduct=None):
+        platformData = self.getPlatformData(updateQuery["buildTarget"])
+        if 'fileUrl' in patch:
+            url = patch['fileUrl']
+        else:
+            # When we're using a fallback channel it's unlikely
+            # we'll have a fileUrl specifically for it, but we
+            # should try nonetheless. Non-fallback cases shouldn't
+            # be hitting any exceptions here.
+            try:
+                url = self['fileUrls'][updateQuery['channel']]
+            except KeyError:
+                try:
+                    url = self['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+                except KeyError:
+                    log.debug("Couldn't find fileUrl for")
+                    raise
+
+            url = url.replace('%LOCALE%', updateQuery['locale'])
+            url = url.replace('%OS_FTP%', platformData['OS_FTP'])
+            url = url.replace('%FILENAME%', ftpFilename)
+            url = url.replace('%PRODUCT%', bouncerProduct)
+            url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
+        # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
+        if updateQuery['force'] and force:
+            if '?' in url:
+                url += '&force=1'
+            else:
+                url += '?force=1'
+
+        return url
 
 class ReleaseBlobV1(Blob):
     format_ = {
@@ -176,6 +211,45 @@ class ReleaseBlobV1(Blob):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
+    def createXML(self, updateQuery, update_type, force):
+        # TODO: handle forbidden domains, error handling, fake partials?
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+
+        platformData = self.getPlatformData(buildTarget)
+        localeData = platformData["locales"][locale]
+        appv = self.getAppv(buildTarget, locale)
+        extv = self.getExtv(buildTarget, locale)
+        buildid = self.getBuildID(buildTarget, locale)
+
+        updateLine = '    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
+            (update_type, appv, extv, buildid)
+        if "detailsURL" in self:
+            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' detailsURL="%s"' % details
+        if "licenseURL" in self:
+            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' licenseURL="%s"' % license
+        updateLine += ">"
+        xml.append(updateLine)
+
+        for patchKey in ("partial", "complete"):
+            patch = localeData.get(patchKey)
+            ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
+            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
+            if not patch:
+                continue
+
+            url = self.getUrl(updateQuery, patch, force, ftpFilename, bouncerProduct)
+            xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+                (patchKey, url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
+
+        xml.append('    </update>')
+        xml.append('</updates>')
+        return xml
 
 class NewStyleVersionsMixin(object):
     def getAppVersion(self, platform, locale):

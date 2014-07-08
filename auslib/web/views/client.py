@@ -1,3 +1,4 @@
+import re
 import urllib
 
 from flask import make_response, request
@@ -34,8 +35,15 @@ class ClientRequestView(MethodView):
         self.log.debug("Got query: %s", query)
         release, update_type = AUS.evaluateRules(query)
         # passing {},None returns empty xml
-        xml = AUS.createXML(query, release, update_type)
-        self.log.debug("Sending XML: %s", xml)
-        response = make_response(xml)
+        if release:
+            xml = release.createXML(query, update_type, force=False)
+        else:
+            xml = ['<?xml version="1.0"?>']
+            xml.append('<updates>')
+            xml.append('</updates>')
+        # ensure valid xml by using the right entity for ampersand
+        payload = re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
+        self.log.debug("Sending XML: %s", payload)
+        response = make_response(payload)
         response.mimetype = 'text/xml'
         return response
