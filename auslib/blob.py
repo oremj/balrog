@@ -15,6 +15,7 @@ def isSpecialURL(url, specialForceHosts):
             return True
     return False
 
+# TODO: move me
 def containsForbiddenDomain(url, whitelistedDomains):
     domain = urlparse(url)[1]
     if domain not in whitelistedDomains:
@@ -88,9 +89,30 @@ class Blob(dict):
     """See isValidBlob for details on how format is used to validate blobs."""
     format_ = {}
 
+    def __init__(self, *args, **kwargs):
+        self.log = logging.getLogger(self.__class__.__name__)
+        dict.__init__(self, *args, **kwargs)
+
+    def matchesUpdateQuery(self, updateQuery):
+        self.log.debug("Trying to match update query to %s" % self["name"])
+        buildTarget = updateQuery["buildTarget"]
+        buildID = updateQuery["buildID"]
+        locale = updateQuery["locale"]
+
+        if buildTarget in self["platforms"]:
+            try:
+                releaseBuildID = self.getBuildID(buildTarget, locale)
+            # Platform doesn't exist in release, clearly it's not a match!
+            except KeyError:
+                return False
+            self.log.debug("releasePlat buildID is: %s", releaseBuildID)
+            if buildID == releaseBuildID:
+                self.log.debug("Query matched!")
+                return True
+
     def isValid(self):
         """Decides whether or not this blob is valid based."""
-        log.debug('Validating blob %s' % self)
+        self.log.debug('Validating blob %s' % self)
         return isValidBlob(self.format_, self)
 
     def loadJSON(self, data):
@@ -147,7 +169,7 @@ class Blob(dict):
                 try:
                     url = self['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
                 except KeyError:
-                    log.debug("Couldn't find fileUrl for")
+                    self.log.debug("Couldn't find fileUrl for")
                     raise
 
             url = url.replace('%LOCALE%', updateQuery['locale'])
@@ -229,7 +251,61 @@ class ReleaseBlobV1(Blob):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
-    def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        snippets = {}
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+        platformData = self.getPlatformData(buildTarget)
+        localeData = platformData["locales"][locale]
+        for patchKey in ("partial", "complete"):
+            patch = localeData.get(patchKey)
+            if not patch:
+                continue
+
+            try:    
+                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+            except KeyError:
+                fromRelease = None
+            ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
+            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
+
+            # TODO: need this in createXML too
+            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+                continue
+
+            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            if containsForbiddenDomain(url, whitelistedDomains):
+                break
+
+            snippet = [
+                "version=1",
+                "type=%s" % patchKey,
+                "url=%s" % url,
+                "hashFunction=%s" % self["hashFunction"],
+                "hashValue=%s" % patch["hashValue"],
+                "size=%s" % patch["filesize"],
+                "build=%s" % self.getBuildID(buildTarget, locale),
+                "appv=%s" % self.getAppv(buildTarget, locale),
+                "extv=%s" % self.getExtv(buildTarget, locale),
+            ]
+            if "detailsUrl" in self:
+                details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+                snippet.append("detailsUrl=%s" % details)
+            if "licenseUrl" in self:
+                license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+                snippet.append("licenseUrl=%s" % license)
+            if update_type == "major":
+                snippet.append("updateType=major")
+            snippets[patchKey] = "\n".join(snippet) + "\n"
+
+        if self.get("fakePartials") and "complete" in snippets and "partial" not in snippets:
+            partial = snippets["complete"]
+            partial = partial.replace("type=complete", "type=partial")
+            snippets["partial"] = partial
+
+        for s in snippets.keys():
+            self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
+        return snippets
 
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # TODO: handle forbidden domains, error handling, fake partials?
@@ -245,10 +321,10 @@ class ReleaseBlobV1(Blob):
 
         updateLine = '    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
             (update_type, appv, extv, buildid)
-        if "detailsURL" in self:
+        if "detailsUrl" in self:
             details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
             updateLine += ' detailsURL="%s"' % details
-        if "licenseURL" in self:
+        if "licenseUrl" in self:
             license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
             updateLine += ' licenseURL="%s"' % license
         updateLine += ">"
@@ -367,6 +443,9 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
+    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        return {}
+
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
@@ -468,6 +547,9 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
+
+    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        return {}
 
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         xml = ['<?xml version="1.0"?>']

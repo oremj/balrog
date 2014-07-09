@@ -508,7 +508,7 @@ class ClientTest(unittest.TestCase):
         returned = minidom.parseString(ret.data)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
-    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1" detailsURL="http://example.org/details" licenseURL="http://example.org/license">
         <patch type="complete" URL="http://a.com/?foo=a" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>
@@ -523,7 +523,7 @@ class ClientTest(unittest.TestCase):
         returned = minidom.parseString(ret.data)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
-    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1" detailsURL="http://example.org/details" licenseURL="http://example.org/license">
         <patch type="complete" URL="http://a.com/?foo=a&amp;force=1" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>
@@ -538,7 +538,7 @@ class ClientTest(unittest.TestCase):
         returned = minidom.parseString(ret.data)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
-    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1" detailsURL="http://example.org/details" licenseURL="http://example.org/license">
         <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>
@@ -553,7 +553,7 @@ class ClientTest(unittest.TestCase):
         returned = minidom.parseString(ret.data)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
-    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1" detailsURL="http://example.org/details" licenseURL="http://example.org/license">
         <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>
@@ -569,7 +569,7 @@ class ClientTest(unittest.TestCase):
         returned = minidom.parseString(ret.data)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
-    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1">
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="1" detailsURL="http://example.org/details" licenseURL="http://example.org/license">
         <patch type="complete" URL="http://boring.com/a" hashFunction="sha512" hashValue="1" size="1"/>
     </update>
 </updates>

@@ -98,7 +98,10 @@ def walkSnippets(AUS, testPath):
         testQuery = getQueryFromPath(f.lstrip(testPath))
         testQuery['queryVersion'] = 3
         release, update_type = AUS.evaluateRules(testQuery)
-        balrog_snippets = release.createSnippet(testQuery, release, update_type, WHITELISTED_DOMAINS)
+        if release:
+            balrog_snippets = release.createSnippets(AUS.db, testQuery, update_type, WHITELISTED_DOMAINS, SPECIAL_FORCE_HOSTS)
+        else:
+            balrog_snippets = {"partial": "", "complete": ""}
 
         if snipType in balrog_snippets:
             balrog_snippet = balrog_snippets[snipType]

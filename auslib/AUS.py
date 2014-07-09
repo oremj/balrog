@@ -137,9 +137,6 @@ class AUS:
     def createSnippetV1(self, updateQuery, rel, update_type):
         snippets = {}
         for patch in rel['patches']:
-            # TODO: better flow control, loldontlookatreleasestable
-            if containsForbiddenDomain(patch['URL'], self.db.releasesTable.domainWhitelist):
-                return {}
             snippet  = ["version=1",
                         "type=%s" % patch['type'],
                         "url=%s" % patch['URL'],
