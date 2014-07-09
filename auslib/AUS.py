@@ -6,6 +6,9 @@ import logging
 from auslib.db import AUSDatabase
 from auslib.util.versions import MozillaVersion
 
+# TODO: move this method
+from auslib.blob import containsForbiddenDomain
+
 class AUSRandom:
     """Abstract getting a randint to make it easier to test the range of
     possible values"""
@@ -123,10 +126,6 @@ class AUS:
 
         rel = self.expandRelease(updateQuery, release, update_type)
 
-        if self.containsForbiddenDomain(rel):
-            self.log.debug("Forbidden domain found, refusing to create snippets.")
-            return {"partial": "", "complete": ""}
-
         if rel['schema_version'] == 1:
             return self.createSnippetV1(updateQuery, rel, update_type)
         # Schema 2 and 3 differences are handled in evaluateRules/expandRelease.
@@ -138,6 +137,9 @@ class AUS:
     def createSnippetV1(self, updateQuery, rel, update_type):
         snippets = {}
         for patch in rel['patches']:
+            # TODO: better flow control, loldontlookatreleasestable
+            if containsForbiddenDomain(patch['URL'], self.db.releasesTable.domainWhitelist):
+                return {}
             snippet  = ["version=1",
                         "type=%s" % patch['type'],
                         "url=%s" % patch['URL'],
@@ -163,6 +165,9 @@ class AUS:
     def createSnippetV2(self, updateQuery, rel, update_type):
         snippets = {}
         for patch in rel['patches']:
+            # TODO: better flow control, loldontlookatreleasestable
+            if containsForbiddenDomain(patch['URL'], self.db.releasesTable.domainWhitelist):
+                return {}
             snippet  = ["version=2",
                         "type=%s" % patch['type'],
                         "url=%s" % patch['URL'],

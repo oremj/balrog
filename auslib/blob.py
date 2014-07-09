@@ -15,6 +15,12 @@ def isSpecialURL(url, specialForceHosts):
             return True
     return False
 
+def containsForbiddenDomain(url, whitelistedDomains):
+    domain = urlparse(url)[1]
+    if domain not in whitelistedDomains:
+        cef_event("Forbidden domain", CEF_ALERT, domain=domain)
+        return True
+    return False
 
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
@@ -223,6 +229,8 @@ class ReleaseBlobV1(Blob):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
+    def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # TODO: handle forbidden domains, error handling, fake partials?
 
@@ -255,10 +263,8 @@ class ReleaseBlobV1(Blob):
                 continue
 
             url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
-            domain = urlparse(url)[1]
-            if domain not in whitelistedDomains:
+            if containsForbiddenDomain(url, whitelistedDomains):
                 forbidden = True
-                cef_event("Forbidden domain", CEF_ALERT, domain=domain)
                 break
             patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
                 (patchKey, url, self["hashFunction"], patch["hashValue"], patch["filesize"]))

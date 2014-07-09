@@ -15,6 +15,9 @@ from auslib.AUS import AUS as AUS_Class
 import logging
 log = logging.getLogger(__name__)
 
+WHITELISTED_DOMAINS = ('download.mozilla.org', 'stage-old.mozilla.org', 'ftp.mozilla.org', 'stage.mozilla.org')
+SPECIAL_FORCE_HOSTS = ('download.mozilla.org',)
+
 def populateDB(AUS, testdir):
     # assuming we're already in the right directory with a db connection
     # read any rules we already have
@@ -95,7 +98,7 @@ def walkSnippets(AUS, testPath):
         testQuery = getQueryFromPath(f.lstrip(testPath))
         testQuery['queryVersion'] = 3
         release, update_type = AUS.evaluateRules(testQuery)
-        balrog_snippets = AUS.createSnippet(testQuery, release, update_type)
+        balrog_snippets = release.createSnippet(testQuery, release, update_type, WHITELISTED_DOMAINS)
 
         if snipType in balrog_snippets:
             balrog_snippet = balrog_snippets[snipType]
@@ -177,7 +180,7 @@ if __name__ == "__main__":
             dbPath = 'sqlite:///:memory:'
         AUS = AUS_Class(dbname=dbPath)
         AUS.db.create()
-        AUS.db.setDomainWhitelist(('download.mozilla.org', 'stage-old.mozilla.org', 'ftp.mozilla.org', 'stage.mozilla.org'))
+        AUS.db.setDomainWhitelist(WHITELISTED_DOMAINS)
         populateDB(AUS, td)
         if options.dumprules:
             log.info("Rules are \n(id, priority, mapping, backgroundRate, product, version, channel, buildTarget, buildID, locale, osVersion, distribution, distVersion, UA arch):")
