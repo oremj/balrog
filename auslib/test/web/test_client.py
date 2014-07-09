@@ -9,6 +9,8 @@ from auslib.web.base import app, AUS
 from auslib.web.views.client import ClientRequestView
 
 class ClientTest(unittest.TestCase):
+    maxDiff = 2000
+
     @classmethod
     def setUpClass(cls):
         # Error handlers are removed in order to give us better debug messages
@@ -340,7 +342,7 @@ class ClientTest(unittest.TestCase):
         "c1": "http://a.com/%FILENAME%"
     },
     "ftpFilenames": {
-        "partial": "g1-partial.mar",
+        "partial": "j1-partial.mar",
         "complete": "complete.mar"
     },
     "platforms": {
@@ -359,6 +361,57 @@ class ClientTest(unittest.TestCase):
                         "filesize": 38,
                         "from": "*",
                         "hashValue": "34"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        AUS.rules.t.insert().execute(backgroundRate=100, mapping='k', update_type='minor', product='k', data_version=1)
+        AUS.releases.t.insert().execute(name='k', product='k', version='50.0', data_version=1, data="""
+{
+    "name": "k",
+    "schema_version": 2,
+    "hashFunction": "sha512",
+    "appVersion": "50.0",
+    "displayVersion": "50.0",
+    "platformVersion": "50.0",
+    "detailsUrl": "http://example.org/details",
+    "licenseUrl": "http://example.org/license",
+    "actions": "silent",
+    "billboardURL": "http://example.org/billboard",
+    "openURL": "http://example.org/url",
+    "notificationURL": "http://example.org/notification",
+    "alertURL": "http://example.org/alert",
+    "showPrompt": "false",
+    "showNeverForVersion": "true",
+    "showSurvey": "false",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%"
+    },
+    "ftpFilenames": {
+        "complete": "complete.mar"
+    },
+    "platforms": {
+        "p": {
+            "buildID": "35",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 40,
+                        "from": "*",
+                        "hashValue": "35"
+                    }
+                },
+                "l2": {
+                    "isOSUpdate": true,
+                    "complete": {
+                        "filesize": 50,
+                        "from": "*",
+                        "hashValue": "45"
                     }
                 }
             }
@@ -499,8 +552,38 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="40.0" appVersion="40.0" platformVersion="40.0" buildID="30">
-        <patch type="partial" URL="http://a.com/g1-partial.mar" hashFunction="sha512" hashValue="5" size="6"/>
+        <patch type="partial" URL="http://a.com/j1-partial.mar" hashFunction="sha512" hashValue="5" size="6"/>
         <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="34" size="38"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema2WithOptionalAttributes(self):
+        ret = self.client.get('/update/3/k/35.0/4/p/l/c1/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="50.0" appVersion="50.0" platformVersion="50.0" buildID="35" detailsURL="http://example.org/details" licenseURL="http://example.org/license" billboardURL="http://example.org/billboard" showPrompt="false" showNeverForVersion="true" showSurvey="false" actions="silent" openURL="http://example.org/url" notificationURL="http://example.org/notification" alertURL="http://example.org/alert">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="35" size="40"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema2WithIsOSUpdate(self):
+        ret = self.client.get('/update/3/k/35.0/4/p/l2/c1/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="50.0" appVersion="50.0" platformVersion="50.0" buildID="35" detailsURL="http://example.org/details" licenseURL="http://example.org/license" billboardURL="http://example.org/billboard" showPrompt="false" showNeverForVersion="true" showSurvey="false" actions="silent" openURL="http://example.org/url" notificationURL="http://example.org/notification" alertURL="http://example.org/alert" isOSUpdate="true">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="45" size="50"/>
     </update>
 </updates>
 """)

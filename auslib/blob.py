@@ -187,6 +187,10 @@ class Blob(dict):
 
         return url
 
+    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+
 class ReleaseBlobV1(Blob):
     format_ = {
         'name': None,
@@ -522,8 +526,11 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         if "licenseUrl" in self:
             license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
             updateLine += ' licenseURL="%s"' % license
-        if "isOSUpdate" in self and self["isOSUpdate"]:
+        if localeData.get("isOSUpdate"):
             updateLine += ' isOSUpdate="true"'
+        for attr in self.optional_:
+            if attr in self:
+                updateLine += ' %s="%s"' % (attr, self[attr])
         updateLine += ">"
 
         patches = []
