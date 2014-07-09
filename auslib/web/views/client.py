@@ -36,7 +36,7 @@ class ClientRequestView(MethodView):
         release, update_type = AUS.evaluateRules(query)
         # passing {},None returns empty xml
         if release:
-            xml = release.createXML(query, update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
+            xml = release.createXML(AUS.db, query, update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
         else:
             xml = ['<?xml version="1.0"?>']
             xml.append('<updates>')

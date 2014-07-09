@@ -269,7 +269,6 @@ class ReleaseBlobV1(Blob):
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
             bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
 
-            # TODO: need this in createXML too
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
@@ -307,7 +306,7 @@ class ReleaseBlobV1(Blob):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # TODO: handle forbidden domains, error handling, fake partials?
 
         buildTarget = updateQuery["buildTarget"]
@@ -333,9 +332,17 @@ class ReleaseBlobV1(Blob):
         forbidden = False
         for patchKey in ("partial", "complete"):
             patch = localeData.get(patchKey)
+            if not patch:
+                continue
+
+            try:    
+                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+            except KeyError:
+                fromRelease = None
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
             bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
-            if not patch:
+
+            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
             url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
@@ -444,9 +451,60 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             self['schema_version'] = 2
 
     def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        return {}
+        snippets = {}
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+        platformData = self.getPlatformData(buildTarget)
+        localeData = platformData["locales"][locale]
+        for patchKey in ("partial", "complete"):
+            patch = localeData.get(patchKey)
+            if not patch:
+                continue
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+            try:    
+                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+            except KeyError:
+                fromRelease = None
+            ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
+            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
+
+            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+                continue
+
+            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            if containsForbiddenDomain(url, whitelistedDomains):
+                break
+
+            snippet = [
+                "version=2",
+                "type=%s" % patchKey,
+                "url=%s" % url,
+                "hashFunction=%s" % self["hashFunction"],
+                "hashValue=%s" % patch["hashValue"],
+                "size=%s" % patch["filesize"],
+                "build=%s" % self.getBuildID(buildTarget, locale),
+                "displayVersion=%s" % self.getDisplayVersion(buildTarget, locale),
+                "appVersion=%s" % self.getAppVersion(buildTarget, locale),
+                "platformVersion=%s" % self.getPlatformVersion(buildTarget, locale),
+            ]
+            if "detailsUrl" in self:
+                details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+                snippet.append("detailsUrl=%s" % details)
+            if "licenseUrl" in self:
+                license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+                snippet.append("licenseUrl=%s" % license)
+            if update_type == "major":
+                snippet.append("updateType=major")
+            for attr in self.optional_:
+                if attr in self:
+                    snippet.append("%s=%s" % (attr, self[attr]))
+            snippets[patchKey] = "\n".join(snippet) + "\n"
+
+        for s in snippets.keys():
+            self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
+        return snippets
+
+    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
         xml.append('</updates>')
@@ -551,7 +609,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
     def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         return {}
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
         xml.append('</updates>')
