@@ -23,6 +23,10 @@ def containsForbiddenDomain(url, whitelistedDomains):
         return True
     return False
 
+# TODO: move me
+def getFallbackChannel(channel):
+    return channel.split('-cck-')[0]
+
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
        Validation follows these rules:
@@ -125,9 +129,6 @@ class Blob(dict):
         """Returns a JSON formatted version of this blob."""
         return json.dumps(self)
 
-    def getFallbackChannel(self, channel):
-        return channel.split('-cck-')[0]
-
     def getResolvedPlatform(self, platform):
         return self['platforms'][platform].get('alias', platform)
 
@@ -167,7 +168,7 @@ class Blob(dict):
                 url = self['fileUrls'][updateQuery['channel']]
             except KeyError:
                 try:
-                    url = self['fileUrls'][self.getFallbackChannel(updateQuery['channel'])]
+                    url = self['fileUrls'][getFallbackChannel(updateQuery['channel'])]
                 except KeyError:
                     self.log.debug("Couldn't find fileUrl for")
                     raise

@@ -7,7 +7,7 @@ from auslib.db import AUSDatabase
 from auslib.util.versions import MozillaVersion
 
 # TODO: move this method
-from auslib.blob import containsForbiddenDomain
+from auslib.blob import containsForbiddenDomain, getFallbackChannel
 
 class AUSRandom:
     """Abstract getting a randint to make it easier to test the range of
@@ -36,30 +36,12 @@ class AUS:
         self.releases = self.db.releases
         self.rules = self.db.rules
 
-    def queryMatchesRelease(self, updateQuery, release):
-        """Check if the updateQuery given is the same as the release."""
-        self.log.debug("Trying to match update query to %s" % release['name'])
-        buildTarget = updateQuery['buildTarget']
-        buildID = updateQuery['buildID']
-        locale = updateQuery['locale']
-
-        if buildTarget in release['data']['platforms']:
-            try:
-                releaseBuildID = release['data'].getBuildID(buildTarget, locale)
-            # Platform doesn't exist in release, clearly it's not a match!
-            except KeyError:
-                return False
-            self.log.debug("releasePlat buildID is: %s", releaseBuildID)
-            if buildID == releaseBuildID:
-                self.log.debug("Query matched!")
-                return True
-
     def evaluateRules(self, updateQuery):
         self.log.debug("Looking for rules that apply to:")
         self.log.debug(updateQuery)
         rules = self.rules.getRulesMatchingQuery(
             updateQuery,
-            fallbackChannel=self.getFallbackChannel(updateQuery['channel'])
+            fallbackChannel=getFallbackChannel(updateQuery['channel'])
         )
 
         ### XXX throw any N->N update rules and keep the highest priority remaining one
@@ -109,85 +91,3 @@ class AUS:
 
         self.log.debug("Returning release %s", release['name'])
         return release['data'], rule['update_type']
-
-    def getFallbackChannel(self, channel):
-        return channel.split('-cck-')[0]
-
-    def expandRelease(self, updateQuery, relData, update_type):
-        updateData = defaultdict(list)
-        return updateData
-
-    def createSnippet(self, updateQuery, release, update_type):
-        if not release:
-            # XXX: Not sure we should be specifying patch types here, but it's
-            # required for tests that have null snippets in them at the time
-            # of writing.
-            return {"partial": "", "complete": ""}
-
-        rel = self.expandRelease(updateQuery, release, update_type)
-
-        if rel['schema_version'] == 1:
-            return self.createSnippetV1(updateQuery, rel, update_type)
-        # Schema 2 and 3 differences are handled in evaluateRules/expandRelease.
-        elif rel['schema_version'] in (2, 3):
-            return self.createSnippetV2(updateQuery, rel, update_type)
-        else:
-            return {"partial": "", "complete": ""}
-
-    def createSnippetV1(self, updateQuery, rel, update_type):
-        snippets = {}
-        for patch in rel['patches']:
-            snippet  = ["version=1",
-                        "type=%s" % patch['type'],
-                        "url=%s" % patch['URL'],
-                        "hashFunction=%s" % patch['hashFunction'],
-                        "hashValue=%s" % patch['hashValue'],
-                        "size=%s" % patch['size'],
-                        "build=%s" % rel['build'],
-                        "appv=%s" % rel['appv'],
-                        "extv=%s" % rel['extv']]
-            if rel['detailsUrl']:
-                snippet.append("detailsUrl=%s" % rel['detailsUrl'])
-            if rel['licenseUrl']:
-                snippet.append("licenseUrl=%s" % rel['licenseUrl'])
-            if rel['type'] == 'major':
-                snippet.append('updateType=major')
-            # AUS2 snippets have a trailing newline, add one here for easy diffing
-            snippets[patch['type']] = "\n".join(snippet) + '\n'
-
-        for s in snippets.keys():
-            self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
-        return snippets
-
-    def createSnippetV2(self, updateQuery, rel, update_type):
-        snippets = {}
-        for patch in rel['patches']:
-            # TODO: better flow control, loldontlookatreleasestable
-            if containsForbiddenDomain(patch['URL'], self.db.releasesTable.domainWhitelist):
-                return {}
-            snippet  = ["version=2",
-                        "type=%s" % patch['type'],
-                        "url=%s" % patch['URL'],
-                        "hashFunction=%s" % patch['hashFunction'],
-                        "hashValue=%s" % patch['hashValue'],
-                        "size=%s" % patch['size'],
-                        "build=%s" % rel['build'],
-                        "displayVersion=%s" % rel['displayVersion'],
-                        "appVersion=%s" % rel['appVersion'],
-                        "platformVersion=%s" % rel['platformVersion']
-                        ]
-            if rel['detailsUrl']:
-                snippet.append("detailsUrl=%s" % rel['detailsUrl'])
-            if rel['licenseUrl']:
-                snippet.append("licenseUrl=%s" % rel['licenseUrl'])
-            if rel['type'] == 'major':
-                snippet.append('updateType=major')
-            for attr in rel['optional']:
-                if attr in rel:
-                    snippet.append('%s=%s' % (attr, rel[attr]))
-            # AUS2 snippets have a trailing newline, add one here for easy diffing
-            snippets[patch['type']] = "\n".join(snippet) + '\n'
-
-        for s in snippets.keys():
-            self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
-        return snippets
