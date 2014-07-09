@@ -307,8 +307,6 @@ class ReleaseBlobV1(Blob):
         return snippets
 
     def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        # TODO: handle forbidden domains, error handling, fake partials?
-
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
 
@@ -505,6 +503,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         return snippets
 
     def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        # add tests before writing this
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
         xml.append('</updates>')
@@ -607,10 +606,63 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
             self['schema_version'] = 3
 
     def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        # does this even need to be implemented?
         return {}
 
     def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+
+        platformData = self.getPlatformData(buildTarget)
+        localeData = platformData["locales"][locale]
+        displayVersion = self.getDisplayVersion(buildTarget, locale)
+        appVersion = self.getAppVersion(buildTarget, locale)
+        platformVersion = self.getPlatformVersion(buildTarget, locale)
+        buildid = self.getBuildID(buildTarget, locale)
+
+        updateLine = '    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
+            (update_type, displayVersion, appVersion, platformVersion, buildid)
+        if "detailsUrl" in self:
+            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' detailsURL="%s"' % details
+        if "licenseUrl" in self:
+            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' licenseURL="%s"' % license
+        if "isOSUpdate" in self and self["isOSUpdate"]:
+            updateLine += ' isOSUpdate="true"'
+        updateLine += ">"
+
+        patches = []
+        forbidden = False
+        for patchKey in ("partials", "completes"):
+            for patch in localeData.get(patchKey):
+                if not patch:
+                    continue
+
+                try:    
+                    fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                except KeyError:
+                    fromRelease = None
+                ftpFilename = self.get("ftpFilenames", {}).get(patchKey, {}).get(patch["from"])
+                bouncerProduct = self.get("bouncerProducts", {}).get(patchKey, {}).get(patch["from"])
+
+                if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+                    continue
+
+                url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+                if containsForbiddenDomain(url, whitelistedDomains):
+                    forbidden = True
+                    break
+                patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+                    # OMG HACK
+                    (patchKey[:-1], url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
+                break
+
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
+        if not forbidden:
+            xml.append(updateLine)
+            xml.extend(patches)
+            xml.append('    </update>')
         xml.append('</updates>')
         return xml

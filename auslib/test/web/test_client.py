@@ -431,8 +431,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
-        <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
         <patch type="partial" URL="http://a.com/p1" hashFunction="sha512" hashValue="3" size="2"/>
+        <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
     </update>
 </updates>
 """)
@@ -446,8 +446,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
-        <patch type="complete" URL="http://a.com/c1" hashFunction="sha512" hashValue="6" size="29"/>
         <patch type="partial" URL="http://a.com/p2" hashFunction="sha512" hashValue="5" size="4"/>
+        <patch type="complete" URL="http://a.com/c1" hashFunction="sha512" hashValue="6" size="29"/>
     </update>
 </updates>
 """)
@@ -477,8 +477,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
-        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="35" size="34"/>
         <patch type="partial" URL="http://a.com/g1-partial.mar" hashFunction="sha512" hashValue="5" size="4"/>
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="35" size="34"/>
     </update>
 </updates>
 """)
@@ -493,8 +493,8 @@ class ClientTest(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
-        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="35" size="34"/>
         <patch type="partial" URL="http://a.com/g1-partial" hashFunction="sha512" hashValue="5" size="4"/>
+        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="35" size="34"/>
     </update>
 </updates>
 """)
