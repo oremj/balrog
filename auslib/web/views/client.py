@@ -4,7 +4,7 @@ import urllib
 from flask import make_response, request
 from flask.views import MethodView
 
-from auslib.web.base import AUS
+from auslib.web.base import AUS, app
 
 import logging
 
@@ -36,7 +36,7 @@ class ClientRequestView(MethodView):
         release, update_type = AUS.evaluateRules(query)
         # passing {},None returns empty xml
         if release:
-            xml = release.createXML(query, update_type, force=False)
+            xml = release.createXML(query, update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
         else:
             xml = ['<?xml version="1.0"?>']
             xml.append('<updates>')

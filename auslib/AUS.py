@@ -1,12 +1,9 @@
-import re
 from collections import defaultdict
 from random import randint
-from urlparse import urlparse
 
 import logging
 
 from auslib.db import AUSDatabase
-from auslib.log import cef_event, CEF_ALERT
 from auslib.util.versions import MozillaVersion
 
 class AUSRandom:
@@ -35,25 +32,6 @@ class AUS:
         self.db = AUSDatabase(dbname)
         self.releases = self.db.releases
         self.rules = self.db.rules
-
-    def setSpecialHosts(self, specialForceHosts):
-        self.specialForceHosts = specialForceHosts
-
-    def isSpecialURL(self, url):
-        if not self.specialForceHosts:
-            return False
-        for s in self.specialForceHosts:
-            if url.startswith(s):
-                return True
-        return False
-
-    def containsForbiddenDomain(self, updateData):
-        for patch in updateData['patches']:
-            domain = urlparse(patch['URL'])[1]
-            if domain not in self.db.domainWhitelist:
-                cef_event('Forbidden domain', CEF_ALERT, domain=domain, updateData=updateData)
-                return True
-        return False
 
     def queryMatchesRelease(self, updateQuery, release):
         """Check if the updateQuery given is the same as the release."""

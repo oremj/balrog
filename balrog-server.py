@@ -41,6 +41,7 @@ if __name__ == "__main__":
     except DatabaseAlreadyControlledError:
         pass
 
+    app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
     app.run(port=options.port, host=options.host)

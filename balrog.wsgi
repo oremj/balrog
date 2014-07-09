@@ -29,8 +29,9 @@ from auslib.web.base import AUS
 
 auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 AUS.setDb(cfg.getDburi())
-AUS.setSpecialHosts(cfg.getSpecialForceHosts())
 AUS.db.setDomainWhitelist(cfg.getDomainWhitelist())
+application.config['WHITELISTED_DOMAINS'] = cfg.getDomainWhitelist()
+application.config['SPECIAL_FORCE_HOSTS'] = cfg.getSpecialForceHosts()
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 application.config['SENTRY_PROCESSORS'] = ['auslib.util.sentry.SanitizeHeadersProcessor']
 

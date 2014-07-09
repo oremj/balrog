@@ -23,10 +23,11 @@ class ClientTest(unittest.TestCase):
     def setUp(self):
         self.cef_fd, self.cef_file = mkstemp()
         app.config['DEBUG'] = True
+        app.config['SPECIAL_FORCE_HOSTS'] = ('http://a.com',)
+        app.config['WHITELISTED_DOMAINS'] = ('a.com', 'boring.com')
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
         AUS.db.setDomainWhitelist(('a.com', 'boring.com'))
-        # TODO: set special bullshit
         self.client = app.test_client()
         self.view = ClientRequestView()
         auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
@@ -280,7 +281,7 @@ class ClientTest(unittest.TestCase):
         AUS.rules.t.insert().execute(backgroundRate=100, mapping='h', update_type='minor', product='h', data_version=1)
         AUS.releases.t.insert().execute(name='h', product='h', version='1.0', data_version=1, data="""
 {
-    "name": "b",
+    "name": "h",
     "schema_version": 1,
     "appv": "1.0",
     "extv": "1.0",
@@ -560,7 +561,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testNoSpecialDefined(self):
-        # TODO: unset special bullshit
+        app.config['SPECIAL_FORCE_HOSTS'] = None
         ret = self.client.get('/update/3/h/0.5/0/p/m/a/a/a/a/update.xml')
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
@@ -582,9 +583,9 @@ class ClientTestWithErrorHandlers(unittest.TestCase):
        error handlers works!"""
     def setUp(self):
         app.config['DEBUG'] = True
+        app.config['WHITELISTED_DOMAINS'] = ('a.com',)
         AUS.setDb('sqlite:///:memory:')
         AUS.db.create()
-        AUS.db.setDomainWhitelist('a.com')
         self.client = app.test_client()
         self.view = ClientRequestView()
 

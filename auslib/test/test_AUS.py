@@ -1,10 +1,7 @@
-import simplejson as json
 import mock
 import unittest
-from xml.dom import minidom
 
 from auslib.AUS import AUS
-from auslib.blob import ReleaseBlobV1, ReleaseBlobV2
 
 def RandomAUSTest(AUS, backgroundRate, force, mapping):
     with mock.patch('auslib.db.Rules.getRulesMatchingQuery') as m:

@@ -1,8 +1,20 @@
-import re
 import simplejson as json
+from urlparse import urlparse
 
 import logging
 log = logging.getLogger(__name__)
+
+from auslib.log import cef_event, CEF_ALERT
+
+# TODO: move me
+def isSpecialURL(url, specialForceHosts):
+    if not specialForceHosts:
+        return False
+    for s in specialForceHosts:
+        if url.startswith(s):
+            return True
+    return False
+
 
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
@@ -114,7 +126,7 @@ class Blob(dict):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def getUrl(self, updateQuery, patch, force, ftpFilename=None, bouncerProduct=None):
+    def getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename=None, bouncerProduct=None):
         platformData = self.getPlatformData(updateQuery["buildTarget"])
         if 'fileUrl' in patch:
             url = patch['fileUrl']
@@ -138,7 +150,7 @@ class Blob(dict):
             url = url.replace('%PRODUCT%', bouncerProduct)
             url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
         # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
-        if updateQuery['force'] and force:
+        if updateQuery['force'] and isSpecialURL(url, specialForceHosts):
             if '?' in url:
                 url += '&force=1'
             else:
@@ -211,10 +223,8 @@ class ReleaseBlobV1(Blob):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
-    def createXML(self, updateQuery, update_type, force):
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # TODO: handle forbidden domains, error handling, fake partials?
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
 
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
@@ -234,8 +244,9 @@ class ReleaseBlobV1(Blob):
             license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
             updateLine += ' licenseURL="%s"' % license
         updateLine += ">"
-        xml.append(updateLine)
 
+        patches = []
+        forbidden = False
         for patchKey in ("partial", "complete"):
             patch = localeData.get(patchKey)
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
@@ -243,11 +254,21 @@ class ReleaseBlobV1(Blob):
             if not patch:
                 continue
 
-            url = self.getUrl(updateQuery, patch, force, ftpFilename, bouncerProduct)
-            xml.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            domain = urlparse(url)[1]
+            if domain not in whitelistedDomains:
+                forbidden = True
+                cef_event("Forbidden domain", CEF_ALERT, domain=domain)
+                break
+            patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
                 (patchKey, url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
 
-        xml.append('    </update>')
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        if not forbidden:
+            xml.append(updateLine)
+            xml.extend(patches)
+            xml.append('    </update>')
         xml.append('</updates>')
         return xml
 
@@ -340,6 +361,11 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        xml.append('</updates>')
+        return xml
 
 class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV2:
@@ -436,3 +462,9 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
+
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        xml.append('</updates>')
+        return xml
