@@ -313,6 +313,59 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
+        AUS.rules.t.insert().execute(backgroundRate=100, mapping='j2', update_type='minor', product='j', data_version=1)
+        AUS.releases.t.insert().execute(name='j1', product='j', version='39.0', data_version=1, data="""
+{
+    "name": "j1",
+    "schema_version": 2,
+    "platforms": {
+        "p": {
+            "buildID": "28",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        AUS.releases.t.insert().execute(name='j2', product='j', version='40.0', data_version=1, data="""
+{
+    "name": "j2",
+    "schema_version": 2,
+    "hashFunction": "sha512",
+    "appVersion": "40.0",
+    "displayVersion": "40.0",
+    "platformVersion": "40.0",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%"
+    },
+    "ftpFilenames": {
+        "partial": "g1-partial.mar",
+        "complete": "complete.mar"
+    },
+    "platforms": {
+        "p": {
+            "buildID": "30",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "partial": {
+                        "filesize": 6,
+                        "from": "j1",
+                        "hashValue": 5
+                    },
+                    "complete": {
+                        "filesize": 38,
+                        "from": "*",
+                        "hashValue": "34"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
 
     def tearDown(self):
         os.close(self.cef_fd)
@@ -421,6 +474,37 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/plain')
         self.assertTrue('User-agent' in ret.data)
+
+    def testSchema2CompleteOnly(self):
+        ret = self.client.get('/update/3/j/35.0/4/p/l/c1/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="40.0" appVersion="40.0" platformVersion="40.0" buildID="30">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="34" size="38"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema2WithPartial(self):
+        ret = self.client.get('/update/3/j/39.0/28/p/l/c1/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="40.0" appVersion="40.0" platformVersion="40.0" buildID="30">
+        <patch type="partial" URL="http://a.com/g1-partial.mar" hashFunction="sha512" hashValue="5" size="6"/>
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="34" size="38"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema3MultipleUpdates(self):
         ret = self.client.get('/update/3/f/22.0/5/p/l/a/a/a/a/update.xml')
