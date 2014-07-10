@@ -42,7 +42,7 @@ if __name__ == '__main__':
     from migrate.exceptions import DatabaseAlreadyControlledError
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
-    dbo.setDburi(options.db)
+    dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:
         dbo.create()
