@@ -167,9 +167,6 @@ class Blob(dict):
 
         return url
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        buildTarget = updateQuery["buildTarget"]
-        locale = updateQuery["locale"]
 
 class ReleaseBlobV1(Blob):
     format_ = {
@@ -358,6 +355,60 @@ class NewStyleVersionsMixin(object):
         """ For v2 schema, appVersion really is the app version """
         return self.getAppVersion(platform, locale)
 
+    # better name
+    def getInnerPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
+        try:    
+            fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
+        except KeyError:
+            fromRelease = None
+
+        ftpFilename = self.getFtpFilename(patchKey, patch["from"])
+        bouncerProduct = self.getBouncerProduct(patchKey, patch["from"])
+
+        if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+            return None
+
+        url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+        if containsForbiddenDomain(url, whitelistedDomains):
+            raise Exception()
+        return'        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+            (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
+
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+
+        platformData = self.getPlatformData(buildTarget)
+        localeData = platformData["locales"][locale]
+        displayVersion = self.getDisplayVersion(buildTarget, locale)
+        appVersion = self.getAppVersion(buildTarget, locale)
+        platformVersion = self.getPlatformVersion(buildTarget, locale)
+        buildid = self.getBuildID(buildTarget, locale)
+
+        updateLine = '    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
+            (update_type, displayVersion, appVersion, platformVersion, buildid)
+        if "detailsUrl" in self:
+            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' detailsURL="%s"' % details
+        if "licenseUrl" in self:
+            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+            updateLine += ' licenseURL="%s"' % license
+        if localeData.get("isOSUpdate"):
+            updateLine += ' isOSUpdate="true"'
+        for attr in self.optional_:
+            if attr in self:
+                updateLine += ' %s="%s"' % (attr, self[attr])
+        updateLine += ">"
+
+        patches = self.getPatchXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        xml.append(updateLine)
+        xml.extend(patches)
+        xml.append('    </update>')
+        xml.append('</updates>')
+        return xml
 
 class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV1:
@@ -487,34 +538,14 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        buildTarget = updateQuery["buildTarget"]
-        locale = updateQuery["locale"]
+    def getFtpFilename(self, patchKey, from_):
+        return self.get("ftpFilenames", {}).get(patchKey, "")
 
-        platformData = self.getPlatformData(buildTarget)
-        localeData = platformData["locales"][locale]
-        displayVersion = self.getDisplayVersion(buildTarget, locale)
-        appVersion = self.getAppVersion(buildTarget, locale)
-        platformVersion = self.getPlatformVersion(buildTarget, locale)
-        buildid = self.getBuildID(buildTarget, locale)
+    def getBouncerProduct(self, patchKey, from_):
+        return self.get("bouncerProducts", {}).get(patchKey, "")
 
-        updateLine = '    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
-            (update_type, displayVersion, appVersion, platformVersion, buildid)
-        if "detailsUrl" in self:
-            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
-            updateLine += ' detailsURL="%s"' % details
-        if "licenseUrl" in self:
-            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
-            updateLine += ' licenseURL="%s"' % license
-        if localeData.get("isOSUpdate"):
-            updateLine += ' isOSUpdate="true"'
-        for attr in self.optional_:
-            if attr in self:
-                updateLine += ' %s="%s"' % (attr, self[attr])
-        updateLine += ">"
-
+    def getPatchXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
-        forbidden = False
         for patchKey in ("partial", "complete"):
             patch = localeData.get(patchKey)
             if not patch:
@@ -532,19 +563,12 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
 
             url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
             if containsForbiddenDomain(url, whitelistedDomains):
-                forbidden = True
-                break
+                # TODO more specificity
+                raise Exception()
             patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
                 (patchKey, url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
 
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
-        if not forbidden:
-            xml.append(updateLine)
-            xml.extend(patches)
-            xml.append('    </update>')
-        xml.append('</updates>')
-        return xml
+        return patches
 
 class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
     """ Changes from ReleaseBlobV2:
@@ -646,60 +670,19 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         # We have no tests that require this, probably not worthwhile to implement.
         return {}
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        buildTarget = updateQuery["buildTarget"]
-        locale = updateQuery["locale"]
+    def getFtpFilename(self, patchKey, from_):
+        return self.get("ftpFilenames", {}).get(patchKey, {}).get(from_, "")
 
-        platformData = self.getPlatformData(buildTarget)
-        localeData = platformData["locales"][locale]
-        displayVersion = self.getDisplayVersion(buildTarget, locale)
-        appVersion = self.getAppVersion(buildTarget, locale)
-        platformVersion = self.getPlatformVersion(buildTarget, locale)
-        buildid = self.getBuildID(buildTarget, locale)
+    def getBouncerProduct(self, patchKey, from_):
+        return self.get("bouncerProducts", {}).get(patchKey, {}).get(from_, "")
 
-        updateLine = '    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
-            (update_type, displayVersion, appVersion, platformVersion, buildid)
-        if "detailsUrl" in self:
-            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
-            updateLine += ' detailsURL="%s"' % details
-        if "licenseUrl" in self:
-            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
-            updateLine += ' licenseURL="%s"' % license
-        if "isOSUpdate" in self and self["isOSUpdate"]:
-            updateLine += ' isOSUpdate="true"'
-        updateLine += ">"
-
+    def getPatchXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
-        forbidden = False
         for patchKey in ("partials", "completes"):
             for patch in localeData.get(patchKey):
-                if not patch:
-                    continue
-
-                try:    
-                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-                except KeyError:
-                    fromRelease = None
-                ftpFilename = self.get("ftpFilenames", {}).get(patchKey, {}).get(patch["from"], "")
-                bouncerProduct = self.get("bouncerProducts", {}).get(patchKey, {}).get(patch["from"], "")
-
-                if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
-                    continue
-
-                url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
-                if containsForbiddenDomain(url, whitelistedDomains):
-                    forbidden = True
+                xml = self.getInnerPatchXML(patchKey, patchKey[:-1], patch, updateQuery, whitelistedDomains, specialForceHosts)
+                if xml:
+                    patches.append(xml)
                     break
-                patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
-                    # OMG HACK
-                    (patchKey[:-1], url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
-                break
 
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
-        if not forbidden:
-            xml.append(updateLine)
-            xml.extend(patches)
-            xml.append('    </update>')
-        xml.append('</updates>')
-        return xml
+        return patches
