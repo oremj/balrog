@@ -5,7 +5,9 @@ import unittest
 from xml.dom import minidom
 
 import auslib.log
-from auslib.web.base import app, AUS
+from auslib import dbo
+from auslib.db import AUSDatabase
+from auslib.web.base import app
 from auslib.web.views.client import ClientRequestView
 
 class ClientTest(unittest.TestCase):
@@ -27,14 +29,14 @@ class ClientTest(unittest.TestCase):
         app.config['DEBUG'] = True
         app.config['SPECIAL_FORCE_HOSTS'] = ('http://a.com',)
         app.config['WHITELISTED_DOMAINS'] = ('a.com', 'boring.com')
-        AUS.setDb('sqlite:///:memory:')
-        AUS.db.create()
-        AUS.db.setDomainWhitelist(('a.com', 'boring.com'))
+        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.create()
+        dbo.setDomainWhitelist(('a.com', 'boring.com'))
         self.client = app.test_client()
         self.view = ClientRequestView()
         auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='b', update_type='minor', product='b', data_version=1)
-        AUS.releases.t.insert().execute(name='b', product='b', version='1.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='b', update_type='minor', product='b', data_version=1)
+        dbo.releases.t.insert().execute(name='b', product='b', version='1.0', data_version=1, data="""
 {
     "name": "b",
     "schema_version": 1,
@@ -58,9 +60,9 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='c', update_type='minor', product='c',
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='c', update_type='minor', product='c',
                                      distribution='default', data_version=1)
-        AUS.releases.t.insert().execute(name='c', product='c', version='10.0', data_version=1, data="""
+        dbo.releases.t.insert().execute(name='c', product='c', version='10.0', data_version=1, data="""
 {
     "name": "c",
     "schema_version": 1,
@@ -84,8 +86,8 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='d', update_type='minor', product='d', data_version=1)
-        AUS.releases.t.insert().execute(name='d', product='d', version='20.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='d', update_type='minor', product='d', data_version=1)
+        dbo.releases.t.insert().execute(name='d', product='d', version='20.0', data_version=1, data="""
 {
     "name": "d",
     "schema_version": 1,
@@ -110,8 +112,8 @@ class ClientTest(unittest.TestCase):
 }
 """)
 
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='e', update_type='minor', product='e', data_version=1)
-        AUS.releases.t.insert().execute(name='e', product='e', version='22.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='e', update_type='minor', product='e', data_version=1)
+        dbo.releases.t.insert().execute(name='e', product='e', version='22.0', data_version=1, data="""
 {
     "name": "e",
     "schema_version": 1,
@@ -134,8 +136,8 @@ class ClientTest(unittest.TestCase):
 }
 """)
 
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='f3', update_type='minor', product='f', data_version=1)
-        AUS.releases.t.insert().execute(name='f1', product='f', version='22.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='f3', update_type='minor', product='f', data_version=1)
+        dbo.releases.t.insert().execute(name='f1', product='f', version='22.0', data_version=1, data="""
 {
     "name": "f1",
     "schema_version": 3,
@@ -149,7 +151,7 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.releases.t.insert().execute(name='f2', product='f', version='23.0', data_version=1, data="""
+        dbo.releases.t.insert().execute(name='f2', product='f', version='23.0', data_version=1, data="""
 {
     "name": "f2",
     "schema_version": 3,
@@ -163,7 +165,7 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.releases.t.insert().execute(name='f3', product='f', version='25.0', data_version=1, data="""
+        dbo.releases.t.insert().execute(name='f3', product='f', version='25.0', data_version=1, data="""
 {
     "name": "f3",
     "schema_version": 3,
@@ -210,8 +212,8 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='g2', update_type='minor', product='g', data_version=1)
-        AUS.releases.t.insert().execute(name='g1', product='g', version='23.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='g2', update_type='minor', product='g', data_version=1)
+        dbo.releases.t.insert().execute(name='g1', product='g', version='23.0', data_version=1, data="""
 {
     "name": "g1",
     "schema_version": 3,
@@ -225,7 +227,7 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.releases.t.insert().execute(name='g2', product='g', version='26.0', data_version=1, data="""
+        dbo.releases.t.insert().execute(name='g2', product='g', version='26.0', data_version=1, data="""
 {
     "name": "g2",
     "schema_version": 3,
@@ -280,8 +282,8 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='h', update_type='minor', product='h', data_version=1)
-        AUS.releases.t.insert().execute(name='h', product='h', version='1.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='h', update_type='minor', product='h', data_version=1)
+        dbo.releases.t.insert().execute(name='h', product='h', version='1.0', data_version=1, data="""
 {
     "name": "h",
     "schema_version": 1,
@@ -315,8 +317,8 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='j2', update_type='minor', product='j', data_version=1)
-        AUS.releases.t.insert().execute(name='j1', product='j', version='39.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='j2', update_type='minor', product='j', data_version=1)
+        dbo.releases.t.insert().execute(name='j1', product='j', version='39.0', data_version=1, data="""
 {
     "name": "j1",
     "schema_version": 2,
@@ -330,7 +332,7 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.releases.t.insert().execute(name='j2', product='j', version='40.0', data_version=1, data="""
+        dbo.releases.t.insert().execute(name='j2', product='j', version='40.0', data_version=1, data="""
 {
     "name": "j2",
     "schema_version": 2,
@@ -368,8 +370,8 @@ class ClientTest(unittest.TestCase):
     }
 }
 """)
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='k', update_type='minor', product='k', data_version=1)
-        AUS.releases.t.insert().execute(name='k', product='k', version='50.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='k', update_type='minor', product='k', data_version=1)
+        dbo.releases.t.insert().execute(name='k', product='k', version='50.0', data_version=1, data="""
 {
     "name": "k",
     "schema_version": 2,
@@ -751,8 +753,8 @@ class ClientTestWithErrorHandlers(unittest.TestCase):
     def setUp(self):
         app.config['DEBUG'] = True
         app.config['WHITELISTED_DOMAINS'] = ('a.com',)
-        AUS.setDb('sqlite:///:memory:')
-        AUS.db.create()
+        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.create()
         self.client = app.test_client()
         self.view = ClientRequestView()
 

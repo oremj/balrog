@@ -4,6 +4,7 @@ from urlparse import urlparse
 import logging
 log = logging.getLogger(__name__)
 
+from auslib import dbo
 from auslib.log import cef_event, CEF_ALERT
 
 # TODO: move me
@@ -187,7 +188,7 @@ class Blob(dict):
 
         return url
 
-    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
 
@@ -256,7 +257,7 @@ class ReleaseBlobV1(Blob):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
-    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
@@ -268,7 +269,7 @@ class ReleaseBlobV1(Blob):
                 continue
 
             try:    
-                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
@@ -311,7 +312,7 @@ class ReleaseBlobV1(Blob):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
 
@@ -339,7 +340,7 @@ class ReleaseBlobV1(Blob):
                 continue
 
             try:    
-                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey, "")
@@ -453,7 +454,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
-    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
@@ -465,7 +466,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
                 continue
 
             try:    
-                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
@@ -507,7 +508,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
 
@@ -541,7 +542,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
                 continue
 
             try:    
-                fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
             ftpFilename = self.get("ftpFilenames", {}).get(patchKey, "")
@@ -662,11 +663,11 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
 
-    def createSnippets(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # We have no tests that require this, probably not worthwhile to implement.
         return {}
 
-    def createXML(self, db, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
 
@@ -697,7 +698,7 @@ class ReleaseBlobV3(Blob, NewStyleVersionsMixin):
                     continue
 
                 try:    
-                    fromRelease = db.releases.getReleaseBlob(name=patch["from"])
+                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
                 except KeyError:
                     fromRelease = None
                 ftpFilename = self.get("ftpFilenames", {}).get(patchKey, {}).get(patch["from"], "")

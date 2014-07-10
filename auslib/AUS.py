@@ -1,13 +1,12 @@
-from collections import defaultdict
 from random import randint
 
 import logging
 
-from auslib.db import AUSDatabase
+from auslib import dbo
 from auslib.util.versions import MozillaVersion
 
 # TODO: move this method
-from auslib.blob import containsForbiddenDomain, getFallbackChannel
+from auslib.blob import getFallbackChannel
 
 class AUSRandom:
     """Abstract getting a randint to make it easier to test the range of
@@ -23,23 +22,15 @@ class AUSRandom:
         return range(self.min, self.max+1)
 
 class AUS:
-    def __init__(self, dbname=None):
+    def __init__(self):
         self.specialForceHosts = None
-        self.setDb(dbname)
         self.rand = AUSRandom()
         self.log = logging.getLogger(self.__class__.__name__)
-
-    def setDb(self, dbname):
-        if dbname == None:
-            dbname = "sqlite:///update.db"
-        self.db = AUSDatabase(dbname)
-        self.releases = self.db.releases
-        self.rules = self.db.rules
 
     def evaluateRules(self, updateQuery):
         self.log.debug("Looking for rules that apply to:")
         self.log.debug(updateQuery)
-        rules = self.rules.getRulesMatchingQuery(
+        rules = dbo.rules.getRulesMatchingQuery(
             updateQuery,
             fallbackChannel=getFallbackChannel(updateQuery['channel'])
         )
@@ -72,7 +63,7 @@ class AUS:
         # 3) Incoming release is older than the one in the mapping, defined as one of:
         #    * version decreases
         #    * version is the same and buildID doesn't increase
-        release = self.releases.getReleases(name=rule['mapping'], limit=1)[0]
+        release = dbo.releases.getReleases(name=rule['mapping'], limit=1)[0]
         buildTarget = updateQuery['buildTarget']
         locale = updateQuery['locale']
         releaseVersion = release['data'].getApplicationVersion(buildTarget, locale)
