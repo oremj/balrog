@@ -6,7 +6,6 @@ from xml.dom import minidom
 
 import auslib.log
 from auslib import dbo
-from auslib.db import AUSDatabase
 from auslib.web.base import app
 from auslib.web.views.client import ClientRequestView
 
@@ -29,7 +28,7 @@ class ClientTest(unittest.TestCase):
         app.config['DEBUG'] = True
         app.config['SPECIAL_FORCE_HOSTS'] = ('http://a.com',)
         app.config['WHITELISTED_DOMAINS'] = ('a.com', 'boring.com')
-        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.setDb('sqlite:///:memory:')
         dbo.create()
         dbo.setDomainWhitelist(('a.com', 'boring.com'))
         self.client = app.test_client()
@@ -753,7 +752,7 @@ class ClientTestWithErrorHandlers(unittest.TestCase):
     def setUp(self):
         app.config['DEBUG'] = True
         app.config['WHITELISTED_DOMAINS'] = ('a.com',)
-        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.setDb('sqlite:///:memory:')
         dbo.create()
         self.client = app.test_client()
         self.view = ClientRequestView()

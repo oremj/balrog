@@ -2,7 +2,6 @@ import mock
 import unittest
 
 from auslib import dbo
-from auslib.db import AUSDatabase
 from auslib.AUS import AUS
 
 def RandomAUSTest(AUS, backgroundRate, force, mapping):
@@ -34,7 +33,7 @@ def RandomAUSTest(AUS, backgroundRate, force, mapping):
 class TestAUSThrottling(unittest.TestCase):
     def setUp(self):
         self.AUS = AUS()
-        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.setDb('sqlite:///:memory:')
         dbo.create()
         dbo.releases.t.insert().execute(name='b', product='b', version='b', data_version=1, data='{"name": "b", "extv": "1.0", "schema_version": 1, "platforms": {"a": {"buildID": "1", "locales": {"a": {}}}}}')
 

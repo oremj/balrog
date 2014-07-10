@@ -11,7 +11,6 @@ site.addsitedir(mydir)
 site.addsitedir(os.path.join(mydir, 'vendor/lib/python'))
 
 from auslib import dbo
-from auslib.db import AUSDatabase
 from auslib.AUS import AUS as AUS_Class
 
 import logging
@@ -184,7 +183,7 @@ if __name__ == "__main__":
         else:
             dbPath = 'sqlite:///:memory:'
         AUS = AUS_Class()
-        dbo.setDb(AUSDatabase(dbPath))
+        dbo.setDb(dbPath)
         dbo.create()
         dbo.setDomainWhitelist(WHITELISTED_DOMAINS)
         populateDB(td)

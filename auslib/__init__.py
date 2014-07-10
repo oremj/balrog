@@ -5,8 +5,10 @@ class DbWrapper(object):
     def __init__(self):
         self.db = None
 
-    def setDb(self, db):
-        self.db = db
+    def setDb(self, dburi):
+        # This import is deferred to avoid circular depedency issues.
+        from auslib.db import AUSDatabase
+        self.db = AUSDatabase(dburi)
 
     def __getattr__(self, name):
         if not self.db:

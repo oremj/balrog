@@ -7,7 +7,6 @@ from flask import Response
 
 from auslib import dbo
 from auslib.admin.base import app
-from auslib.db import AUSDatabase
 import auslib.log
 
 # When running tests, there's no web server to convert uncaught exceptions to
@@ -27,7 +26,7 @@ class ViewTest(unittest.TestCase):
         app.config['CSRF_ENABLED'] = False
         app.config['WHITELISTED_DOMAINS'] = ['good.com']
         auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
-        dbo.setDb(AUSDatabase('sqlite:///:memory:'))
+        dbo.setDb('sqlite:///:memory:')
         dbo.setDomainWhitelist(['good.com'])
         dbo.create()
         dbo.permissions.t.insert().execute(permission='admin', username='bill', data_version=1)
