@@ -37,14 +37,15 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
-    from auslib.admin.base import app, db
+    from auslib import dbo
+    from auslib.admin.base import app
     from migrate.exceptions import DatabaseAlreadyControlledError
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
-    db.setDburi(options.db)
-    db.setDomainWhitelist(options.whitelistedDomains)
+    dbo.setDburi(options.db)
+    dbo.setDomainWhitelist(options.whitelistedDomains)
     try:
-        db.create()
+        dbo.create()
     except DatabaseAlreadyControlledError:
         pass
 

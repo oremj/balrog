@@ -1,12 +1,31 @@
 from random import randint
+from urlparse import urlparse
 
 import logging
 
 from auslib import dbo
+from auslib.log import cef_event, CEF_ALERT
 from auslib.util.versions import MozillaVersion
 
-# TODO: move this method
-from auslib.blob import getFallbackChannel
+
+def isSpecialURL(url, specialForceHosts):
+    if not specialForceHosts:
+        return False
+    for s in specialForceHosts:
+        if url.startswith(s):
+            return True
+    return False
+
+def containsForbiddenDomain(url, whitelistedDomains):
+    domain = urlparse(url)[1]
+    if domain not in whitelistedDomains:
+        cef_event("Forbidden domain", CEF_ALERT, domain=domain)
+        return True
+    return False
+
+def getFallbackChannel(channel):
+    return channel.split('-cck-')[0]
+
 
 class AUSRandom:
     """Abstract getting a randint to make it easier to test the range of

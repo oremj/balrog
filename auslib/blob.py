@@ -1,32 +1,11 @@
 import simplejson as json
-from urlparse import urlparse
 
 import logging
 log = logging.getLogger(__name__)
 
 from auslib import dbo
-from auslib.log import cef_event, CEF_ALERT
+from auslib.AUS import isSpecialURL, containsForbiddenDomain, getFallbackChannel
 
-# TODO: move me
-def isSpecialURL(url, specialForceHosts):
-    if not specialForceHosts:
-        return False
-    for s in specialForceHosts:
-        if url.startswith(s):
-            return True
-    return False
-
-# TODO: move me
-def containsForbiddenDomain(url, whitelistedDomains):
-    domain = urlparse(url)[1]
-    if domain not in whitelistedDomains:
-        cef_event("Forbidden domain", CEF_ALERT, domain=domain)
-        return True
-    return False
-
-# TODO: move me
-def getFallbackChannel(channel):
-    return channel.split('-cck-')[0]
 
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
