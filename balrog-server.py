@@ -1,3 +1,10 @@
+from os import path
+import site
+
+mydir = path.dirname(path.abspath(__file__))
+site.addsitedir(mydir)
+site.addsitedir(path.join(mydir, 'vendor/lib/python'))
+
 from migrate import DatabaseAlreadyControlledError
 
 import logging
