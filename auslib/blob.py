@@ -244,7 +244,7 @@ class ReleaseBlobV1(Blob):
             if not patch:
                 continue
 
-            try:    
+            try:
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
@@ -315,7 +315,7 @@ class ReleaseBlobV1(Blob):
             if not patch:
                 continue
 
-            try:    
+            try:
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
@@ -357,7 +357,7 @@ class NewStyleVersionsMixin(object):
 
     # better name
     def getInnerPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
-        try:    
+        try:
             fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
         except KeyError:
             fromRelease = None
@@ -495,7 +495,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             if not patch:
                 continue
 
-            try:    
+            try:
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
@@ -551,7 +551,7 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             if not patch:
                 continue
 
-            try:    
+            try:
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
