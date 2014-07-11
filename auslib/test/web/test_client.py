@@ -789,11 +789,11 @@ class HackyH264Tests(unittest.TestCase):
 
     def setUp(self):
         app.config['DEBUG'] = True
-        AUS.setDb('sqlite:///:memory:')
-        AUS.db.create()
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
         self.client = app.test_client()
-        AUS.rules.t.insert().execute(backgroundRate=100, mapping='HackyH264Blob', update_type='minor', product='GMP', data_version=1)
-        AUS.releases.t.insert().execute(name='HackyH264Blob', product='GMP', version='1.0', data_version=1, data="""
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='HackyH264Blob', update_type='minor', product='GMP', data_version=1)
+        dbo.releases.t.insert().execute(name='HackyH264Blob', product='GMP', version='1.0', data_version=1, data="""
 {
     "name": "HackyH264Blob",
     "schema_version": 3,

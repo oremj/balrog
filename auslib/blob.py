@@ -551,22 +551,9 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin):
             if not patch:
                 continue
 
-            try:
-                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-            except KeyError:
-                fromRelease = None
-            ftpFilename = self.get("ftpFilenames", {}).get(patchKey, "")
-            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey, "")
-
-            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
-                continue
-
-            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
-            if containsForbiddenDomain(url, whitelistedDomains):
-                # TODO more specificity
-                raise Exception()
-            patches.append('        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
-                (patchKey, url, self["hashFunction"], patch["hashValue"], patch["filesize"]))
+            xml = self.getInnerPatchXML(patchKey, patchKey, patch, updateQuery, whitelistedDomains, specialForceHosts)
+            if xml:
+                patches.append(xml)
 
         return patches
 
