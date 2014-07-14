@@ -544,8 +544,10 @@ class MultipleUpdatesXMLMixin(object):
     def getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey in ("partials", "completes"):
+            # Hopefully patchType = patchKey - last character holds true.
+            patchType = patchKey[:-1]
             for patch in localeData.get(patchKey):
-                xml = self.getSpecificPatchXML(patchKey, patchKey[:-1], patch, updateQuery, whitelistedDomains, specialForceHosts)
+                xml = self.getSpecificPatchXML(patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts)
                 if xml:
                     patches.append(xml)
                     break
