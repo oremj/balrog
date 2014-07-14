@@ -352,8 +352,9 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
-        xml.append(updateLine)
-        xml.extend(patches)
+        if patches:
+            xml.append(updateLine)
+            xml.extend(patches)
         xml.append('    </update>')
         xml.append('</updates>')
         return xml
