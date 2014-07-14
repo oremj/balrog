@@ -190,6 +190,22 @@ class Blob(dict):
         return '        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
 
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        buildTarget = updateQuery["buildTarget"]
+        locale = updateQuery["locale"]
+        localeData = self.getPlatformData(buildTarget)["locales"][locale]
+
+        updateLine = self.getUpdateLineXML(buildTarget, locale, update_type)
+        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        if patches:
+            xml.append(updateLine)
+            xml.extend(patches)
+            xml.append('    </update>')
+        xml.append('</updates>')
+        return xml
 
 class SingleUpdateXMLMixin(object):
     def getFtpFilename(self, patchKey, from_):
@@ -332,12 +348,7 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        buildTarget = updateQuery["buildTarget"]
-        locale = updateQuery["locale"]
-
-        platformData = self.getPlatformData(buildTarget)
-        localeData = platformData["locales"][locale]
+    def getUpdateLineXML(self, buildTarget, locale, update_type):
         appv = self.getAppv(buildTarget, locale)
         extv = self.getExtv(buildTarget, locale)
         buildid = self.getBuildID(buildTarget, locale)
@@ -345,23 +356,15 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
         updateLine = '    <update type="%s" version="%s" extensionVersion="%s" buildID="%s"' % \
             (update_type, appv, extv, buildid)
         if "detailsUrl" in self:
-            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+            details = self["detailsUrl"].replace("%LOCALE%", locale)
             updateLine += ' detailsURL="%s"' % details
         if "licenseUrl" in self:
-            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+            license = self["licenseUrl"].replace("%LOCALE%", locale)
             updateLine += ' licenseURL="%s"' % license
         updateLine += ">"
 
-        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+        return updateLine
 
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
-        if patches:
-            xml.append(updateLine)
-            xml.extend(patches)
-            xml.append('    </update>')
-        xml.append('</updates>')
-        return xml
 
 class NewStyleVersionsMixin(object):
     def getAppVersion(self, platform, locale):
@@ -377,24 +380,20 @@ class NewStyleVersionsMixin(object):
         """ For v2 schema, appVersion really is the app version """
         return self.getAppVersion(platform, locale)
 
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
-        buildTarget = updateQuery["buildTarget"]
-        locale = updateQuery["locale"]
-
-        platformData = self.getPlatformData(buildTarget)
-        localeData = platformData["locales"][locale]
+    def getUpdateLineXML(self, buildTarget, locale, update_type):
         displayVersion = self.getDisplayVersion(buildTarget, locale)
         appVersion = self.getAppVersion(buildTarget, locale)
         platformVersion = self.getPlatformVersion(buildTarget, locale)
         buildid = self.getBuildID(buildTarget, locale)
+        localeData = self.getPlatformData(buildTarget)["locales"][locale]
 
         updateLine = '    <update type="%s" displayVersion="%s" appVersion="%s" platformVersion="%s" buildID="%s"' % \
             (update_type, displayVersion, appVersion, platformVersion, buildid)
         if "detailsUrl" in self:
-            details = self["detailsUrl"].replace("%LOCALE%", updateQuery["locale"])
+            details = self["detailsUrl"].replace("%LOCALE%", locale)
             updateLine += ' detailsURL="%s"' % details
         if "licenseUrl" in self:
-            license = self["licenseUrl"].replace("%LOCALE%", updateQuery["locale"])
+            license = self["licenseUrl"].replace("%LOCALE%", locale)
             updateLine += ' licenseURL="%s"' % license
         if localeData.get("isOSUpdate"):
             updateLine += ' isOSUpdate="true"'
@@ -403,16 +402,8 @@ class NewStyleVersionsMixin(object):
                 updateLine += ' %s="%s"' % (attr, self[attr])
         updateLine += ">"
 
-        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+        return updateLine
 
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
-        if patches:
-            xml.append(updateLine)
-            xml.extend(patches)
-            xml.append('    </update>')
-        xml.append('</updates>')
-        return xml
 
 class ReleaseBlobV2(Blob, NewStyleVersionsMixin, SingleUpdateXMLMixin):
     """ Changes from ReleaseBlobV1:
