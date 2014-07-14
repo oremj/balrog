@@ -167,8 +167,7 @@ class Blob(dict):
 
         return url
 
-    # better name
-    def getInnerPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
+    def getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
         try:
             fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
         except KeyError:
@@ -194,14 +193,14 @@ class SingleUpdateXMLMixin(object):
     def getBouncerProduct(self, patchKey, from_):
         return self.get("bouncerProducts", {}).get(patchKey, "")
 
-    def getPatchXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
+    def getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey in ("partial", "complete"):
             patch = localeData.get(patchKey)
             if not patch:
                 continue
 
-            xml = self.getInnerPatchXML(patchKey, patchKey, patch, updateQuery, whitelistedDomains, specialForceHosts)
+            xml = self.getSpecificPatchXML(patchKey, patchKey, patch, updateQuery, whitelistedDomains, specialForceHosts)
             if xml:
                 patches.append(xml)
 
@@ -348,7 +347,7 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
             updateLine += ' licenseURL="%s"' % license
         updateLine += ">"
 
-        patches = self.getPatchXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
@@ -399,7 +398,7 @@ class NewStyleVersionsMixin(object):
                 updateLine += ' %s="%s"' % (attr, self[attr])
         updateLine += ">"
 
-        patches = self.getPatchXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
@@ -545,11 +544,11 @@ class MultipleUpdatesXMLMixin(object):
     def getBouncerProduct(self, patchKey, from_):
         return self.get("bouncerProducts", {}).get(patchKey, {}).get(from_, "")
 
-    def getPatchXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
+    def getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey in ("partials", "completes"):
             for patch in localeData.get(patchKey):
-                xml = self.getInnerPatchXML(patchKey, patchKey[:-1], patch, updateQuery, whitelistedDomains, specialForceHosts)
+                xml = self.getSpecificPatchXML(patchKey, patchKey[:-1], patch, updateQuery, whitelistedDomains, specialForceHosts)
                 if xml:
                     patches.append(xml)
                     break
