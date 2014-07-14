@@ -186,6 +186,7 @@ class Blob(dict):
         # but the complete could still return an update from an accepted one.
         if containsForbiddenDomain(url, whitelistedDomains):
             return None
+
         return '        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
 
