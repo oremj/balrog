@@ -180,9 +180,13 @@ class Blob(dict):
             return None
 
         url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+        # TODO: should be raising a bigger alarm here, or aborting
+        # the update entirely? Right now, another patch type could still
+        # return an update. Eg, the partial could contain a forbidden domain
+        # but the complete could still return an update from an accepted one.
         if containsForbiddenDomain(url, whitelistedDomains):
-            raise Exception()
-        return'        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
+            return None
+        return '        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
 
 
@@ -354,7 +358,7 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
         if patches:
             xml.append(updateLine)
             xml.extend(patches)
-        xml.append('    </update>')
+            xml.append('    </update>')
         xml.append('</updates>')
         return xml
 
@@ -402,9 +406,10 @@ class NewStyleVersionsMixin(object):
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
-        xml.append(updateLine)
-        xml.extend(patches)
-        xml.append('    </update>')
+        if patches:
+            xml.append(updateLine)
+            xml.extend(patches)
+            xml.append('    </update>')
         xml.append('</updates>')
         return xml
 
