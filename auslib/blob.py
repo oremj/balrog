@@ -135,7 +135,7 @@ class Blob(dict):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename=None, bouncerProduct=None):
+    def getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct):
         platformData = self.getPlatformData(updateQuery["buildTarget"])
         if 'fileUrl' in patch:
             url = patch['fileUrl']
