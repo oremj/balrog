@@ -5,7 +5,6 @@ import logging
 
 from auslib import dbo
 from auslib.log import cef_event, CEF_ALERT
-from auslib.util.versions import MozillaVersion
 
 
 def isSpecialURL(url, specialForceHosts):
@@ -83,21 +82,9 @@ class AUS:
         #    * version decreases
         #    * version is the same and buildID doesn't increase
         release = dbo.releases.getReleases(name=rule['mapping'], limit=1)[0]
-        buildTarget = updateQuery['buildTarget']
-        locale = updateQuery['locale']
-        releaseVersion = release['data'].getApplicationVersion(buildTarget, locale)
-        if not releaseVersion:
-            self.log.debug("Matching rule has no extv, ignoring rule.")
+        blob = release['data']
+        if not blob.shouldServeUpdate(updateQuery):
             return None, None
-        releaseVersion = MozillaVersion(releaseVersion)
-        queryVersion = MozillaVersion(updateQuery['version'])
-        if queryVersion > releaseVersion:
-            self.log.debug("Matching rule has older version than request, ignoring rule.")
-            return None, None
-        elif releaseVersion == queryVersion:
-            if updateQuery['buildID'] >= release['data'].getBuildID(updateQuery['buildTarget'], updateQuery['locale']):
-                self.log.debug("Matching rule has older buildid than request, ignoring rule.")
-                return None, None
 
         self.log.debug("Returning release %s", release['name'])
-        return release['data'], rule['update_type']
+        return blob, rule['update_type']
