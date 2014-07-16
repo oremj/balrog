@@ -52,7 +52,10 @@ def isValidBlob(format_, blob, topLevel=True):
     return True
 
 def createBlob(data):
+    # These imports need to be done here to avoid errors due to circular
+    # between this module and specific blob modules like apprelease.
     from auslib.blobs.apprelease import ReleaseBlobV1, ReleaseBlobV2, ReleaseBlobV3
+
     """Takes a string form of a blob (eg from DB or API) and converts into an
     actual blob, taking care to notice the schema"""
     data = json.loads(data)
