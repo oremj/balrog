@@ -772,6 +772,41 @@ class ClientTestWithErrorHandlers(unittest.TestCase):
             self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
 
+class GMPClientTest(unittest.TestCase):
+    maxDiff = 2000
+
+    @classmethod
+    def setUpClass(cls):
+        # Error handlers are removed in order to give us better debug messages
+        cls.error_spec = app.error_handler_spec
+        # Ripped from https://github.com/mitsuhiko/flask/blob/1f5927eee2288b4aaf508af5dc1f148aa2140d91/flask/app.py#L394
+        app.error_handler_spec = {None: {}}
+
+    @classmethod
+    def tearDownClass(cls):
+        app.error_handler_spec = cls.error_spec
+
+    def setUp(self):
+        self.cef_fd, self.cef_file = mkstemp()
+        app.config['DEBUG'] = True
+        app.config['SPECIAL_FORCE_HOSTS'] = ('http://a.com',)
+        app.config['WHITELISTED_DOMAINS'] = ('a.com', 'boring.com')
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
+        dbo.setDomainWhitelist(('a.com', 'boring.com'))
+        self.client = app.test_client()
+        self.view = ClientRequestView()
+        auslib.log.cef_config = auslib.log.get_cef_config(self.cef_file)
+        dbo.rules.t.insert().execute(backgroundRate=100, mapping='gg', update_type='minor', product='gg', data_version=1)
+        dbo.releases.t.insert().execute(name='gg', product='gg', version='1.0', data_version=1, data="""
+{
+    "name": "gg",
+    "schema_version": 1000,
+}
+""")
+
+    def test
+
 
 # TODO: kill this with fire, brimstone, and extreme prejudice when bug 1013354 is fixed.
 class HackyH264Tests(unittest.TestCase):
