@@ -4,7 +4,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
        Validation follows these rules:
