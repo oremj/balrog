@@ -1,6 +1,3 @@
-import logging
-log = logging.getLogger(__name__)
-
 from auslib import dbo
 from auslib.AUS import isSpecialURL, containsForbiddenDomain, getFallbackChannel
 from auslib.blobs.base import Blob
