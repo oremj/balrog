@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from auslib import dbo
 from auslib.AUS import isSpecialURL, containsForbiddenDomain, getFallbackChannel
+from auslib.util.versions import MozillaVersion
 
 
 def isValidBlob(format_, blob, topLevel=True):
@@ -206,6 +207,26 @@ class Blob(dict):
             xml.append('    </update>')
         xml.append('</updates>')
         return xml
+
+    def shouldServeUpdate(self, updateQuery):
+        buildTarget = updateQuery['buildTarget']
+        locale = updateQuery['locale']
+        releaseVersion = self.getApplicationVersion(buildTarget, locale)
+        if not releaseVersion:
+            self.log.debug("Matching rule has no extv, will not serve update.")
+            return False
+        releaseVersion = MozillaVersion(releaseVersion)
+        queryVersion = MozillaVersion(updateQuery['version'])
+        if queryVersion > releaseVersion:
+            self.log.debug("Matching rule has older version than request, will not serve update.")
+            return False
+        elif releaseVersion == queryVersion:
+            if updateQuery['buildID'] >= self.getBuildID(updateQuery['buildTarget'], updateQuery['locale']):
+                self.log.debug("Matching rule has older buildid than request, will not serve update.")
+                return False
+
+        return True
+
 
 class SingleUpdateXMLMixin(object):
     def getFtpFilename(self, patchKey, from_):
