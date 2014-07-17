@@ -92,3 +92,6 @@ class Blob(dict):
     def getJSON(self):
         """Returns a JSON formatted version of this blob."""
         return json.dumps(self)
+
+    def shouldServeUpdate(self):
+        raise NotImplementedError()
