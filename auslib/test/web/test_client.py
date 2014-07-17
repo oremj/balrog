@@ -826,6 +826,11 @@ class GMPClientTest(unittest.TestCase):
                     "filesize": 10,
                     "hashValue": "11",
                     "fileUrl": "http://boring.com/foo"
+                },
+                "r": {
+                    "filesize": 666,
+                    "hashValue": "666",
+                    "fileUrl": "http://evil.com/fire"
                 }
             }
         }
@@ -862,6 +867,22 @@ class GMPClientTest(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
+    def testSpecialForceHosts(self):
+        ret = self.client.get('/update/3/gg/3/1/p/l/a/a/a/a/update.xml?force=1')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://a.com/blah?force=1" hashFunction="SHA512" hashValue="3" size="2" version="1"/>
+    </addons>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testForbiddenDomain(self):
+        pass
 
 
 # TODO: kill this with fire, brimstone, and extreme prejudice when bug 1013354 is fixed.
