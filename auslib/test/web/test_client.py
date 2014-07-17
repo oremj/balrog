@@ -882,7 +882,10 @@ class GMPClientTest(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testForbiddenDomain(self):
-        pass
+        ret = self.client.get('/update/3/gg/1/1/r/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
 
 # TODO: kill this with fire, brimstone, and extreme prejudice when bug 1013354 is fixed.
