@@ -97,7 +97,7 @@ class Blob(dict):
         """Returns a JSON formatted version of this blob."""
         return json.dumps(self)
 
-    def shouldServeUpdate(self):
+    def shouldServeUpdate(self, updateQuery):
         raise NotImplementedError()
 
     def processSpecialForceHosts(self, url, specialForceHosts):
