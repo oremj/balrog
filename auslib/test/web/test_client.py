@@ -818,6 +818,16 @@ class GMPClientTest(unittest.TestCase):
                     "fileUrl": "http://boring.com/blah"
                 }
             }
+        },
+        "d": {
+            "version": "5",
+            "platforms": {
+                "q": {
+                    "filesize": 10,
+                    "hashValue": "11",
+                    "fileUrl": "http://boring.com/foo"
+                }
+            }
         }
     }
 }
@@ -835,9 +845,24 @@ class GMPClientTest(unittest.TestCase):
     </addons>
 </updates>
 """)
-        print returned.toxml()
-        print expected.toxml()
         self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testGMPUpdateMultipleAddons(self):
+        ret = self.client.get('/update/3/gg/3/1/q/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://boring.com/blah" hashFunction="SHA512" hashValue="5" size="4" version="1"/>
+        <addon id="d" URL="http://boring.com/foo" hashFunction="SHA512" hashValue="11" size="10" version="5"/>
+    </addons>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+
 
 # TODO: kill this with fire, brimstone, and extreme prejudice when bug 1013354 is fixed.
 class HackyH264Tests(unittest.TestCase):

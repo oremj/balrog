@@ -37,6 +37,9 @@ class GMPBlobV1(Blob):
         vendorXML = []
         for id_, vendorInfo in self.get("vendors", {}).iteritems():
             platformInfo = vendorInfo.get("platforms", {}).get(buildTarget)
+            if not platformInfo:
+                continue
+
             url = platformInfo["fileUrl"]
             if updateQuery["force"]:
                 url = self.processSpecialForceHosts(url, specialForceHosts)
