@@ -802,11 +802,42 @@ class GMPClientTest(unittest.TestCase):
 {
     "name": "gg",
     "schema_version": 1000,
+    "hashFunction": "SHA512",
+    "vendors": {
+        "c": {
+            "version": "1",
+            "platforms": {
+                "p": {
+                    "filesize": 2,
+                    "hashValue": "3",
+                    "fileUrl": "http://a.com/blah"
+                },
+                "q": {
+                    "filesize": 4,
+                    "hashValue": "5",
+                    "fileUrl": "http://boring.com/blah"
+                }
+            }
+        }
+    }
 }
 """)
 
-    def test
-
+    def testGMPUpdate(self):
+        ret = self.client.get('/update/3/gg/3/1/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://a.com/blah" hashFunction="SHA512" hashValue="3" size="2" version="1"/>
+    </addons>
+</updates>
+""")
+        print returned.toxml()
+        print expected.toxml()
+        self.assertEqual(returned.toxml(), expected.toxml())
 
 # TODO: kill this with fire, brimstone, and extreme prejudice when bug 1013354 is fixed.
 class HackyH264Tests(unittest.TestCase):

@@ -55,6 +55,7 @@ def createBlob(data):
     # These imports need to be done here to avoid errors due to circular
     # between this module and specific blob modules like apprelease.
     from auslib.blobs.apprelease import ReleaseBlobV1, ReleaseBlobV2, ReleaseBlobV3
+    from auslib.blobs.gmp import GMPBlobV1
 
     """Takes a string form of a blob (eg from DB or API) and converts into an
     actual blob, taking care to notice the schema"""
@@ -66,6 +67,8 @@ def createBlob(data):
             return ReleaseBlobV2(**data)
         elif data['schema_version'] == 3:
             return ReleaseBlobV3(**data)
+        elif data['schema_version'] == 1000:
+            return GMPBlobV1(**data)
         else:
             raise ValueError("schema_version is unknown")
     except KeyError:
@@ -94,7 +97,7 @@ class Blob(dict):
         """Returns a JSON formatted version of this blob."""
         return json.dumps(self)
 
-    def shouldServeUpdate(self):
+    def shouldServeUpdate(self, updateQuery):
         raise NotImplementedError()
 
     def processSpecialForceHosts(self, url, specialForceHosts):

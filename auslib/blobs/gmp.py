@@ -9,7 +9,7 @@ class GMPBlobV1(Blob):
         "hashFunction": None,
         "vendors": {
             "*": {
-                "version": "*",
+                "version": None,
                 "platforms": {
                     "*": {
                         "filesize": None,
@@ -26,27 +26,31 @@ class GMPBlobV1(Blob):
         if "schema_version" not in self:
             self["schema_version"] = 1000
 
+    def shouldServeUpdate(self, updateQuery):
+        # GMP updates should always be returned. It is the responsibility
+        # of the client to decide whether or not any action needs to be taken.
+        return True
+
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
 
         vendorXML = []
         for id_, vendorInfo in self.get("vendors", {}).iteritems():
-            for platformInfo in vendorInfo.get("platforms", {}).get(buildTarget):
-                url = platformInfo["fileUrl"]
-                if updateQuery["force"]:
-                    url = self.processSpecialForceHosts(url, specialForceHosts)
-                if containsForbiddenDomain(url, whitelistedDomains):
-                    continue
-                vendorXML.append('        <addon id="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%d" version="%s">' % \
-                    (id_, url, self["hashFunction"], platformInfo["hashValue"],
-                     platformInfo["filesize"], vendorInfo["version"]))
+            platformInfo = vendorInfo.get("platforms", {}).get(buildTarget)
+            url = platformInfo["fileUrl"]
+            if updateQuery["force"]:
+                url = self.processSpecialForceHosts(url, specialForceHosts)
+            if containsForbiddenDomain(url, whitelistedDomains):
+                continue
+            vendorXML.append('        <addon id="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%d" version="%s"/>' % \
+                (id_, url, self["hashFunction"], platformInfo["hashValue"],
+                    platformInfo["filesize"], vendorInfo["version"]))
 
-        xml = '<?xml version="1.0" encoding="UTF-8"?>'
+        xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
         if vendorXML:
             xml.append('    <addons>')
-            for x in vendorXML:
-                xml.append(x)
-                xml.append("\n")
+            xml.extend(vendorXML)
             xml.append('    </addons>')
         xml.append('</updates>')
+        return xml
