@@ -3,6 +3,7 @@ import simplejson as json
 import logging
 log = logging.getLogger(__name__)
 
+from auslib.AUS import isSpecialURL
 
 def isValidBlob(format_, blob, topLevel=True):
     """Decides whether or not 'blob' is valid based on the format provided.
@@ -95,3 +96,11 @@ class Blob(dict):
 
     def shouldServeUpdate(self):
         raise NotImplementedError()
+
+    def processSpecialForceHosts(self, url, specialForceHosts):
+        if isSpecialURL(url, specialForceHosts):
+            if '?' in url:
+                url += '&force=1'
+            else:
+                url += '?force=1'
+        return url

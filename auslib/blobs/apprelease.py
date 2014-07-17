@@ -1,5 +1,5 @@
 from auslib import dbo
-from auslib.AUS import isSpecialURL, containsForbiddenDomain, getFallbackChannel
+from auslib.AUS import containsForbiddenDomain, getFallbackChannel
 from auslib.blobs.base import Blob
 from auslib.util.versions import MozillaVersion
 
@@ -72,11 +72,8 @@ class ReleaseBlobBase(Blob):
             url = url.replace('%PRODUCT%', bouncerProduct)
             url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
         # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
-        if updateQuery['force'] and isSpecialURL(url, specialForceHosts):
-            if '?' in url:
-                url += '&force=1'
-            else:
-                url += '?force=1'
+        if updateQuery['force']:
+            url = self.processSpecialForceHosts(url, specialForceHosts)
 
         return url
 
