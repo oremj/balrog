@@ -1,4 +1,3 @@
-import re
 import urllib
 
 from flask import make_response, request
