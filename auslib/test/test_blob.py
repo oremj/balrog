@@ -1,6 +1,7 @@
 import unittest
 from xml.dom import minidom
 
+from auslib import dbo
 from auslib.blob import Blob, ReleaseBlobV1, ReleaseBlobV2, ReleaseBlobV3
 
 class SimpleBlob(Blob):
@@ -286,12 +287,124 @@ class TestSpecialQueryParams(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
 class TestSchema2Blob(unittest.TestCase):
+    def setUp(self):
+        self.specialForceHosts = ["http://a.com"]
+        self.whitelistedDomains = ["a.com", "boring.com"]
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
+        dbo.releases.t.insert().execute(name='j1', product='j', version='39.0', data_version=1, data="""
+{
+    "name": "j1",
+    "schema_version": 2,
+    "platforms": {
+        "p": {
+            "buildID": "28",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        self.blobJ2 = ReleaseBlobV2()
+        self.blobJ2.loadJSON("""
+{
+    "name": "j2",
+    "schema_version": 2,
+    "hashFunction": "sha512",
+    "appVersion": "40.0",
+    "displayVersion": "40.0",
+    "platformVersion": "40.0",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%"
+    },
+    "ftpFilenames": {
+        "partial": "j1-partial.mar",
+        "complete": "complete.mar"
+    },
+    "platforms": {
+        "p": {
+            "buildID": "30",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "partial": {
+                        "filesize": 6,
+                        "from": "j1",
+                        "hashValue": 5
+                    },
+                    "complete": {
+                        "filesize": 38,
+                        "from": "*",
+                        "hashValue": "34"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+        self.blobK = ReleaseBlobV2()
+        self.blobK.loadJSON("""
+{
+    "name": "k",
+    "schema_version": 2,
+    "hashFunction": "sha512",
+    "appVersion": "50.0",
+    "displayVersion": "50.0",
+    "platformVersion": "50.0",
+    "detailsUrl": "http://example.org/details",
+    "licenseUrl": "http://example.org/license",
+    "actions": "silent",
+    "billboardURL": "http://example.org/billboard",
+    "openURL": "http://example.org/url",
+    "notificationURL": "http://example.org/notification",
+    "alertURL": "http://example.org/alert",
+    "showPrompt": "false",
+    "showNeverForVersion": "true",
+    "showSurvey": "false",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%"
+    },
+    "ftpFilenames": {
+        "complete": "complete.mar"
+    },
+    "platforms": {
+        "p": {
+            "buildID": "35",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 40,
+                        "from": "*",
+                        "hashValue": "35"
+                    }
+                },
+                "l2": {
+                    "isOSUpdate": true,
+                    "complete": {
+                        "filesize": 50,
+                        "from": "*",
+                        "hashValue": "45"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
     def testSchema2CompleteOnly(self):
-        ret = self.client.get('/update/3/j/35.0/4/p/l/c1/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "j", "version": "35.0", "buildID": "4",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobJ2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="40.0" appVersion="40.0" platformVersion="40.0" buildID="30">
@@ -302,11 +415,14 @@ class TestSchema2Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema2WithPartial(self):
-        ret = self.client.get('/update/3/j/39.0/28/p/l/c1/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "j", "version": "39.0", "buildID": "28",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobJ2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="40.0" appVersion="40.0" platformVersion="40.0" buildID="30">
@@ -318,11 +434,14 @@ class TestSchema2Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema2WithOptionalAttributes(self):
-        ret = self.client.get('/update/3/k/35.0/4/p/l/c1/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "k", "version": "35.0", "buildID": "4",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobK.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="50.0" appVersion="50.0" platformVersion="50.0" buildID="35" detailsURL="http://example.org/details" licenseURL="http://example.org/license" billboardURL="http://example.org/billboard" showPrompt="false" showNeverForVersion="true" showSurvey="false" actions="silent" openURL="http://example.org/url" notificationURL="http://example.org/notification" alertURL="http://example.org/alert">
@@ -333,11 +452,14 @@ class TestSchema2Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema2WithIsOSUpdate(self):
-        ret = self.client.get('/update/3/k/35.0/4/p/l2/c1/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "k", "version": "35.0", "buildID": "4",
+            "buildTarget": "p", "locale": "l2", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobK.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="50.0" appVersion="50.0" platformVersion="50.0" buildID="35" detailsURL="http://example.org/details" licenseURL="http://example.org/license" billboardURL="http://example.org/billboard" showPrompt="false" showNeverForVersion="true" showSurvey="false" actions="silent" openURL="http://example.org/url" notificationURL="http://example.org/notification" alertURL="http://example.org/alert" isOSUpdate="true">
@@ -350,12 +472,166 @@ class TestSchema2Blob(unittest.TestCase):
 
 
 class TestSchema3Blob(unittest.TestCase):
+    def setUp(self):
+        self.specialForceHosts = ["http://a.com"]
+        self.whitelistedDomains = ["a.com", "boring.com"]
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
+        dbo.releases.t.insert().execute(name='f1', product='f', version='22.0', data_version=1, data="""
+{
+    "name": "f1",
+    "schema_version": 3,
+    "platforms": {
+        "p": {
+            "buildID": "5",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        dbo.releases.t.insert().execute(name='f2', product='f', version='23.0', data_version=1, data="""
+{
+    "name": "f2",
+    "schema_version": 3,
+    "platforms": {
+        "p": {
+            "buildID": "6",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        self.blobF3 = ReleaseBlobV3()
+        self.blobF3.loadJSON("""
+{
+    "name": "f3",
+    "schema_version": 3,
+    "hashFunction": "sha512",
+    "appVersion": "25.0",
+    "displayVersion": "25.0",
+    "platformVersion": "25.0",
+    "platforms": {
+        "p": {
+            "buildID": "29",
+            "locales": {
+                "l": {
+                    "partials": [
+                        {
+                            "filesize": 2,
+                            "from": "f1",
+                            "hashValue": 3,
+                            "fileUrl": "http://a.com/p1"
+                        },
+                        {
+                            "filesize": 4,
+                            "from": "f2",
+                            "hashValue": 5,
+                            "fileUrl": "http://a.com/p2"
+                        }
+                    ],
+                    "completes": [
+                        {
+                            "filesize": 29,
+                            "from": "f2",
+                            "hashValue": 6,
+                            "fileUrl": "http://a.com/c1"
+                        },
+                        {
+                            "filesize": 30,
+                            "from": "*",
+                            "hashValue": "31",
+                            "fileUrl": "http://a.com/c2"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+""")
+        dbo.releases.t.insert().execute(name='g1', product='g', version='23.0', data_version=1, data="""
+{
+    "name": "g1",
+    "schema_version": 3,
+    "platforms": {
+        "p": {
+            "buildID": "8",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        self.blobG2 = ReleaseBlobV3()
+        self.blobG2.loadJSON("""
+{
+    "name": "g2",
+    "schema_version": 3,
+    "hashFunction": "sha512",
+    "appVersion": "26.0",
+    "displayVersion": "26.0",
+    "platformVersion": "26.0",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%",
+        "c2": "http://a.com/%PRODUCT%"
+    },
+    "ftpFilenames": {
+        "partials": {
+            "g1": "g1-partial.mar"
+        },
+        "completes": {
+            "*": "complete.mar"
+        }
+    },
+    "bouncerProducts": {
+        "partials": {
+            "g1": "g1-partial"
+        },
+        "completes": {
+            "*": "complete"
+        }
+    },
+    "platforms": {
+        "p": {
+            "buildID": "40",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "partials": [
+                        {
+                            "filesize": 4,
+                            "from": "g1",
+                            "hashValue": 5
+                        }
+                    ],
+                    "completes": [
+                        {
+                            "filesize": 34,
+                            "from": "*",
+                            "hashValue": "35"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+""")
     def testSchema3MultipleUpdates(self):
-        ret = self.client.get('/update/3/f/22.0/5/p/l/a/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "f", "version": "22.0", "buildID": "5",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobF3.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
@@ -366,11 +642,14 @@ class TestSchema3Blob(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
-        ret = self.client.get('/update/3/f/23.0/6/p/l/a/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "f", "version": "23.0", "buildID": "6",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobF3.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
@@ -382,11 +661,14 @@ class TestSchema3Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema3NoPartial(self):
-        ret = self.client.get('/update/3/f/20.0/1/p/l/a/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "f", "version": "20.0", "buildID": "1",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobF3.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
@@ -397,11 +679,14 @@ class TestSchema3Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema3FtpSubstitutions(self):
-        ret = self.client.get('/update/3/g/23.0/8/p/l/c1/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "g", "version": "23.0", "buildID": "8",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobG2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
@@ -413,11 +698,14 @@ class TestSchema3Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testSchema3BouncerSubstitutions(self):
-        ret = self.client.get('/update/3/g/23.0/8/p/l/c2/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
-        returned = minidom.parseString(ret.data)
+        updateQuery = {
+            "product": "g", "version": "23.0", "buildID": "8",
+            "buildTarget": "p", "locale": "l", "channel": "c2",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobG2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="26.0" appVersion="26.0" platformVersion="26.0" buildID="40">
