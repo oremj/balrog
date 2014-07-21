@@ -192,6 +192,30 @@ class Blob(dict):
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
 
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        """This method is the entry point for update XML creation for all Gecko
+           app blobs. However, the XML and underlying data has changed over
+           time, so there is a lot of indirection and calls factored out to
+           subclasses. Below is a brief description of the flow of control that
+           should help in understanding this code. Inner methods that are
+           shared between blob versions live in Mixin classes so that they can
+           be easily shared. Inner methods that only apply to a single blob
+           version live on concrete blob classes (but should be moved if they
+           need to be shared in the future).
+           * createXML() called by web layer, lives on this base class.
+           ** _getUpdateLineXML() called to get information that is independent
+              of specific MARs. Most notably, version information changed
+              starting with V2 blobs.
+           ** _getPatchesXML() called to get the information that describes
+              specific MARs. Where in the blob this information comes from
+              changed significantly starting with V3 blobs.
+           *** _getPatchSpecificXML() called to translate MAR information into
+               XML. This transformation in blob version independent, so it
+               lives on the base class to avoid duplication.
+           **** _getFtpFilename/_getBouncerProduct called to substitute some
+                paths with real information. This is another part of the blob
+                format that changed starting with V3 blobs.
+        """
+
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
         localeData = self.getPlatformData(buildTarget)["locales"][locale]
@@ -314,6 +338,8 @@ class ReleaseBlobV1(Blob, SingleUpdateXMLMixin):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
+    # TODO: kill me when aus3.m.o is dead, and snippet tests have been
+    # converted to unit tests.
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
@@ -500,6 +526,8 @@ class ReleaseBlobV2(Blob, NewStyleVersionsMixin, SingleUpdateXMLMixin):
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
+    # TODO: kill me when aus3.m.o is dead, and snippet tests have been
+    # converted to unit tests.
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
