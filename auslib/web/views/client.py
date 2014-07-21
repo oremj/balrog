@@ -1,4 +1,3 @@
-import re
 import urllib
 
 from flask import make_response, request
@@ -41,9 +40,8 @@ class ClientRequestView(MethodView):
             xml = ['<?xml version="1.0"?>']
             xml.append('<updates>')
             xml.append('</updates>')
-        # ensure valid xml by using the right entity for ampersand
-        payload = re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
-        self.log.debug("Sending XML: %s", payload)
-        response = make_response(payload)
+            xml = "\n".join(xml)
+        self.log.debug("Sending XML: %s", xml)
+        response = make_response(xml)
         response.mimetype = 'text/xml'
         return response

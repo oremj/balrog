@@ -1,3 +1,9 @@
+import re
+import simplejson as json
+
+import logging
+log = logging.getLogger(__name__)
+
 from auslib import dbo
 from auslib.AUS import containsForbiddenDomain, getFallbackChannel
 from auslib.blobs.base import Blob
@@ -48,7 +54,7 @@ class ReleaseBlobBase(Blob):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct):
+    def _getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct):
         platformData = self.getPlatformData(updateQuery["buildTarget"])
         if 'fileUrl' in patch:
             url = patch['fileUrl']
@@ -77,19 +83,19 @@ class ReleaseBlobBase(Blob):
 
         return url
 
-    def getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
+    def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
         try:
             fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
         except KeyError:
             fromRelease = None
 
-        ftpFilename = self.getFtpFilename(patchKey, patch["from"])
-        bouncerProduct = self.getBouncerProduct(patchKey, patch["from"])
+        ftpFilename = self._getFtpFilename(patchKey, patch["from"])
+        bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
 
         if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
             return None
 
-        url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+        url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
         # TODO: should be raising a bigger alarm here, or aborting
         # the update entirely? Right now, another patch type could still
         # return an update. Eg, the partial could contain a forbidden domain
@@ -101,12 +107,36 @@ class ReleaseBlobBase(Blob):
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
 
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        """This method is the entry point for update XML creation for all Gecko
+           app blobs. However, the XML and underlying data has changed over
+           time, so there is a lot of indirection and calls factored out to
+           subclasses. Below is a brief description of the flow of control that
+           should help in understanding this code. Inner methods that are
+           shared between blob versions live in Mixin classes so that they can
+           be easily shared. Inner methods that only apply to a single blob
+           version live on concrete blob classes (but should be moved if they
+           need to be shared in the future).
+           * createXML() called by web layer, lives on this base class.
+           ** _getUpdateLineXML() called to get information that is independent
+              of specific MARs. Most notably, version information changed
+              starting with V2 blobs.
+           ** _getPatchesXML() called to get the information that describes
+              specific MARs. Where in the blob this information comes from
+              changed significantly starting with V3 blobs.
+           *** _getPatchSpecificXML() called to translate MAR information into
+               XML. This transformation in blob version independent, so it
+               lives on the base class to avoid duplication.
+           **** _getFtpFilename/_getBouncerProduct called to substitute some
+                paths with real information. This is another part of the blob
+                format that changed starting with V3 blobs.
+        """
+
         buildTarget = updateQuery["buildTarget"]
         locale = updateQuery["locale"]
         localeData = self.getPlatformData(buildTarget)["locales"][locale]
 
-        updateLine = self.getUpdateLineXML(buildTarget, locale, update_type)
-        patches = self.getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
+        updateLine = self._getUpdateLineXML(buildTarget, locale, update_type)
+        patches = self._getPatchesXML(localeData, updateQuery, whitelistedDomains, specialForceHosts)
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
@@ -115,14 +145,15 @@ class ReleaseBlobBase(Blob):
             xml.extend(patches)
             xml.append('    </update>')
         xml.append('</updates>')
-        return xml
+        # ensure valid xml by using the right entity for ampersand
+        return re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
 
     def shouldServeUpdate(self, updateQuery):
         buildTarget = updateQuery['buildTarget']
         locale = updateQuery['locale']
         releaseVersion = self.getApplicationVersion(buildTarget, locale)
         if not releaseVersion:
-            self.log.debug("Matching rule has no extv, will not serve update.")
+            self.log.debug("Matching rule has no application version, will not serve update.")
             return False
         releaseVersion = MozillaVersion(releaseVersion)
         queryVersion = MozillaVersion(updateQuery['version'])
@@ -138,20 +169,20 @@ class ReleaseBlobBase(Blob):
 
 
 class SingleUpdateXMLMixin(object):
-    def getFtpFilename(self, patchKey, from_):
+    def _getFtpFilename(self, patchKey, from_):
         return self.get("ftpFilenames", {}).get(patchKey, "")
 
-    def getBouncerProduct(self, patchKey, from_):
+    def _getBouncerProduct(self, patchKey, from_):
         return self.get("bouncerProducts", {}).get(patchKey, "")
 
-    def getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
+    def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey in ("partial", "complete"):
             patch = localeData.get(patchKey)
             if not patch:
                 continue
 
-            xml = self.getSpecificPatchXML(patchKey, patchKey, patch, updateQuery, whitelistedDomains, specialForceHosts)
+            xml = self._getSpecificPatchXML(patchKey, patchKey, patch, updateQuery, whitelistedDomains, specialForceHosts)
             if xml:
                 patches.append(xml)
 
@@ -223,6 +254,8 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin):
         may have been a pretty version for users to see"""
         return self.getExtv(platform, locale)
 
+    # TODO: kill me when aus3.m.o is dead, and snippet tests have been
+    # converted to unit tests.
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
@@ -244,7 +277,7 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin):
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
-            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
             if containsForbiddenDomain(url, whitelistedDomains):
                 break
 
@@ -278,7 +311,7 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin):
             self.log.debug('%s\n%s' % (s, snippets[s].rstrip()))
         return snippets
 
-    def getUpdateLineXML(self, buildTarget, locale, update_type):
+    def _getUpdateLineXML(self, buildTarget, locale, update_type):
         appv = self.getAppv(buildTarget, locale)
         extv = self.getExtv(buildTarget, locale)
         buildid = self.getBuildID(buildTarget, locale)
@@ -310,7 +343,7 @@ class NewStyleVersionsMixin(object):
         """ For v2 schema, appVersion really is the app version """
         return self.getAppVersion(platform, locale)
 
-    def getUpdateLineXML(self, buildTarget, locale, update_type):
+    def _getUpdateLineXML(self, buildTarget, locale, update_type):
         displayVersion = self.getDisplayVersion(buildTarget, locale)
         appVersion = self.getAppVersion(buildTarget, locale)
         platformVersion = self.getPlatformVersion(buildTarget, locale)
@@ -409,6 +442,8 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
         if 'schema_version' not in self.keys():
             self['schema_version'] = 2
 
+    # TODO: kill me when aus3.m.o is dead, and snippet tests have been
+    # converted to unit tests.
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         snippets = {}
         buildTarget = updateQuery["buildTarget"]
@@ -430,7 +465,7 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
-            url = self.getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
             if containsForbiddenDomain(url, whitelistedDomains):
                 break
 
@@ -465,17 +500,17 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
 
 
 class MultipleUpdatesXMLMixin(object):
-    def getFtpFilename(self, patchKey, from_):
+    def _getFtpFilename(self, patchKey, from_):
         return self.get("ftpFilenames", {}).get(patchKey, {}).get(from_, "")
 
-    def getBouncerProduct(self, patchKey, from_):
+    def _getBouncerProduct(self, patchKey, from_):
         return self.get("bouncerProducts", {}).get(patchKey, {}).get(from_, "")
 
-    def getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
+    def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey, patchType in (("partials", "partial"), ("completes", "complete")):
             for patch in localeData.get(patchKey):
-                xml = self.getSpecificPatchXML(patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts)
+                xml = self._getSpecificPatchXML(patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts)
                 if xml:
                     patches.append(xml)
                     break
