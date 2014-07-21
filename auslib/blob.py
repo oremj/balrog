@@ -237,7 +237,7 @@ class Blob(dict):
         locale = updateQuery['locale']
         releaseVersion = self.getApplicationVersion(buildTarget, locale)
         if not releaseVersion:
-            self.log.debug("Matching rule has no extv, will not serve update.")
+            self.log.debug("Matching rule has no application version, will not serve update.")
             return False
         releaseVersion = MozillaVersion(releaseVersion)
         queryVersion = MozillaVersion(updateQuery['version'])
