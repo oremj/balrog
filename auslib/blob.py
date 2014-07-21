@@ -1,3 +1,4 @@
+import re
 import simplejson as json
 
 import logging
@@ -230,7 +231,8 @@ class Blob(dict):
             xml.extend(patches)
             xml.append('    </update>')
         xml.append('</updates>')
-        return xml
+        # ensure valid xml by using the right entity for ampersand
+        return re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
 
     def shouldServeUpdate(self, updateQuery):
         buildTarget = updateQuery['buildTarget']
