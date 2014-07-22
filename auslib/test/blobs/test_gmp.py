@@ -1,0 +1,89 @@
+from tempfile import mkstemp
+import unittest
+from xml.dom import minidom
+
+from auslib.blobs.gmp import GMPBlobV1
+
+class TestSchema1Blob(unittest.TestCase):
+    maxDiff = 2000
+
+    def setUp(self):
+        self.specialForceHosts = ["http://a.com"]
+        self.whitelistedDomains = ["a.com", "boring.com"]
+        self.blob = GMPBlobV1()
+        self.blob.loadJSON("""
+{
+    "name": "gg",
+    "schema_version": 1000,
+    "hashFunction": "SHA512",
+    "vendors": {
+        "c": {
+            "version": "1",
+            "platforms": {
+                "p": {
+                    "filesize": 2,
+                    "hashValue": "3",
+                    "fileUrl": "http://a.com/blah"
+                },
+                "q": {
+                    "filesize": 4,
+                    "hashValue": "5",
+                    "fileUrl": "http://boring.com/blah"
+                }
+            }
+        },
+        "d": {
+            "version": "5",
+            "platforms": {
+                "q": {
+                    "filesize": 10,
+                    "hashValue": "11",
+                    "fileUrl": "http://boring.com/foo"
+                },
+                "r": {
+                    "filesize": 666,
+                    "hashValue": "666",
+                    "fileUrl": "http://evil.com/fire"
+                }
+            }
+        }
+    }
+}
+""")
+
+    def testGMPUpdate(self):
+        updateQuery = {
+            "product": "gg", "version": "3", "buildID": "1",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blob.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://a.com/blah" hashFunction="SHA512" hashValue="3" size="2" version="1"/>
+    </addons>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testGMPUpdateMultipleAddons(self):
+        updateQuery = {
+            "product": "gg", "version": "3", "buildID": "1",
+            "buildTarget": "q", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blob.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://boring.com/blah" hashFunction="SHA512" hashValue="5" size="4" version="1"/>
+        <addon id="d" URL="http://boring.com/foo" hashFunction="SHA512" hashValue="11" size="10" version="5"/>
+    </addons>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())

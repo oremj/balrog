@@ -1,3 +1,5 @@
+import re
+
 from auslib.AUS import containsForbiddenDomain
 from auslib.blobs.base import Blob
 
@@ -56,4 +58,5 @@ class GMPBlobV1(Blob):
             xml.extend(vendorXML)
             xml.append('    </addons>')
         xml.append('</updates>')
-        return xml
+        # ensure valid xml by using the right entity for ampersand
+        return re.sub('&(?!amp;)','&amp;', '\n'.join(xml))
