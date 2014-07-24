@@ -105,7 +105,7 @@ class TestSchema1Blob(unittest.TestCase):
             "osVersion": "a", "distribution": "a", "distVersion": "a",
             "force": 0
         }
-        with mock.patch("auslib.log.cef_event") as c:
+        with mock.patch("auslib.AUS.cef_event") as c:
             returned = self.blob.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
             returned = minidom.parseString(returned)
             self.assertEqual(returned.getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
