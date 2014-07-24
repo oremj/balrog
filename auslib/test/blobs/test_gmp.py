@@ -1,13 +1,20 @@
+import mock
 from tempfile import mkstemp
 import unittest
 from xml.dom import minidom
 
 from auslib.blobs.gmp import GMPBlobV1
+import auslib.log
+
+def null(*args, **kwargs):
+    return
 
 class TestSchema1Blob(unittest.TestCase):
     maxDiff = 2000
-
+    
     def setUp(self):
+        self.cef_patcher = mock.patch("auslib.log.cef_event")
+        self.cef_patcher.start()
         self.specialForceHosts = ["http://a.com"]
         self.whitelistedDomains = ["a.com", "boring.com"]
         self.blob = GMPBlobV1()
@@ -51,6 +58,9 @@ class TestSchema1Blob(unittest.TestCase):
 }
 """)
 
+    def tearDown(self):
+        self.cef_patcher.stop()
+
     def testGMPUpdate(self):
         updateQuery = {
             "product": "gg", "version": "3", "buildID": "1",
@@ -87,3 +97,15 @@ class TestSchema1Blob(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testGMPWithForbiddenDomain(self):
+        updateQuery = {
+            "product": "gg", "version": "3", "buildID": "1",
+            "buildTarget": "r", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        with mock.patch("auslib.log.cef_event") as c:
+            returned = self.blob.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+            returned = minidom.parseString(returned)
+            self.assertEqual(returned.getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
