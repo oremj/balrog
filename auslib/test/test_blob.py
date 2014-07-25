@@ -470,6 +470,99 @@ class TestSchema2Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
 
+class TestSchema2BlobNightlyStyle(unittest.TestCase):
+    maxDiff = 2000
+
+    def setUp(self):
+        self.specialForceHosts = ["http://a.com"]
+        self.whitelistedDomains = ["a.com", "boring.com"]
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
+        dbo.releases.t.insert().execute(name='j1', product='j', version='0.5', data_version=1, data="""
+{
+    "name": "j1",
+    "schema_version": 2,
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "buildID": "1"
+                }
+            }
+        }
+    }
+}
+""")
+        self.blobJ2 = ReleaseBlobV2()
+        self.blobJ2.loadJSON("""
+{
+    "name": "j2",
+    "schema_version": 2,
+    "hashFunction": "sha512",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "buildID": "3",
+                    "appVersion": "2",
+                    "platformVersion": "2",
+                    "displayVersion": "2",
+                    "partial": {
+                        "filesize": 3,
+                        "from": "j1",
+                        "hashValue": 4,
+                        "fileUrl": "http://a.com/p"
+                    },
+                    "complete": {
+                        "filesize": 5,
+                        "from": "*",
+                        "hashValue": "6",
+                        "fileUrl": "http://a.com/c"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+
+    def testCompleteOnly(self):
+        updateQuery = {
+            "product": "j", "version": "0.5", "buildID": "0",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobJ2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="2" appVersion="2" platformVersion="2" buildID="3">
+        <patch type="complete" URL="http://a.com/c" hashFunction="sha512" hashValue="6" size="5"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testCompleteAndPartial(self):
+        updateQuery = {
+            "product": "j", "version": "0.5", "buildID": "1",
+            "buildTarget": "p", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobJ2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="2" appVersion="2" platformVersion="2" buildID="3">
+        <patch type="partial" URL="http://a.com/p" hashFunction="sha512" hashValue="4" size="3"/>
+        <patch type="complete" URL="http://a.com/c" hashFunction="sha512" hashValue="6" size="5"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
 
 class TestSchema3Blob(unittest.TestCase):
     def setUp(self):
