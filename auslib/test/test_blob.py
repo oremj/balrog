@@ -640,6 +640,16 @@ class TestSchema3Blob(unittest.TestCase):
                             "fileUrl": "http://a.com/c2"
                         }
                     ]
+                },
+                "m": {
+                    "completes": [
+                        {
+                            "filesize": 32,
+                            "from": "*",
+                            "hashValue": "33",
+                            "fileUrl": "http://a.com/c2m"
+                        }
+                    ]
                 }
             }
         }
@@ -766,6 +776,24 @@ class TestSchema3Blob(unittest.TestCase):
 <updates>
     <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
         <patch type="complete" URL="http://a.com/c2" hashFunction="sha512" hashValue="31" size="30"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema3NoPartialBlock(self):
+        updateQuery = {
+            "product": "f", "version": "20.0", "buildID": "1",
+            "buildTarget": "p", "locale": "m", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobF3.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="25.0" appVersion="25.0" platformVersion="25.0" buildID="29">
+        <patch type="complete" URL="http://a.com/c2m" hashFunction="sha512" hashValue="33" size="32"/>
     </update>
 </updates>
 """)
