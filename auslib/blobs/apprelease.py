@@ -177,7 +177,7 @@ class SingleUpdateXMLMixin(object):
 
     def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
-        for patchKey in ("partial", "complete"):
+        for patchKey in ("complete", "partial"):
             patch = localeData.get(patchKey)
             if not patch:
                 continue
@@ -508,7 +508,7 @@ class MultipleUpdatesXMLMixin(object):
 
     def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
-        for patchKey, patchType in (("partials", "partial"), ("completes", "complete")):
+        for patchKey, patchType in (("completes", "complete"), ("partials", "partial")):
             for patch in localeData.get(patchKey, {}):
                 xml = self._getSpecificPatchXML(patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts)
                 if xml:
