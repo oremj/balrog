@@ -617,3 +617,98 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # We have no tests that require this, probably not worthwhile to implement.
         return {}
+
+
+class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin):
+    """ Changes from ReleaseBlobV4:
+        * support pushing release builds to the beta channel with bouncer support (bug 1021026)
+    """
+    format_ = {
+        'name': None,
+        'schema_version': None,
+        'appVersion': None,
+        'displayVersion': None,
+        'platformVersion': None,
+        'fileUrls': {
+            '*': None
+        },
+        'ftpFilenames': {
+            'partials': {
+                '*': None
+            },
+            'completes': {
+                '*': None
+            }
+        },
+        'bouncerProducts': {
+            'partials': {
+                '*': None
+            },
+            'completes': {
+                '*': None
+            }
+        },
+        'hashFunction': None,
+        'detailsUrl': None,
+        'licenseUrl': None,
+        'actions': None,
+        'billboardURL': None,
+        'openURL': None,
+        'notificationURL': None,
+        'alertURL': None,
+        'showPrompt': None,
+        'showNeverForVersion': None,
+        'showSurvey': None,
+        'platforms': {
+            '*': {
+                'alias': None,
+                'buildID': None,
+                'OS_BOUNCER': None,
+                'OS_FTP': None,
+                'locales': {
+                    '*': {
+                        'isOSUpdate': None,
+                        'buildID': None,
+                        'appVersion': None,
+                        'displayVersion': None,
+                        'platformVersion': None,
+                        # Using lists instead of dicts for multiple updates
+                        # gives us a way to reduce load a bit. As this is
+                        # iterated over, each "from" release is looked up
+                        # in the database. If the "from" releases that we
+                        # we expect to be the most common are earlier in the
+                        # list, we can avoid looking up every single entry.
+                        # The server doesn't know anything about which order is
+                        # best, so we assume the client will make the right
+                        # decision about this.
+                        'partials': [
+                            {
+                                'filesize': None,
+                                'from': None,
+                                'hashValue': None,
+                                'fileUrl': None
+                            }
+                        ],
+                        'completes': [
+                            {
+                                'filesize': None,
+                                'from': None,
+                                'hashValue': None,
+                                'fileUrl': None
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    # for the benefit of createXML and createSnippetv2
+    optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
+                 'showSurvey', 'actions', 'openURL', 'notificationURL',
+                 'alertURL')
+
+    def __init__(self, **kwargs):
+        # ensure schema_version is set if we init ReleaseBlobV3 directly
+        Blob.__init__(self, **kwargs)
+        if 'schema_version' not in self.keys():
+            self['schema_version'] = 3
