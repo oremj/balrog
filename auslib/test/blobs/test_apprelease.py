@@ -3,7 +3,7 @@ from xml.dom import minidom
 
 from auslib import dbo
 from auslib.blobs.apprelease import ReleaseBlobBase, ReleaseBlobV1, ReleaseBlobV2, \
-    ReleaseBlobV3
+    ReleaseBlobV3, ReleaseBlobV4
 
 class SimpleBlob(ReleaseBlobBase):
     format_ = {'foo': None}
@@ -770,3 +770,90 @@ class TestSchema3Blob(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+
+class TestSchema4Blob(unittest.TestCase):
+    def setUp(self):
+        self.specialForceHosts = ["http://a.com"]
+        self.whitelistedDomains = ["a.com", "boring.com"]
+        dbo.setDb('sqlite:///:memory:')
+        dbo.create()
+        dbo.releases.t.insert().execute(name='h1', product='h', version='30.0', data_version=1, data="""
+{
+    "name": "h1",
+    "schema_version": 4,
+    "platforms": {
+        "p": {
+            "buildID": "10",
+            "locales": {
+                "l": {}
+            }
+        }
+    }
+}
+""")
+        self.blobH2 = ReleaseBlobV4()
+        self.blobH2.loadJSON("""
+{
+    "name": "h2",
+    "schema_version": 4,
+    "hashFunction": "sha512",
+    "appVersion": "31.0",
+    "displayVersion": "31.0",
+    "platformVersion": "31.0",
+    "fileUrls": {
+        "c1": {
+            "partials": {
+                "h1": "http://a.com/h1-partial.mar"
+            },
+            "completes": {
+                "*": "http://a.com/complete.mar"
+            }
+        },
+        "c2": {
+            "partials": {
+                "h1": "http://a.com/h1-partial"
+            },
+            "completes": {
+                "*": "http://a.com/complete"
+            }
+        },
+        "*": {
+            "partials": {
+                "h1": "http://a.com/h1-partial-catchall"
+            },
+            "completes": {
+                "*": "http://a.com/h1-complete-catchall"
+            }
+        }
+    },
+    "platforms": {
+        "p": {
+            "buildID": "50",
+            "OS_FTP": "p",
+            "OS_BOUNCER": "p",
+            "locales": {
+                "l": {
+                    "partials": [
+                        {
+                            "filesize": 8,
+                            "from": "h1",
+                            "hashValue": 9
+                        }
+                    ],
+                    "completes": [
+                        {
+                            "filesize": 40,
+                            "from": "*",
+                            "hashValue": "41"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+""")
+
+    def testStub(self):
+        pass
