@@ -620,12 +620,14 @@ class UnifiedFileUrlsMixin(object):
     def _getUrl(self, updateQuery, patchKey, patch, specialForceHosts):
         platformData = self.getPlatformData(updateQuery["buildTarget"])
         from_ = patch["from"]
+        # A fileUrl in the deep-down patch section takes priority over anything
+        # else.
         if 'fileUrl' in patch:
             url = patch['fileUrl']
         else:
-            # There's three places we can look for a fileUrl, in order of
-            # preference:
-            # 1) Its specified channel.
+            # There's three "channels" that any given request could get
+            # a fileUrl from, in order of preference:
+            # 1) Its exact specified channel.
             # 2) Its fallback channel.
             # 3) In the catch-all "channel" ("*").
             channels = [
@@ -639,6 +641,7 @@ class UnifiedFileUrlsMixin(object):
                     url = self['fileUrls'][c][patchKey][from_]
                     break
 
+            # If we still can't find a fileUrl, we cannot fulfill this request.
             if not url:
                 self.log.debug("Couldn't find fileUrl")
                 raise ValueError("Couldn't find fileUrl")
@@ -646,6 +649,7 @@ class UnifiedFileUrlsMixin(object):
             url = url.replace('%LOCALE%', updateQuery['locale'])
             url = url.replace('%OS_FTP%', platformData['OS_FTP'])
             url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
+
         # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
         if updateQuery['force']:
             url = self.processSpecialForceHosts(url, specialForceHosts)
@@ -655,7 +659,9 @@ class UnifiedFileUrlsMixin(object):
 
 class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, UnifiedFileUrlsMixin):
     """ Changes from ReleaseBlobV4:
-        * support pushing release builds to the beta channel with bouncer support (bug 1021026)
+        * Support pushing release builds to the beta channel with bouncer support (bug 1021026)
+        ** Combine fileUrls, bouncerProducts, and ftpFilenames into a larger data structure,
+           still called "fileUrls". (See below for a more detailed description.)
     """
     format_ = {
         'name': None,
@@ -740,6 +746,7 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
 
     @classmethod
     def fromV3(cls, v3Blob):
+        """Creates a v4 blob based on the v3 blob given."""
         v4Blob = cls()
         v4Blob.update(v3Blob)
         # These 3 sections changed between v3 and v4, we'll fill out the data
@@ -749,6 +756,9 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                 del v4Blob[k]
 
         v4Blob["schema_version"] = 4
+        # If "fileUrls" doesn't exist in the v3 blob, we have nothing else to do.
+        # Technically, bouncerProducts and/or ftpFilenames could exist in it,
+        # but they have no effect when fileUrls isn't present.
         if "fileUrls" not in v3Blob:
             return v4Blob
 
@@ -758,8 +768,14 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                 v4Blob["fileUrls"][channel] = {}
 
             # Each fileUrl should have one (no more no less) of the matchstrs below.
+            # Technically, they could have neither, but if we had blob validation,
+            # that probably be considered an invalid state. Probably not worth
+            # supporting here.
             for matchstr, lookup in (("%PRODUCT%", "bouncerProducts"), ("%FILENAME%", "ftpFilenames")):
                 if matchstr in baseUrl:
+                    # If we've found a match, we need to replicate the inner structure
+                    # of the lookup dict, substitute the match in the url,
+                    # and add it to the new fileUrls.
                     for patchKey, products in v3Blob.get(lookup, {}).iteritems():
                         if patchKey not in v4Blob["fileUrls"][channel]:
                             v4Blob["fileUrls"][channel][patchKey] = {}
