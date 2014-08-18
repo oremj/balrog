@@ -961,3 +961,33 @@ class TestSchema4Blob(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testConvertFromV3(self):
+        blob = ReleaseBlobV3()
+        blob.loadJSON("""
+{
+    "name": "g2",
+    "schema_version": 3,
+    "hashFunction": "sha512",
+    "fileUrls": {
+        "c1": "http://a.com/%FILENAME%",
+        "c2": "http://a.com/%PRODUCT%"
+    },
+    "ftpFilenames": {
+        "partials": {
+            "g1": "g1-partial.mar"
+        },
+        "completes": {
+            "*": "complete.mar"
+        }
+    },
+    "bouncerProducts": {
+        "partials": {
+            "g1": "g1-partial"
+        },
+        "completes": {
+            "*": "complete"
+        }
+    }
+}
+""")

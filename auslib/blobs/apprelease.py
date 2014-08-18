@@ -272,8 +272,6 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixi
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
-            ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
-            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
 
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
@@ -460,8 +458,6 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
                 fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
             except KeyError:
                 fromRelease = None
-            ftpFilename = self.get("ftpFilenames", {}).get(patchKey)
-            bouncerProduct = self.get("bouncerProducts", {}).get(patchKey)
 
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
@@ -741,3 +737,31 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 4
+
+    @classmethod
+    def fromV3(cls, v3Blob):
+        v4Blob = cls()
+        v4Blob.update(v3Blob)
+        # These 3 sections changed between v3 and v4, we'll fill out the data
+        # in the new format, but we need to clear them out first.
+        for k in ('fileUrls', 'ftpFilenames', 'bouncerProducts'):
+            if k in v4Blob:
+                del v4Blob[k]
+
+        v4Blob["fileUrls"] = {
+        }
+        for channel, baseUrl in v3Blob.get('fileUrls').iteritems():
+            if channel not in v4Blob["fileUrls"]:
+                v4Blob["fileUrls"] = {}
+
+            # Each fileUrl should have one (no more no less) of the matchstrs below.
+            for matchstr, lookup in (("%PRODUCT%", "bouncerProducts"), ("%FILENAME%", "ftpFilenames")):
+                if matchstr in baseUrl:
+                    for patchKey, products in v3Blob.get(lookup, {}).iteritems():
+                        if patchKey not in v4Blob["fileUrls"][channel]:
+                            v4Blob["fileUrls"][channel][patchKey] = {}
+                        for from_, product in products:
+                            url = baseUrl.replace(matchstr, product)
+                            v4Blob["fileUrls"][channel][patchKey][from_] = url
+
+        return v4Blob
