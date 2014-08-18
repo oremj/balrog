@@ -1020,3 +1020,46 @@ class TestSchema4Blob(unittest.TestCase):
         }
 
         self.assertEquals(v4Blob, expected)
+
+    def testConvertFromV3Noop(self):
+        v3Blob = ReleaseBlobV3()
+        v3Blob.loadJSON("""
+{
+    "name": "g2",
+    "schema_version": 3,
+    "hashFunction": "sha512",
+    "platforms": {
+        "p": {
+            "buildID": "40",
+            "OS_FTP": "o",
+            "OS_BOUNCER": "o",
+            "locales": {
+                "l": {
+                    "partials": [
+                        {
+                            "filesize": 4,
+                            "from": "g1",
+                            "hashValue": 5
+                        }
+                    ],
+                    "completes": [
+                        {
+                            "filesize": 34,
+                            "from": "*",
+                            "hashValue": "35"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+""")
+
+        v4Blob = ReleaseBlobV4.fromV3(v3Blob)
+        self.assertTrue(v4Blob.isValid())
+
+        expected = v3Blob.copy()
+        expected["schema_version"] = 4
+
+        self.assertEquals(v4Blob, expected)

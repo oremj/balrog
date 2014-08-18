@@ -748,8 +748,11 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
             if k in v4Blob:
                 del v4Blob[k]
 
-        v4Blob["fileUrls"] = {
-        }
+        v4Blob["schema_version"] = 4
+        if "fileUrls" not in v3Blob:
+            return v4Blob
+
+        v4Blob["fileUrls"] = {}
         for channel, baseUrl in v3Blob.get('fileUrls').iteritems():
             if channel not in v4Blob["fileUrls"]:
                 v4Blob["fileUrls"][channel] = {}
@@ -764,5 +767,4 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                             url = baseUrl.replace(matchstr, product)
                             v4Blob["fileUrls"][channel][patchKey][from_] = url
 
-        v4Blob["schema_version"] = 4
         return v4Blob
