@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 
 import logging
-import os.path
+from os import path
 import site
-import sys
 
-site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python"))
-site.addsitedir(os.path.join(os.path.dirname(__file__), "../lib/python/vendor"))
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+mydir = path.dirname(path.abspath(__file__))
+site.addsitedir(path.join(mydir, ".."))
+site.addsitedir(path.join(mydir, "..", "vendor/lib/python"))
 
 from auslib.blobs.apprelease import ReleaseBlobV4
 from auslib.db import AUSDatabase
 
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
@@ -41,7 +41,9 @@ if __name__ == '__main__':
             continue
 
         try:
+            log.debug("Upgrading %s", release)
             v4Blob = ReleaseBlobV4.fromV3(blob)
-            db.release.updateRelease(release, args.name, rel["data_version"], blob=v4Blob)
+            db.releases.updateRelease(release, args.name, rel["data_version"], blob=v4Blob)
+            log.debug("Done")
         except:
             log.exception("Failed to upgrade %s", release)
