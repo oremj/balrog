@@ -812,10 +812,10 @@ class TestSchema4Blob(unittest.TestCase):
         },
         "c2": {
             "partials": {
-                "h1": "http://a.com/h1-partial"
+                "h1": "http://a.com/h1-%LOCALE%-partial"
             },
             "completes": {
-                "*": "http://a.com/complete"
+                "*": "http://a.com/%LOCALE%-complete"
             }
         },
         "*": {
@@ -885,8 +885,8 @@ class TestSchema4Blob(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
-        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="41" size="40"/>
-        <patch type="partial" URL="http://a.com/h1-partial" hashFunction="sha512" hashValue="9" size="8"/>
+        <patch type="complete" URL="http://a.com/l-complete" hashFunction="sha512" hashValue="41" size="40"/>
+        <patch type="partial" URL="http://a.com/h1-l-partial" hashFunction="sha512" hashValue="9" size="8"/>
     </update>
 </updates>
 """)
@@ -939,7 +939,7 @@ class TestSchema4Blob(unittest.TestCase):
         expected = minidom.parseString("""<?xml version="1.0"?>
 <updates>
     <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
-        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="41" size="40"/>
+        <patch type="complete" URL="http://a.com/l-complete" hashFunction="sha512" hashValue="41" size="40"/>
     </update>
 </updates>
 """)
