@@ -752,7 +752,7 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         }
         for channel, baseUrl in v3Blob.get('fileUrls').iteritems():
             if channel not in v4Blob["fileUrls"]:
-                v4Blob["fileUrls"] = {}
+                v4Blob["fileUrls"][channel] = {}
 
             # Each fileUrl should have one (no more no less) of the matchstrs below.
             for matchstr, lookup in (("%PRODUCT%", "bouncerProducts"), ("%FILENAME%", "ftpFilenames")):
@@ -760,8 +760,9 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                     for patchKey, products in v3Blob.get(lookup, {}).iteritems():
                         if patchKey not in v4Blob["fileUrls"][channel]:
                             v4Blob["fileUrls"][channel][patchKey] = {}
-                        for from_, product in products:
+                        for from_, product in products.iteritems():
                             url = baseUrl.replace(matchstr, product)
                             v4Blob["fileUrls"][channel][patchKey][from_] = url
 
+        v4Blob["schema_version"] = 4
         return v4Blob

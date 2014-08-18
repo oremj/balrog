@@ -963,8 +963,8 @@ class TestSchema4Blob(unittest.TestCase):
         self.assertEqual(returned.toxml(), expected.toxml())
 
     def testConvertFromV3(self):
-        blob = ReleaseBlobV3()
-        blob.loadJSON("""
+        v3Blob = ReleaseBlobV3()
+        v3Blob.loadJSON("""
 {
     "name": "g2",
     "schema_version": 3,
@@ -991,3 +991,32 @@ class TestSchema4Blob(unittest.TestCase):
     }
 }
 """)
+
+        v4Blob = ReleaseBlobV4.fromV3(v3Blob)
+        self.assertTrue(v4Blob.isValid())
+
+        expected = {
+            "name": "g2",
+            "schema_version": 4,
+            "hashFunction": "sha512",
+            "fileUrls": {
+                "c1": {
+                    "partials": {
+                        "g1": "http://a.com/g1-partial.mar"
+                    },
+                    "completes": {
+                        "*": "http://a.com/complete.mar"
+                    }
+                },
+                "c2": {
+                    "partials": {
+                        "g1": "http://a.com/g1-partial",
+                    },
+                    "completes": {
+                        "*": "http://a.com/complete"
+                    }
+                }
+            }
+        }
+
+        self.assertEquals(v4Blob, expected)
