@@ -961,4 +961,3 @@ class TestSchema4Blob(unittest.TestCase):
 </updates>
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
-
