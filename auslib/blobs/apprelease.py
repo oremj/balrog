@@ -136,6 +136,12 @@ class ReleaseBlobBase(Blob):
 
 
 class SeparatedFileUrlsMixin(object):
+    def _getFtpFilename(self, patchKey, from_):
+        return self.get("ftpFilenames", {}).get(patchKey, "")
+
+    def _getBouncerProduct(self, patchKey, from_):
+        return self.get("bouncerProducts", {}).get(patchKey, "")
+
     def _getUrl(self, updateQuery, patchKey, patch, specialForceHosts):
         platformData = self.getPlatformData(updateQuery["buildTarget"])
         if 'fileUrl' in patch:
@@ -170,12 +176,6 @@ class SeparatedFileUrlsMixin(object):
 
 
 class SingleUpdateXMLMixin(object):
-    def _getFtpFilename(self, patchKey, from_):
-        return self.get("ftpFilenames", {}).get(patchKey, "")
-
-    def _getBouncerProduct(self, patchKey, from_):
-        return self.get("bouncerProducts", {}).get(patchKey, "")
-
     def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey in ("complete", "partial"):
@@ -501,12 +501,6 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
 
 
 class MultipleUpdatesXMLMixin(object):
-    def _getFtpFilename(self, patchKey, from_):
-        return self.get("ftpFilenames", {}).get(patchKey, {}).get(from_, "")
-
-    def _getBouncerProduct(self, patchKey, from_):
-        return self.get("bouncerProducts", {}).get(patchKey, {}).get(from_, "")
-
     def _getPatchesXML(self, localeData, updateQuery, whitelistedDomains, specialForceHosts):
         patches = []
         for patchKey, patchType in (("completes", "complete"), ("partials", "partial")):
@@ -614,6 +608,12 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
             self['schema_version'] = 3
+
+    def _getFtpFilename(self, patchKey, from_):
+        return self.get("ftpFilenames", {}).get(patchKey, {}).get(from_, "")
+
+    def _getBouncerProduct(self, patchKey, from_):
+        return self.get("bouncerProducts", {}).get(patchKey, {}).get(from_, "")
 
     def createSnippets(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         # We have no tests that require this, probably not worthwhile to implement.
@@ -740,4 +740,4 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         # ensure schema_version is set if we init ReleaseBlobV3 directly
         Blob.__init__(self, **kwargs)
         if 'schema_version' not in self.keys():
-            self['schema_version'] = 3
+            self['schema_version'] = 4
