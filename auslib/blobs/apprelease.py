@@ -1,5 +1,4 @@
 import re
-import simplejson as json
 
 import logging
 log = logging.getLogger(__name__)
@@ -54,48 +53,16 @@ class ReleaseBlobBase(Blob):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def _getUrl(self, updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct):
-        platformData = self.getPlatformData(updateQuery["buildTarget"])
-        if 'fileUrl' in patch:
-            url = patch['fileUrl']
-        else:
-            # When we're using a fallback channel it's unlikely
-            # we'll have a fileUrl specifically for it, but we
-            # should try nonetheless. Non-fallback cases shouldn't
-            # be hitting any exceptions here.
-            try:
-                url = self['fileUrls'][updateQuery['channel']]
-            except KeyError:
-                try:
-                    url = self['fileUrls'][getFallbackChannel(updateQuery['channel'])]
-                except KeyError:
-                    self.log.debug("Couldn't find fileUrl for")
-                    raise
-
-            url = url.replace('%LOCALE%', updateQuery['locale'])
-            url = url.replace('%OS_FTP%', platformData['OS_FTP'])
-            url = url.replace('%FILENAME%', ftpFilename)
-            url = url.replace('%PRODUCT%', bouncerProduct)
-            url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
-        # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
-        if updateQuery['force']:
-            url = self.processSpecialForceHosts(url, specialForceHosts)
-
-        return url
-
     def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
         try:
             fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
         except KeyError:
             fromRelease = None
 
-        ftpFilename = self._getFtpFilename(patchKey, patch["from"])
-        bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
-
         if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
             return None
 
-        url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+        url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
         # TODO: should be raising a bigger alarm here, or aborting
         # the update entirely? Right now, another patch type could still
         # return an update. Eg, the partial could contain a forbidden domain
@@ -168,6 +135,40 @@ class ReleaseBlobBase(Blob):
         return True
 
 
+class SeparatedFileUrlsMixin(object):
+    def _getUrl(self, updateQuery, patchKey, patch, specialForceHosts):
+        platformData = self.getPlatformData(updateQuery["buildTarget"])
+        if 'fileUrl' in patch:
+            url = patch['fileUrl']
+        else:
+            ftpFilename = self._getFtpFilename(patchKey, patch["from"])
+            bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
+
+            # When we're using a fallback channel it's unlikely
+            # we'll have a fileUrl specifically for it, but we
+            # should try nonetheless. Non-fallback cases shouldn't
+            # be hitting any exceptions here.
+            try:
+                url = self['fileUrls'][updateQuery['channel']]
+            except KeyError:
+                try:
+                    url = self['fileUrls'][getFallbackChannel(updateQuery['channel'])]
+                except KeyError:
+                    self.log.debug("Couldn't find fileUrl for")
+                    raise
+
+            url = url.replace('%LOCALE%', updateQuery['locale'])
+            url = url.replace('%OS_FTP%', platformData['OS_FTP'])
+            url = url.replace('%FILENAME%', ftpFilename)
+            url = url.replace('%PRODUCT%', bouncerProduct)
+            url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
+        # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
+        if updateQuery['force']:
+            url = self.processSpecialForceHosts(url, specialForceHosts)
+
+        return url
+
+
 class SingleUpdateXMLMixin(object):
     def _getFtpFilename(self, patchKey, from_):
         return self.get("ftpFilenames", {}).get(patchKey, "")
@@ -189,7 +190,7 @@ class SingleUpdateXMLMixin(object):
         return patches
 
 
-class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin):
+class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixin):
     format_ = {
         'name': None,
         'schema_version': None,
@@ -277,7 +278,7 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin):
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
-            url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
             if containsForbiddenDomain(url, whitelistedDomains):
                 break
 
@@ -368,7 +369,7 @@ class NewStyleVersionsMixin(object):
         return updateLine
 
 
-class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin):
+class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin, SeparatedFileUrlsMixin):
     """ Changes from ReleaseBlobV1:
          * appv, extv become appVersion, platformVersion, displayVersion
         Added:
@@ -465,7 +466,7 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
-            url = self._getUrl(updateQuery, patch, specialForceHosts, ftpFilename, bouncerProduct)
+            url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
             if containsForbiddenDomain(url, whitelistedDomains):
                 break
 
@@ -518,7 +519,7 @@ class MultipleUpdatesXMLMixin(object):
         return patches
 
 
-class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin):
+class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, SeparatedFileUrlsMixin):
     """ Changes from ReleaseBlobV2:
          * support multiple partials
            * remove "partial" and "complete" from locale level
@@ -619,7 +620,44 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         return {}
 
 
-class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin):
+class UnifiedFileUrlsMixin(object):
+    def _getUrl(self, updateQuery, patchKey, patch, specialForceHosts):
+        platformData = self.getPlatformData(updateQuery["buildTarget"])
+        from_ = patch["from"]
+        if 'fileUrl' in patch:
+            url = patch['fileUrl']
+        else:
+            # There's three places we can look for a fileUrl, in order of
+            # preference:
+            # 1) Its specified channel.
+            # 2) Its fallback channel.
+            # 3) In the catch-all "channel" ("*").
+            channels = [
+                updateQuery['channel'],
+                getFallbackChannel(updateQuery['channel']),
+                "*",
+            ]
+            url = None
+            for c in channels:
+                if c in self['fileUrls']:
+                    url = self['fileUrls'][c][patchKey][from_]
+                    break
+
+            if not url:
+                self.log.debug("Couldn't find fileUrl")
+                raise ValueError("Couldn't find fileUrl")
+
+            url = url.replace('%LOCALE%', updateQuery['locale'])
+            url = url.replace('%OS_FTP%', platformData['OS_FTP'])
+            url = url.replace('%OS_BOUNCER%', platformData['OS_BOUNCER'])
+        # pass on forcing for special hosts (eg download.m.o for mozilla metrics)
+        if updateQuery['force']:
+            url = self.processSpecialForceHosts(url, specialForceHosts)
+
+        return url
+
+
+class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, UnifiedFileUrlsMixin):
     """ Changes from ReleaseBlobV4:
         * support pushing release builds to the beta channel with bouncer support (bug 1021026)
     """
@@ -637,22 +675,6 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                                # The value is the URL for this specific
                                # channel/update type/incoming release.
                 }
-            }
-        },
-        'ftpFilenames': {
-            'partials': {
-                '*': None
-            },
-            'completes': {
-                '*': None
-            }
-        },
-        'bouncerProducts': {
-            'partials': {
-                '*': None
-            },
-            'completes': {
-                '*': None
             }
         },
         'hashFunction': None,
