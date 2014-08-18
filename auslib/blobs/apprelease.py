@@ -630,7 +630,14 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         'displayVersion': None,
         'platformVersion': None,
         'fileUrls': {
-            '*': None
+            '*': { # This first level contains a channel name, or "*" as a catch all.
+                '*': { # This is "partials" or "completes" (TODO: enforce this).
+                    '*': None, # And this key is a specific release (matched up
+                               # against incoming requests), "or "*" as a catch all.
+                               # The value is the URL for this specific
+                               # channel/update type/incoming release.
+                }
+            }
         },
         'ftpFilenames': {
             'partials': {
