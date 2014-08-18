@@ -823,7 +823,7 @@ class TestSchema4Blob(unittest.TestCase):
                 "h1": "http://a.com/h1-partial-catchall"
             },
             "completes": {
-                "*": "http://a.com/h1-complete-catchall"
+                "*": "http://a.com/complete-catchall"
             }
         }
     },
@@ -855,5 +855,110 @@ class TestSchema4Blob(unittest.TestCase):
 }
 """)
 
-    def testStub(self):
-        pass
+    def testSchema4WithPartials(self):
+        updateQuery = {
+            "product": "h", "version": "30.0", "buildID": "10",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="41" size="40"/>
+        <patch type="partial" URL="http://a.com/h1-partial.mar" hashFunction="sha512" hashValue="9" size="8"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+        updateQuery = {
+            "product": "h", "version": "30.0", "buildID": "10",
+            "buildTarget": "p", "locale": "l", "channel": "c2",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="41" size="40"/>
+        <patch type="partial" URL="http://a.com/h1-partial" hashFunction="sha512" hashValue="9" size="8"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+        updateQuery = {
+            "product": "h", "version": "30.0", "buildID": "10",
+            "buildTarget": "p", "locale": "l", "channel": "c3",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete-catchall" hashFunction="sha512" hashValue="41" size="40"/>
+        <patch type="partial" URL="http://a.com/h1-partial-catchall" hashFunction="sha512" hashValue="9" size="8"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testSchema4NoPartials(self):
+        updateQuery = {
+            "product": "h", "version": "25.0", "buildID": "2",
+            "buildTarget": "p", "locale": "l", "channel": "c1",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete.mar" hashFunction="sha512" hashValue="41" size="40"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+        updateQuery = {
+            "product": "h", "version": "25.0", "buildID": "2",
+            "buildTarget": "p", "locale": "l", "channel": "c2",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete" hashFunction="sha512" hashValue="41" size="40"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+        updateQuery = {
+            "product": "h", "version": "25.0", "buildID": "2",
+            "buildTarget": "p", "locale": "l", "channel": "c3",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blobH2.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="31.0" buildID="50">
+        <patch type="complete" URL="http://a.com/complete-catchall" hashFunction="sha512" hashValue="41" size="40"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
