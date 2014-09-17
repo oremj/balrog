@@ -362,7 +362,10 @@ class NewStyleVersionsMixin(object):
             updateLine += ' isOSUpdate="true"'
         for attr in self.optional_:
             if attr in self:
-                updateLine += ' %s="%s"' % (attr, self[attr])
+                if self.interpolable_ and attr in self.interpolable_:
+                    updateLine += ' %s="%s"' % (attr, self[attr].replace("%LOCALE%", locale))
+                else:
+                    updateLine += ' %s="%s"' % (attr, self[attr])
         updateLine += ">"
 
         return updateLine
@@ -435,6 +438,8 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
+    # params that can have %LOCALE% interpolated
+    interpolable_ = ('billboardURL', 'openURL', 'notificationURL', 'alertURL')
 
     def __init__(self, **kwargs):
         # ensure schema_version is set if we init ReleaseBlobV2 directly
@@ -491,7 +496,10 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
                 snippet.append("updateType=major")
             for attr in self.optional_:
                 if attr in self:
-                    snippet.append("%s=%s" % (attr, self[attr]))
+                    if attr in self.interpolable_:
+                        snippet.append("%s=%s" % (attr, self[attr].replace("%LOCALE%", updateQuery["locale"])))
+                    else:
+                        snippet.append("%s=%s" % (attr, self[attr]))
             snippets[patchKey] = "\n".join(snippet) + "\n"
 
         for s in snippets.keys():
@@ -607,6 +615,8 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
+    # params that can have %LOCALE% interpolated
+    interpolable_ = ('billboardURL', 'openURL', 'notificationURL', 'alertURL')
 
     def __init__(self, **kwargs):
         # ensure schema_version is set if we init ReleaseBlobV3 directly
