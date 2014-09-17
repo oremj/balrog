@@ -33,6 +33,9 @@ class GMPBlobV1(Blob):
         # of the client to decide whether or not any action needs to be taken.
         return True
 
+    # Because specialForceHosts is only relevant to our own internal servers,
+    # and these type of updates are always served externally, we don't process
+    # them in GMP blobs.
     def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
 
@@ -43,8 +46,6 @@ class GMPBlobV1(Blob):
                 continue
 
             url = platformInfo["fileUrl"]
-            if updateQuery["force"]:
-                url = self.processSpecialForceHosts(url, specialForceHosts)
             if containsForbiddenDomain(url, whitelistedDomains):
                 continue
             vendorXML.append('        <addon id="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%d" version="%s"/>' % \
