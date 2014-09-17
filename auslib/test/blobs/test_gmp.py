@@ -20,7 +20,7 @@ class TestSchema1Blob(unittest.TestCase):
         self.blob = GMPBlobV1()
         self.blob.loadJSON("""
 {
-    "name": "gg",
+    "name": "fake",
     "schema_version": 1000,
     "hashFunction": "SHA512",
     "vendors": {
