@@ -11,7 +11,7 @@ def null(*args, **kwargs):
 
 class TestSchema1Blob(unittest.TestCase):
     maxDiff = 2000
-    
+
     def setUp(self):
         self.cef_patcher = mock.patch("auslib.log.cef_event")
         self.cef_patcher.start()
