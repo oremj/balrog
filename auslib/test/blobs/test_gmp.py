@@ -36,6 +36,9 @@ class TestSchema1Blob(unittest.TestCase):
                     "filesize": 4,
                     "hashValue": "5",
                     "fileUrl": "http://boring.com/blah"
+                },
+                "q2": {
+                    "alias": "q"
                 }
             }
         },
@@ -61,6 +64,25 @@ class TestSchema1Blob(unittest.TestCase):
     def tearDown(self):
         self.cef_patcher.stop()
 
+    def testGetVendorsForPlatform(self):
+        vendors = set([v for v in self.blob.getVendorsForPlatform("q")])
+        self.assertEquals(set(["c", "d"]), vendors)
+
+    def testGetVendorsForPlatformOnlyInOne(self):
+        vendors = set([v for v in self.blob.getVendorsForPlatform("r")])
+        self.assertEquals(set(["d"]), vendors)
+
+    def testGetResolvedPlatform(self):
+        self.assertEquals("q", self.blob.getResolvedPlatform("c", "q2"))
+
+    def testGetPlatformData(self):
+        expected = {
+            "filesize": 4,
+            "hashValue": "5",
+            "fileUrl": "http://boring.com/blah",
+        }
+        self.assertEquals(self.blob.getPlatformData("c", "q2"), expected)
+
     def testGMPUpdate(self):
         updateQuery = {
             "product": "gg", "version": "3", "buildID": "1",
@@ -74,6 +96,24 @@ class TestSchema1Blob(unittest.TestCase):
 <updates>
     <addons>
         <addon id="c" URL="http://a.com/blah" hashFunction="SHA512" hashValue="3" size="2" version="1"/>
+    </addons>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
+    def testGMPUpdateWithAlias(self):
+        updateQuery = {
+            "product": "gg", "version": "3", "buildID": "1",
+            "buildTarget": "q2", "locale": "l", "channel": "a",
+            "osVersion": "a", "distribution": "a", "distVersion": "a",
+            "force": 0
+        }
+        returned = self.blob.createXML(updateQuery, "minor", self.whitelistedDomains, self.specialForceHosts)
+        returned = minidom.parseString(returned)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <addons>
+        <addon id="c" URL="http://boring.com/blah" hashFunction="SHA512" hashValue="5" size="4" version="1"/>
     </addons>
 </updates>
 """)

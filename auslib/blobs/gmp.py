@@ -28,6 +28,18 @@ class GMPBlobV1(Blob):
         if "schema_version" not in self:
             self["schema_version"] = 1000
 
+    def getVendorsForPlatform(self, platform):
+        for v in self["vendors"]:
+            if platform in self["vendors"][v]["platforms"]:
+                yield v
+
+    def getResolvedPlatform(self, vendor, platform):
+        return self['vendors'][vendor]['platforms'][platform].get('alias', platform)
+
+    def getPlatformData(self, vendor, platform):
+        platform = self.getResolvedPlatform(vendor, platform)
+        return self['vendors'][vendor]['platforms'][platform]
+
     def shouldServeUpdate(self, updateQuery):
         # GMP updates should always be returned. It is the responsibility
         # of the client to decide whether or not any action needs to be taken.
@@ -40,17 +52,16 @@ class GMPBlobV1(Blob):
         buildTarget = updateQuery["buildTarget"]
 
         vendorXML = []
-        for id_, vendorInfo in self.get("vendors", {}).iteritems():
-            platformInfo = vendorInfo.get("platforms", {}).get(buildTarget)
-            if not platformInfo:
-                continue
+        for vendor in self.getVendorsForPlatform(buildTarget):
+            vendorInfo = self["vendors"][vendor]
+            platformData = self.getPlatformData(vendor, buildTarget)
 
-            url = platformInfo["fileUrl"]
+            url = platformData["fileUrl"]
             if containsForbiddenDomain(url, whitelistedDomains):
                 continue
             vendorXML.append('        <addon id="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%d" version="%s"/>' % \
-                (id_, url, self["hashFunction"], platformInfo["hashValue"],
-                    platformInfo["filesize"], vendorInfo["version"]))
+                (vendor, url, self["hashFunction"], platformData["hashValue"],
+                    platformData["filesize"], vendorInfo["version"]))
 
         xml = ['<?xml version="1.0"?>']
         xml.append('<updates>')
