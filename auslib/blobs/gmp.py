@@ -14,9 +14,10 @@ class GMPBlobV1(Blob):
                 "version": None,
                 "platforms": {
                     "*": {
+                        "alias": None,
                         "filesize": None,
                         "hashValue": None,
-                        "fileUrl": None,
+                        "fileUrl": None
                     }
                 }
             }

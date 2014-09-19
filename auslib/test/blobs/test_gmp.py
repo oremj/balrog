@@ -6,8 +6,6 @@ from xml.dom import minidom
 from auslib.blobs.gmp import GMPBlobV1
 import auslib.log
 
-def null(*args, **kwargs):
-    return
 
 class TestSchema1Blob(unittest.TestCase):
     maxDiff = 2000
