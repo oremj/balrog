@@ -466,7 +466,6 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
 }
 """))
 
-                                                        #json.dumps(newReleaseFile.getvalue())))
         self.assertEquals(ret.status_code, 201, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         r = dbo.releases.t.select().where(dbo.releases.name=='gmprel').execute().fetchall()
         self.assertEquals(len(r), 1)
