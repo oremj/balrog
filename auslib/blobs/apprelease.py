@@ -653,8 +653,8 @@ class UnifiedFileUrlsMixin(object):
             ]
             url = None
             for c in channels:
-                if c in self['fileUrls']:
-                    url = self['fileUrls'][c][patchKey][from_]
+                url = self.get("fileUrls", {}).get(c, {}).get(patchKey, {}).get(from_)
+                if url:
                     break
 
             # If we still can't find a fileUrl, we cannot fulfill this request.
