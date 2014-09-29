@@ -439,7 +439,7 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
             }
         }
     }
-    # for the benefit of createXML and createSnippetv2
+    # for the benefit of createXML and createSnippets
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
@@ -608,7 +608,7 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
             }
         }
     }
-    # for the benefit of createXML and createSnippetv2
+    # for the benefit of createXML
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
@@ -749,7 +749,7 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
             }
         }
     }
-    # for the benefit of createXML and createSnippetv2
+    # for the benefit of createXML
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
