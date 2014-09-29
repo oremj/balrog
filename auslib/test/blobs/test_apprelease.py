@@ -1039,14 +1039,16 @@ class TestSchema4Blob(unittest.TestCase):
                         {
                             "filesize": 4,
                             "from": "g1",
-                            "hashValue": 5
+                            "hashValue": 5,
+                            "fileUrl": "http://a.com/g1-partial"
                         }
                     ],
                     "completes": [
                         {
                             "filesize": 34,
                             "from": "*",
-                            "hashValue": "35"
+                            "hashValue": "35",
+                            "fileUrl": "http://a.com/complete"
                         }
                     ]
                 }
