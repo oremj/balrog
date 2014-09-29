@@ -18,9 +18,9 @@ if __name__ == "__main__":
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--db", dest="db", required=True)
-    parser.add_argument("--name", dest="name", required=True)
-    parser.add_argument("releases", metavar="release", nargs="+")
+    parser.add_argument("--db", dest="db", required=True, help="The database to use, in URI format.")
+    parser.add_argument("--name", dest="name", required=True, help="The name of the person/script doing the migrations.")
+    parser.add_argument("releases", metavar="release", nargs="+", help="The releases (aka blob names) to migrate.")
 
     args = parser.parse_args()
 
