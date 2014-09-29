@@ -685,6 +685,14 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
         'appVersion': None,
         'displayVersion': None,
         'platformVersion': None,
+        # Top level fileUrls are useful primarily for release style builds,
+        # where the URLs are predictable and only vary by locale and platform.
+        # It's worth noting that while we normally serve different channels
+        # through different fileUrls (eg, ftp.mozilla.org vs. download.mozilla.org),
+        # each platform+locale combination is expected to receive the same
+        # MAR contents regardless of channel. As of yet there is no way to
+        # specify different metadata for different channels so doing anything
+        # other than above will result in MAR verification failures on the client.
         'fileUrls': {
             '*': { # This first level contains a channel name, or "*" as a catch all.
                 '*': { # This is "partials" or "completes" (TODO: enforce this).
