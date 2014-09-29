@@ -753,6 +753,8 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
     optional_ = ('billboardURL', 'showPrompt', 'showNeverForVersion',
                  'showSurvey', 'actions', 'openURL', 'notificationURL',
                  'alertURL')
+    # params that can have %LOCALE% interpolated
+    interpolable_ = ('billboardURL', 'openURL', 'notificationURL', 'alertURL')
 
     def __init__(self, **kwargs):
         # ensure schema_version is set if we init ReleaseBlobV3 directly
