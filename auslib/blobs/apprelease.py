@@ -90,12 +90,18 @@ class ReleaseBlobBase(Blob):
            ** _getPatchesXML() called to get the information that describes
               specific MARs. Where in the blob this information comes from
               changed significantly starting with V3 blobs.
-           *** _getPatchSpecificXML() called to translate MAR information into
+           *** _getSpecificPatchXML() called to translate MAR information into
                XML. This transformation in blob version independent, so it
                lives on the base class to avoid duplication.
-           **** _getFtpFilename/_getBouncerProduct called to substitute some
-                paths with real information. This is another part of the blob
-                format that changed starting with V3 blobs.
+           **** _getUrl() called to figure out what the MAR URL is for a
+                specific patch. This changed starting with V4 blobs. V3 and
+                earlier use SeparatedFileUrlsMixin, V4 and later use
+                UnifiedFileUrlsMixin.
+           ***** _getFtpFilename/_getBouncerProduct called to substitute some
+                 paths with real information. This is another part of the blob
+                 format that changed starting with V3 blobs. It was later
+                 deprecated in V4 and thus not used for UnifiedFileUrlsMixin
+                 blobs.
         """
 
         buildTarget = updateQuery["buildTarget"]
