@@ -15,9 +15,10 @@ from auslib.admin.views.csrf import CSRFView
 from auslib.admin.views.permissions import UsersView, PermissionsView, \
   SpecificPermissionView, PermissionsPageView, UserPermissionsPageView
 from auslib.admin.views.releases import SingleLocaleView, SingleBlobView, \
-  SingleReleaseView, ReleasesPageView, ReleaseHistoryView
+  SingleReleaseView, ReleasesPageView, ReleaseHistoryView, \
+  ReleasesAPIView
 from auslib.admin.views.rules import RulesPageView, RulesAPIView, \
-  SingleRuleView, RuleHistoryView
+  SingleRuleView, RuleHistoryView, RuleHistoryAPIView
 from auslib.admin.views.history import DiffView, FieldView
 from auslib.admin.views.index import IndexPageView, RecentChangesTableView
 
@@ -60,3 +61,11 @@ app.add_url_rule('/history/diff/<type_>/<change_id>/<field>', view_func=DiffView
 app.add_url_rule('/history/view/<type_>/<change_id>/<field>', view_func=FieldView.as_view('field'))
 app.add_url_rule('/recent_changes_table.html', view_func=RecentChangesTableView.as_view(''))
 app.add_url_rule('/', view_func=IndexPageView.as_view('index.html'))
+
+
+# Specific API views
+app.add_url_rule('/api/csrf_token', view_func=CSRFView.as_view('csrf'))
+app.add_url_rule('/api/rules', view_func=RulesAPIView.as_view('api_rules'))
+app.add_url_rule('/api/rules/<rule_id>', view_func=SingleRuleView.as_view('api_rule'))
+app.add_url_rule('/api/rules/<rule_id>/revisions', view_func=RuleHistoryAPIView.as_view('api_rules_revisions'))
+app.add_url_rule('/api/releases', view_func=ReleasesAPIView.as_view('api_releases'))

@@ -380,3 +380,40 @@ class ReleaseHistoryView(HistoryAdminView):
             return Response(status=400, response=e.args)
 
         return Response("Excellent!")
+
+
+class ReleasesAPIView(AdminView):
+    """/releases"""
+
+    @requirelogin
+    #@requirepermission('/releases')# XXX???
+    def get(self, **kwargs):
+        releases = dbo.releases.getReleaseInfo()
+
+        if request.args.get('names_only'):
+            names = []
+            for release in releases:
+                names.append(release['name'])
+            data = {'names': names}
+        else:
+            count = 0
+            _releases = []
+            _mapping = {
+                # return : db name
+                'name': 'name',
+                'product': 'product',
+                'version': 'version',
+                'data_version': 'data_version',
+            }
+            for release in releases:
+                _releases.append(dict(
+                    (key, release[db_key])
+                    for key, db_key in _mapping.items()
+                ))
+            data = {
+                'count': count,
+                'releases': _releases,
+            }
+        response = make_response(json.dumps(data))
+        response.headers['Content-Type'] = 'application/json'
+        return response
