@@ -21,7 +21,7 @@ class ViewTest(unittest.TestCase):
        some helper methods."""
     def setUp(self):
         self.cef_fd, self.cef_file = mkstemp()
-        app.config["WTF_CSRF_SECRET_KEY"] = 'abc123'
+        app.config["SECRET_KEY"] = 'abc123'
         app.config['DEBUG'] = True
         app.config["WTF_CSRF_ENABLED"] = False
         app.config['WHITELISTED_DOMAINS'] = ['good.com']

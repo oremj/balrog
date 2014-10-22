@@ -50,7 +50,7 @@ if __name__ == '__main__':
         pass
 
     app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
-    app.config['WTF_CSRF_SECRET_KEY'] = 'abc123'
+    app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
     app.config['PAGE_TITLE'] = options.pageTitle
     def auth(environ, username, password):
