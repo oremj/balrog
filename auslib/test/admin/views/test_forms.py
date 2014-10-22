@@ -11,8 +11,8 @@ class TestFormsWithJSONFields(ViewTest):
         """Rendering the Permission form with a dict for the options field
         should serialize it when preparing it as the input tag value in HTML"""
         app = flask.Flask(__name__)
-        app.config['SECRET_KEY'] = 'abc123'
-        app.config['CSRF_ENABLED'] = False
+        app.config['WTF_CSRF_SECRET_KEY'] = 'abc123'
+        app.config['WTF_CSRF_ENABLED'] = False
         with app.test_request_context('/'):
             struct = {'foo': u'\xe3'}
             form = PermissionForm(options=struct)

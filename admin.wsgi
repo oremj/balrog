@@ -33,7 +33,7 @@ dbo.setupChangeMonitors(cfg.getSystemAccounts())
 dbo.setDomainWhitelist(cfg.getDomainWhitelist())
 application.config['WHITELISTED_DOMAINS'] = cfg.getDomainWhitelist()
 application.config['PAGE_TITLE'] = cfg.getPageTitle()
-application.config['SECRET_KEY'] = cfg.getSecretKey()
+application.config['WTF_CSRF_SECRET_KEY'] = cfg.getSecretKey()
 application.config['SENTRY_DSN'] = cfg.getSentryDsn()
 application.config['SENTRY_PROCESSORS'] = ['auslib.util.sentry.SanitizeHeadersProcessor']
 

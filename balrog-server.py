@@ -54,6 +54,6 @@ if __name__ == "__main__":
 
     app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
     app.config['SPECIAL_FORCE_HOSTS'] = options.specialForceHosts
-    app.config['SECRET_KEY'] = 'abc123'
+    app.config['WTF_CSRF_SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
     app.run(port=options.port, host=options.host)
