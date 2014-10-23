@@ -67,7 +67,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     form = ReleaseForm()
     if not form.validate():
         cef_event("Bad input", CEF_WARN, errors=form.errors)
-        return Response(status=400, response=form.errors)
+        return Response(status=400, response=json.dumps(form.errors))
     product = form.product.data
     version = form.version.data
     hashFunction = form.hashFunction.data
@@ -254,6 +254,7 @@ class SingleReleaseView(AdminView):
     @requirelogin
     @requirepermission('/releases/:name')
     def _post(self, release, changed_by, transaction):
+
         def exists(rel, product, version):
             if rel == release:
                 return True
@@ -448,3 +449,16 @@ class ReleasesAPIView(AdminView):
         )
         response.headers['Content-Type'] = 'application/json'
         return response
+
+
+class SingleReleaseAPIView(SingleReleaseView):
+    """ /releases/[release]"""
+
+    @json_to_form
+    @requirelogin
+    @requirepermission('/releases/:name')
+    def _put(self, release, changed_by, transaction):
+        return super(SingleReleaseAPIView, self)._post(
+            release=release,
+            transaction=transaction
+        )
