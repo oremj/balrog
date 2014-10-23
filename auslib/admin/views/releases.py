@@ -237,14 +237,10 @@ class SingleReleaseView(AdminView):
     @requirepermission('/releases/:name')
     def _put(self, release, changed_by, transaction):
         form = NewReleaseForm()
-        print request.form
         if not form.validate():
-            print "FORM.ERRORS"
-            print form.errors
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=form.errors)
 
-        raise Exception('debugging')
         try:
             dbo.releases.addRelease(name=release, product=form.product.data,
                 version=form.version.data, blob=form.blob.data,
@@ -424,28 +420,31 @@ class ReleasesAPIView(AdminView):
 
     @json_to_form
     @requirelogin
-    @requirepermission('/releases/:name')
+    #@requirepermission('/releases/:name')
     def _post(self, changed_by, transaction):
-        print "REQUEST.form"
-        print request.form
-        print
-        print "REQUEST.json"
-        print request.json
-        print
         form = NewReleaseForm()
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=json.dumps(form.errors))
 
         try:
-            result = dbo.releases.addRelease(
-                name=release, product=form.product.data,
+            name = dbo.releases.addRelease(
+                name=form.name.data, product=form.product.data,
                 version=form.version.data, blob=form.blob.data,
                 changed_by=changed_by, transaction=transaction
             )
-            print "RESULT", result
         except ValueError, e:
             msg = "Couldn't update release: %s" % e
             cef_event("Bad input", CEF_WARN, errors=msg)
             return Response(status=400, response=msg)
-        return Response(status=201)
+
+        release = dbo.releases.getReleases(
+            name=name, transaction=transaction, limit=1
+        )[0]
+        new_data_version = release['data_version']
+        response = make_response(
+            json.dumps(dict(new_data_version=new_data_version)),
+            201
+        )
+        response.headers['Content-Type'] = 'application/json'
+        return response
