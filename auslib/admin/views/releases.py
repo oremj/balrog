@@ -338,6 +338,15 @@ class ReleaseHistoryView(HistoryAdminView):
 
         self.annotateRevisionDifferences(revisions)
 
+        if 'application/json' in request.headers.get('Accept', ''):
+            return Response(
+                response=json.dumps({
+                    'revisions': revisions,
+                    'count': total_count,
+                }),
+                mimetype='application/json',
+            )
+
         return render_template(
             'revisions.html',
             revisions=revisions,
@@ -348,6 +357,7 @@ class ReleaseHistoryView(HistoryAdminView):
             total_count=total_count,
         )
 
+    @json_to_form
     @requirelogin
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')

@@ -249,6 +249,7 @@ class SingleRuleView(AdminView):
 
     @requirelogin
     def _delete(self, rule_id, transaction, changed_by):
+
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
         if not rule:
