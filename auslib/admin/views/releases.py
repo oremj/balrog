@@ -462,15 +462,3 @@ class ReleasesAPIView(AdminView):
         )
         response.headers['Content-Type'] = 'application/json'
         return response
-
-
-class SingleReleaseAPIView(SingleReleaseView):
-    """ /releases/[release]"""
-
-    @requirelogin
-    @requirepermission('/releases/:name')
-    def _put(self, release, changed_by, transaction):
-        return super(SingleReleaseAPIView, self)._post(
-            release=release,
-            transaction=transaction
-        )

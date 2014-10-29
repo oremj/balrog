@@ -16,7 +16,7 @@ from auslib.admin.views.permissions import UsersView, PermissionsView, \
   SpecificPermissionView, PermissionsPageView, UserPermissionsPageView
 from auslib.admin.views.releases import SingleLocaleView, SingleBlobView, \
   SingleReleaseView, ReleasesPageView, ReleaseHistoryView, \
-  ReleasesAPIView, SingleReleaseAPIView
+  ReleasesAPIView
 from auslib.admin.views.rules import RulesPageView, RulesAPIView, \
   SingleRuleView, RuleHistoryView, RuleHistoryAPIView
 from auslib.admin.views.history import DiffView, FieldView
@@ -51,7 +51,7 @@ app.add_url_rule('/api/rules', view_func=RulesAPIView.as_view('api_rules'))
 app.add_url_rule('/api/rules/<rule_id>', view_func=SingleRuleView.as_view('api_rule'))
 app.add_url_rule('/api/rules/<rule_id>/revisions', view_func=RuleHistoryAPIView.as_view('api_rules_revisions'))
 app.add_url_rule('/api/releases', view_func=ReleasesAPIView.as_view('api_releases'))
-app.add_url_rule('/api/releases/<release>', view_func=SingleReleaseAPIView.as_view('api_releases_revision'))
+app.add_url_rule('/api/releases/<release>', view_func=SingleReleaseView.as_view('api_releases_revision'))
 app.add_url_rule('/api/releases/<release>/revisions', view_func=ReleaseHistoryView.as_view('api_release_revisions'))
 app.add_url_rule('/api/history/diff/<type_>/<change_id>/<field>', view_func=DiffView.as_view('api_diff'))
 app.add_url_rule('/api/history/view/<type_>/<change_id>/<field>', view_func=FieldView.as_view('api_field'))
