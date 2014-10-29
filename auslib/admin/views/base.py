@@ -27,7 +27,7 @@ def requirepermission(url, options=['product']):
             for opt in options:
                 if opt in request.form:
                     extra[opt] = request.form[opt]
-                elif opt in request.json:
+                elif request.get_json() and opt in request.json:
                     extra[opt] = request.json[opt]
                 else:
                     msg = "Couldn't find required option %s in form" % opt
