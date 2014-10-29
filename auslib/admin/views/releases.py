@@ -70,7 +70,6 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
         return Response(status=400, response=json.dumps(form.errors))
     product = form.product.data
     version = form.version.data
-    hashFunction = form.hashFunction.data
     incomingData = form.data.data
     copyTo = form.copyTo.data
     alias = form.alias.data
@@ -85,6 +84,13 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
         schema_version = incomingData.get("schema_version")
     else:
         return Response(status=400, response="schema_version is required")
+    
+    if getattr(form.hashFunction, "data", None):
+        hashFunction = form.hashFunction.data
+    elif incomingData.get("hashFunction"):
+        hashFunction = incomingData.get("hashFunction")
+    else:
+        return Response(status=400, response="hashFunction is required")
 
     allReleases = [release]
     if copyTo:
