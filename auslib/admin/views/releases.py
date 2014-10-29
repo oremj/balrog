@@ -90,7 +90,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     elif incomingData.get("hashFunction"):
         hashFunction = incomingData.get("hashFunction")
     else:
-        return Response(status=400, response="hashFunction is required")
+        hashFunction = None
 
     allReleases = [release]
     if copyTo:
