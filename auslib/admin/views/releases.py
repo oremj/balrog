@@ -433,8 +433,7 @@ class ReleasesAPIView(AdminView):
         return response
 
     @requirelogin
-    # TODO: enable me
-    #@requirepermission('/releases/:name')
+    @requirepermission('/releases')
     def _post(self, changed_by, transaction):
         form = NewReleaseForm()
         if not form.validate():
