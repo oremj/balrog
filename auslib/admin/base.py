@@ -64,11 +64,11 @@ app.add_url_rule('/', view_func=IndexPageView.as_view('index.html'))
 
 
 # Specific API views
-app.add_url_rule('/api/csrf_token', view_func=CSRFView.as_view('csrf'))
+app.add_url_rule('/api/csrf_token', view_func=CSRFView.as_view('api_csrf'))
 app.add_url_rule('/api/users', view_func=UsersView.as_view('api_users'))
 app.add_url_rule('/api/users/<username>/permissions', view_func=PermissionsView.as_view('api_user_permissions'))
 app.add_url_rule('/api/users/<username>/permissions/<path:permission>', view_func=SpecificPermissionView.as_view('api_specific_permission'))
-app.add_url_rule('/api/users/<username>/permissions//<path:permission>', view_func=SpecificPermissionView.as_view('api_specific_permission'))
+app.add_url_rule('/api/users/<username>/permissions//<path:permission>', view_func=SpecificPermissionView.as_view('api_specific_permission2'))
 app.add_url_rule('/api/rules', view_func=RulesAPIView.as_view('api_rules'))
 app.add_url_rule('/api/rules/<rule_id>', view_func=SingleRuleView.as_view('api_rule'))
 app.add_url_rule('/api/rules/<rule_id>/revisions', view_func=RuleHistoryAPIView.as_view('api_rules_revisions'))
