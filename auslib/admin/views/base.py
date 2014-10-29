@@ -9,7 +9,6 @@ from auslib.util.timesince import timesince
 
 import logging
 
-
 def requirelogin(f):
     def decorated(*args, **kwargs):
         username = request.environ.get('REMOTE_USER')
