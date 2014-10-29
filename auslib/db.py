@@ -4,7 +4,6 @@ import re
 import simplejson as json
 import sys
 import time
-from urlparse import urlparse
 
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
   create_engine, select, BigInteger
