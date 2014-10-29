@@ -133,22 +133,3 @@ class UserPermissionsPageView(AdminView):
             prefix = permission2selector(perm)
             forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
         return render_template('user_permissions.html', username=username, permissions=forms, newPermission=NewPermissionForm())
-
-
-# class UserPermissionsAPIView(SpecificPermissionView):
-#     """/user/:username/permissions"""
-#
-#     def get(self, username):
-#         permissions = dbo.permissions.getUserPermissions(username)
-#         # rewrite as a list of dicts
-#         permissions = [
-#             {
-#                 'permission': k,
-#                 'data_version': v['data_version'],
-#                 'options': v['options'],
-#             }
-#             for k, v in permissions.items()
-#         ]
-#         response = make_response(json.dumps({'permissions': permissions}))
-#         response.headers['Content-Type'] = 'application/json'
-#         return response
