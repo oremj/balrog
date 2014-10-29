@@ -8,7 +8,7 @@ from auslib.db import OutdatedDataError
 from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 from auslib.util import getPagination
 from auslib.admin.views.base import (
-    requirelogin, requirepermission, AdminView, HistoryAdminView
+    requirelogin, requirepermission, AdminView, HistoryAdminView, json_to_form
 )
 from auslib.admin.views.csrf import get_csrf_headers
 from auslib.admin.views.forms import ReleaseForm, NewReleaseForm, DbEditableForm
@@ -67,7 +67,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
     form = ReleaseForm()
     if not form.validate():
         cef_event("Bad input", CEF_WARN, errors=form.errors)
-        return Response(status=400, response=form.errors)
+        return Response(status=400, response=json.dumps(form.errors))
     product = form.product.data
     version = form.version.data
     hashFunction = form.hashFunction.data
@@ -224,10 +224,10 @@ class SingleReleaseView(AdminView):
     def get(self, release):
         release = dbo.releases.getReleases(name=release, limit=1)
         if not release:
-            return Response(status=404)
+            return Response(status=400)
         headers = {'X-Data-Version': release[0]['data_version']}
         headers.update(get_csrf_headers())
-        if 'application/json' in request.headers.get('Accept-Encoding', ''):
+        if 'application/json' in request.headers.get('Accept', ''):
             return Response(response=json.dumps(release[0]['data']), mimetype='application/json', headers=headers)
         else:
             form = DbEditableForm(prefix=release[0]['name'], data_version=release[0]['data_version'])
@@ -254,6 +254,7 @@ class SingleReleaseView(AdminView):
     @requirelogin
     @requirepermission('/releases/:name')
     def _post(self, release, changed_by, transaction):
+
         def exists(rel, product, version):
             if rel == release:
                 return True
@@ -337,6 +338,15 @@ class ReleaseHistoryView(HistoryAdminView):
 
         self.annotateRevisionDifferences(revisions)
 
+        if 'application/json' in request.headers.get('Accept', ''):
+            return Response(
+                response=json.dumps({
+                    'revisions': revisions,
+                    'count': total_count,
+                }),
+                mimetype='application/json',
+            )
+
         return render_template(
             'revisions.html',
             revisions=revisions,
@@ -347,6 +357,7 @@ class ReleaseHistoryView(HistoryAdminView):
             total_count=total_count,
         )
 
+    @json_to_form
     @requirelogin
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')
@@ -380,3 +391,84 @@ class ReleaseHistoryView(HistoryAdminView):
             return Response(status=400, response=e.args)
 
         return Response("Excellent!")
+
+
+class ReleasesAPIView(AdminView):
+    """/releases"""
+
+    @requirelogin
+    #@requirepermission('/releases')# XXX???
+    def get(self, **kwargs):
+        if request.args.get('names_only'):
+            releases = dbo.releases.getReleaseInfo(nameOnly=True)
+            names = []
+            for release in releases:
+                names.append(release['name'])
+            data = {'names': names}
+        else:
+            releases = dbo.releases.getReleaseInfo()
+            count = 0
+            _releases = []
+            _mapping = {
+                # return : db name
+                'name': 'name',
+                'product': 'product',
+                'version': 'version',
+                'data_version': 'data_version',
+            }
+            for release in releases:
+                _releases.append(dict(
+                    (key, release[db_key])
+                    for key, db_key in _mapping.items()
+                ))
+            data = {
+                'count': count,
+                'releases': _releases,
+            }
+        response = make_response(json.dumps(data))
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    @json_to_form
+    @requirelogin
+    #@requirepermission('/releases/:name')
+    def _post(self, changed_by, transaction):
+        form = NewReleaseForm()
+        if not form.validate():
+            cef_event("Bad input", CEF_WARN, errors=form.errors)
+            return Response(status=400, response=json.dumps(form.errors))
+
+        try:
+            name = dbo.releases.addRelease(
+                name=form.name.data, product=form.product.data,
+                version=form.version.data, blob=form.blob.data,
+                changed_by=changed_by, transaction=transaction
+            )
+        except ValueError, e:
+            msg = "Couldn't update release: %s" % e
+            cef_event("Bad input", CEF_WARN, errors=msg)
+            return Response(status=400, response=msg)
+
+        release = dbo.releases.getReleases(
+            name=name, transaction=transaction, limit=1
+        )[0]
+        new_data_version = release['data_version']
+        response = make_response(
+            json.dumps(dict(new_data_version=new_data_version)),
+            201
+        )
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+
+class SingleReleaseAPIView(SingleReleaseView):
+    """ /releases/[release]"""
+
+    @json_to_form
+    @requirelogin
+    @requirepermission('/releases/:name')
+    def _put(self, release, changed_by, transaction):
+        return super(SingleReleaseAPIView, self)._post(
+            release=release,
+            transaction=transaction
+        )

@@ -3,7 +3,12 @@ import simplejson as json
 from flask import render_template, request, Response, jsonify, make_response
 
 from auslib import dbo
-from auslib.admin.views.base import requirelogin, requirepermission, AdminView
+from auslib.admin.views.base import (
+    requirelogin,
+    requirepermission,
+    AdminView,
+    json_to_form
+)
 from auslib.admin.views.forms import NewPermissionForm, ExistingPermissionForm
 from auslib.log import cef_event, CEF_WARN
 
@@ -26,7 +31,7 @@ class UsersView(AdminView):
         users = dbo.permissions.getAllUsers()
         self.log.debug("Found users: %s", users)
         fmt = request.args.get('format', 'html')
-        if fmt == 'json':
+        if fmt == 'json' or 'application/json' in request.headers.get('Accept'):
             # We don't return a plain jsonify'ed list here because of:
             # http://flask.pocoo.org/docs/security/#json-security
             return jsonify(dict(users=users))
@@ -38,7 +43,7 @@ class PermissionsView(AdminView):
     def get(self, username):
         permissions = dbo.permissions.getUserPermissions(username)
         fmt = request.args.get('format', 'html')
-        if fmt == 'json':
+        if fmt == 'json' or 'application/json' in request.headers.get('Accept'):
             return jsonify(permissions)
         else:
             forms = []
@@ -63,6 +68,7 @@ class SpecificPermissionView(AdminView):
             form = ExistingPermissionForm(prefix=prefix, permission=permission, options=perm['options'], data_version=perm['data_version'])
             return render_template('fragments/permission_row.html', username=username, form=form)
 
+    @json_to_form
     @setpermission
     @requirelogin
     @requirepermission('/users/:id/permissions/:permission', options=[])
@@ -83,6 +89,7 @@ class SpecificPermissionView(AdminView):
             cef_event("Bad input", CEF_WARN, errors=e.args)
             return Response(status=400, response=e.args)
 
+    @json_to_form
     @setpermission
     @requirelogin
     @requirepermission('/users/:id/permissions/:permission', options=[])
@@ -133,3 +140,22 @@ class UserPermissionsPageView(AdminView):
             prefix = permission2selector(perm)
             forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
         return render_template('user_permissions.html', username=username, permissions=forms, newPermission=NewPermissionForm())
+
+
+# class UserPermissionsAPIView(SpecificPermissionView):
+#     """/user/:username/permissions"""
+#
+#     def get(self, username):
+#         permissions = dbo.permissions.getUserPermissions(username)
+#         # rewrite as a list of dicts
+#         permissions = [
+#             {
+#                 'permission': k,
+#                 'data_version': v['data_version'],
+#                 'options': v['options'],
+#             }
+#             for k, v in permissions.items()
+#         ]
+#         response = make_response(json.dumps({'permissions': permissions}))
+#         response.headers['Content-Type'] = 'application/json'
+#         return response

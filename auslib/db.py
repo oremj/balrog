@@ -885,7 +885,8 @@ class Releases(AUSTable):
 
         columns = dict(name=name, product=product, version=version, data=blob.getJSON())
         # Raises DuplicateDataError if the release already exists.
-        self.insert(changed_by=changed_by, transaction=transaction, **columns)
+        ret = self.insert(changed_by=changed_by, transaction=transaction, **columns)
+        return ret.inserted_primary_key[0]
 
     def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, blob=None, transaction=None):
         what = {}
