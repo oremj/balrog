@@ -44,6 +44,20 @@ class TestRulesAPI_HTML(ViewTest, HTMLTestMixin):
         self.assertEquals(r[0]['priority'], 33)
         self.assertEquals(r[0]['data_version'], 1)
 
+    def testNewRulePostJSON(self):
+        data = json.dumps(dict(
+            backgroundRate=31, mapping="c", priority=33, product="Firefox",
+            update_type="minor", channel="nightly"
+        ))
+        ret = self._post("/api/rules", data=data, headers={"Content-Type": "application/json"})
+        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        r = dbo.rules.t.select().where(dbo.rules.rule_id==ret.data).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0]['mapping'], 'c')
+        self.assertEquals(r[0]['backgroundRate'], 31)
+        self.assertEquals(r[0]['priority'], 33)
+        self.assertEquals(r[0]['data_version'], 1)
+
     # A POST without the required fields shouldn't be valid
     def testMissingFields(self):
         # But we still need to pass product, because permission checking
@@ -58,6 +72,28 @@ class TestSingleRuleView_HTML(ViewTest, HTMLTestMixin):
         # Make some changes to a rule
         ret = self._post('/rules/1', data=dict(backgroundRate=71, mapping='d', priority=73, data_version=1,
                                                 product='Firefox', channel='nightly'))
+        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        load = json.loads(ret.data)
+        self.assertEquals(load['new_data_version'], 2)
+
+        # Assure the changes made it into the database
+        r = dbo.rules.t.select().where(dbo.rules.rule_id==1).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0]['mapping'], 'd')
+        self.assertEquals(r[0]['backgroundRate'], 71)
+        self.assertEquals(r[0]['priority'], 73)
+        self.assertEquals(r[0]['data_version'], 2)
+        # And that we didn't modify other fields
+        self.assertEquals(r[0]['update_type'], 'minor')
+        self.assertEquals(r[0]['version'], '3.5')
+        self.assertEquals(r[0]['buildTarget'], 'd')
+
+    def testPostJSON(self):
+        data = json.dumps(dict(
+            backgroundRate=71, mapping="d", priority=73, data_version=1,
+            product="Firefox", channel="nightly"
+        ))
+        ret = self._post("/rules/1", data=data, headers={"Content-Type": "application/json"})
         self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         load = json.loads(ret.data)
         self.assertEquals(load['new_data_version'], 2)

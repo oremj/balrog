@@ -72,8 +72,8 @@ class ViewTest(unittest.TestCase):
     def _getAuth(self, username):
         return {'REMOTE_USER': username}
 
-    def _post(self, url, data={}, username='bill'):
-        return self.client.post(url, data=data, environ_base=self._getAuth(username))
+    def _post(self, url, data={}, username='bill', **kwargs):
+        return self.client.post(url, data=data, environ_base=self._getAuth(username), **kwargs)
 
     def _badAuthPost(self, url, data={}):
         return self.client.post(url, data=data, environ_base=self._getBadAuth())
