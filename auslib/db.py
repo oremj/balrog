@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import copy
 from os import path
 import re
@@ -999,6 +1000,12 @@ class Permissions(AUSTable):
     def getAllUsers(self, transaction=None):
         res = self.select(columns=[self.username], distinct=True, transaction=transaction)
         return [r['username'] for r in res]
+
+    def getAllPermissions(self, transaction=None):
+        ret = defaultdict(dict)
+        for r in self.select(transaction=transaction):
+            ret[r["username"]][r["permission"]] = r["options"]
+        return ret
 
     def countAllUsers(self, transaction=None):
         res = self.select(columns=[self.username], distinct=True, transaction=transaction)

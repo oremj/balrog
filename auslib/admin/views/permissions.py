@@ -23,7 +23,7 @@ def permission2selector(permission):
 class UsersView(AdminView):
     """/users"""
     def get(self):
-        users = dbo.permissions.getAllUsers()
+        users = dbo.permissions.getAllPermissions()
         self.log.debug("Found users: %s", users)
         fmt = request.args.get('format', 'html')
         if fmt == 'json' or 'application/json' in request.headers.get('Accept'):
@@ -31,7 +31,7 @@ class UsersView(AdminView):
             # http://flask.pocoo.org/docs/security/#json-security
             return jsonify(dict(users=users))
         else:
-            return render_template('fragments/users.html', users=users)
+            return render_template('fragments/users.html', users=users.keys())
 
 class PermissionsView(AdminView):
     """/users/[user]/permissions"""
