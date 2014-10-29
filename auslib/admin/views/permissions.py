@@ -3,12 +3,7 @@ import simplejson as json
 from flask import render_template, request, Response, jsonify, make_response
 
 from auslib import dbo
-from auslib.admin.views.base import (
-    requirelogin,
-    requirepermission,
-    AdminView,
-    json_to_form
-)
+from auslib.admin.views.base import requirelogin, requirepermission, AdminView
 from auslib.admin.views.forms import NewPermissionForm, ExistingPermissionForm
 from auslib.log import cef_event, CEF_WARN
 
@@ -68,7 +63,6 @@ class SpecificPermissionView(AdminView):
             form = ExistingPermissionForm(prefix=prefix, permission=permission, options=perm['options'], data_version=perm['data_version'])
             return render_template('fragments/permission_row.html', username=username, form=form)
 
-    @json_to_form
     @setpermission
     @requirelogin
     @requirepermission('/users/:id/permissions/:permission', options=[])
@@ -89,7 +83,6 @@ class SpecificPermissionView(AdminView):
             cef_event("Bad input", CEF_WARN, errors=e.args)
             return Response(status=400, response=e.args)
 
-    @json_to_form
     @setpermission
     @requirelogin
     @requirepermission('/users/:id/permissions/:permission', options=[])

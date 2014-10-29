@@ -8,7 +8,7 @@ from auslib.db import OutdatedDataError
 from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 from auslib.util import getPagination
 from auslib.admin.views.base import (
-    requirelogin, requirepermission, AdminView, HistoryAdminView, json_to_form
+    requirelogin, requirepermission, AdminView, HistoryAdminView
 )
 from auslib.admin.views.csrf import get_csrf_headers
 from auslib.admin.views.forms import ReleaseForm, NewReleaseForm, DbEditableForm
@@ -254,7 +254,6 @@ class SingleReleaseView(AdminView):
     @requirelogin
     @requirepermission('/releases/:name')
     def _post(self, release, changed_by, transaction):
-
         def exists(rel, product, version):
             if rel == release:
                 return True
@@ -357,7 +356,6 @@ class ReleaseHistoryView(HistoryAdminView):
             total_count=total_count,
         )
 
-    @json_to_form
     @requirelogin
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')
@@ -397,7 +395,6 @@ class ReleasesAPIView(AdminView):
     """/releases"""
 
     @requirelogin
-    #@requirepermission('/releases')# XXX???
     def get(self, **kwargs):
         if request.args.get('names_only'):
             releases = dbo.releases.getReleaseInfo(nameOnly=True)
@@ -429,8 +426,8 @@ class ReleasesAPIView(AdminView):
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    @json_to_form
     @requirelogin
+    # TODO: enable me
     #@requirepermission('/releases/:name')
     def _post(self, changed_by, transaction):
         form = NewReleaseForm()
@@ -464,7 +461,6 @@ class ReleasesAPIView(AdminView):
 class SingleReleaseAPIView(SingleReleaseView):
     """ /releases/[release]"""
 
-    @json_to_form
     @requirelogin
     @requirepermission('/releases/:name')
     def _put(self, release, changed_by, transaction):

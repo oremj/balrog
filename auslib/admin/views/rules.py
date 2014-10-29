@@ -1,12 +1,10 @@
 import json
 
 from flask import render_template, Response, make_response, request
-from werkzeug.datastructures import ImmutableMultiDict
 
 from auslib import dbo
 from auslib.admin.views.base import (
     requirelogin, requirepermission, AdminView, HistoryAdminView,
-    json_to_form
 )
 from auslib.admin.views.csrf import get_csrf_headers
 from auslib.admin.views.forms import EditRuleForm, RuleForm
@@ -98,7 +96,6 @@ class RulesAPIView(AdminView):
         return response
 
     # changed_by is available via the requirelogin decorator
-    @json_to_form
     @requirelogin
     @requirepermission('/rules')
     def _post(self, transaction, changed_by):
@@ -110,9 +107,6 @@ class RulesAPIView(AdminView):
 
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
-            print request.form
-            print "FORM ERRORS"
-            print form.errors
             return Response(status=400, response=json.dumps(form.errors))
 
         what = dict(backgroundRate=form.backgroundRate.data,
@@ -173,11 +167,8 @@ class SingleRuleView(AdminView):
             form.mapping.choices.insert(0, ('', 'NULL' ) )
             return Response(response=render_template('fragments/single_rule.html', rule=rule, form=form), mimetype='text/html', headers=headers)
 
-    #@requirelogin
-    #def _post(self, rule_id, transaction, changed_by):
-
     # changed_by is available via the requirelogin decorator
-    @json_to_form
+    # TODO: require permissions
     @requirelogin
     def _post(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
@@ -249,7 +240,6 @@ class SingleRuleView(AdminView):
 
     @requirelogin
     def _delete(self, rule_id, transaction, changed_by):
-
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
         if not rule:
@@ -269,7 +259,6 @@ class SingleRuleView(AdminView):
 
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
-            print "FORM.ERRORS", form.errors
             return Response(status=400, response=form.errors)
 
         if not dbo.permissions.hasUrlPermission(changed_by, '/rules/:id', 'DELETE', urlOptions={'product': rule['product']}):
@@ -462,8 +451,8 @@ class RuleHistoryAPIView(HistoryAdminView):
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    @json_to_form
     @requirelogin
+    # TODO: permissions
     def _post(self, rule_id, transaction, changed_by):
         rule_id = int(rule_id)
 

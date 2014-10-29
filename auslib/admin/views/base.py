@@ -2,40 +2,12 @@ import time
 
 from flask import request, Response
 from flask.views import MethodView
-from werkzeug.datastructures import ImmutableMultiDict
 
 from auslib import dbo
 from auslib.log import cef_event, CEF_ALERT, CEF_WARN
 from auslib.util.timesince import timesince
 
 import logging
-
-
-def json_to_form(f):
-    """Some views expect there to be a `request.form` but if you do a PUT
-    or a POST with Content-Type 'application/json' and all the data as a big
-    JSON string blob, then we need to copy it.
-    For example, from curl:
-
-        curl -X POST http://balrog -H 'Content-Type: application/json' \
-         --data '{"foo": "bar"}'
-
-    When using angular for example to make POST and PUTs it uses this.
-    """
-    def inner(*args, **kwargs):
-        if request.json and not request.form:
-            # Because form data has the praxis of not being included
-            # if not supplied, replace all Nones with non-existance.
-            # This solution isn't recursive but it's unlikely to ever
-            # need to be considering the nature of the use.
-            request.form = ImmutableMultiDict(dict(
-                (k, val) for (k, val)
-                in request.json.items()
-                if val is not None
-            ))
-        return f(*args, **kwargs)
-
-    return inner
 
 
 def requirelogin(f):
