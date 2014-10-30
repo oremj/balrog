@@ -25,6 +25,7 @@ class UsersView(AdminView):
     def get(self):
         users = dbo.permissions.getAllPermissions()
         self.log.debug("Found users: %s", users)
+        # TODO: Only return json after old ui is dead
         fmt = request.args.get('format', 'html')
         if fmt == 'json' or 'application/json' in request.headers.get('Accept'):
             # We don't return a plain jsonify'ed list here because of:
@@ -37,6 +38,7 @@ class PermissionsView(AdminView):
     """/api/users/:username/permissions"""
     def get(self, username):
         permissions = dbo.permissions.getUserPermissions(username)
+        # TODO: Only return json after old ui is dead
         fmt = request.args.get('format', 'html')
         if fmt == 'json' or 'application/json' in request.headers.get('Accept'):
             return jsonify(permissions)
@@ -55,6 +57,7 @@ class SpecificPermissionView(AdminView):
             perm = dbo.permissions.getUserPermissions(username)[permission]
         except KeyError:
             return Response(status=404)
+        # TODO: Only return json after old ui is dead
         fmt = request.args.get('format', 'html')
         if fmt == 'json':
             return jsonify(perm)

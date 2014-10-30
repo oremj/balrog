@@ -83,6 +83,7 @@ class SingleRuleView(AdminView):
         headers = {'X-Data-Version': rule['data_version']}
         headers.update(get_csrf_headers())
 
+        # TODO: Only return json after old ui is dead
         if "application/json" in request.headers.get("Accept-Encoding", ""):
             return Response(response=json.dumps(rule), mimetype="application/json", headers=headers)
         else:

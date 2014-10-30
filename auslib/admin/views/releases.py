@@ -210,6 +210,7 @@ class SingleReleaseView(AdminView):
             return Response(status=400)
         headers = {'X-Data-Version': release[0]['data_version']}
         headers.update(get_csrf_headers())
+        # TODO: Only return json after old ui is dead
         if 'application/json' in request.headers.get('Accept', ''):
             return Response(response=json.dumps(release[0]['data']), mimetype='application/json', headers=headers)
         else:
@@ -278,8 +279,7 @@ class SingleReleaseView(AdminView):
         return Response(status=200)
 
 class ReleaseHistoryView(HistoryAdminView):
-    """ /api/releases/<release>/revisions/ """
-
+    """/api/releases/:release/revisions"""
     def get(self, release):
         releases = dbo.releases.getReleases(name=release, limit=1)
         if not releases:
@@ -320,6 +320,7 @@ class ReleaseHistoryView(HistoryAdminView):
 
         self.annotateRevisionDifferences(revisions)
 
+        # TODO: Only return json after old ui is dead
         if 'application/json' in request.headers.get('Accept', ''):
             return Response(
                 response=json.dumps({
