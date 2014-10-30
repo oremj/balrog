@@ -83,6 +83,7 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         self.assertEqual(query.execute().fetchone(), None)
 
 
+# TODO: kill when old ui goes away
 class TestPermissionsPage(ViewTest, HTMLTestMixin):
     def testGet(self):
         ret = self._get('/permissions.html')
@@ -90,6 +91,7 @@ class TestPermissionsPage(ViewTest, HTMLTestMixin):
         self.assertTrue('bill' in ret.data, msg=ret.data)
         self.assertTrue('bob' in ret.data, msg=ret.data)
 
+# TODO: kill when old ui goes away
 class TestUserPermissionsPage(ViewTest, HTMLTestMixin):
     def testGet(self):
         ret = self._get('/user_permissions.html', query_string=dict(username='bill'))
