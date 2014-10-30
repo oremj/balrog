@@ -9,7 +9,7 @@ from auslib.test.admin.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testReleasePostUpdateExisting(self):
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
-        ret = self._post('/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
+        ret = self._post('/api/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
         self.assertStatusCode(ret, 200)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='d').execute().fetchone()[0]
         self.assertEqual(json.loads(ret), json.loads("""
@@ -34,7 +34,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testReleasePostCreatesNewReleaseDefault(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
-        ret = self._post('/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
+        ret = self._post('/api/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
         self.assertStatusCode(ret, 201)
         ret = dbo.releases.t.select().where(dbo.releases.name=='e').execute().fetchone()
         self.assertEqual(ret['product'], 'e')
@@ -52,7 +52,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testReleasePostCreatesNewReleasev1(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
-        ret = self._post('/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
+        ret = self._post('/api/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
         self.assertStatusCode(ret, 201)
         ret = dbo.releases.t.select().where(dbo.releases.name=='e').execute().fetchone()
         self.assertEqual(ret['product'], 'e')
@@ -70,7 +70,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testReleasePostCreatesNewReleasev2(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
-        ret = self._post('/releases/e', data=dict(data=data, product='e', version='e', schema_version=2))
+        ret = self._post('/api/releases/e', data=dict(data=data, product='e', version='e', schema_version=2))
         self.assertStatusCode(ret, 201)
         ret = dbo.releases.t.select().where(dbo.releases.name=='e').execute().fetchone()
         self.assertEqual(ret['product'], 'e')
@@ -88,31 +88,31 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testReleasePostInvalidKey(self):
         data = json.dumps(dict(foo=1))
-        ret = self._post('/releases/a', data=dict(data=data))
+        ret = self._post('/api/releases/a', data=dict(data=data))
         self.assertStatusCode(ret, 400)
 
     def testReleasePostRejectedURL(self):
         data = json.dumps(dict(platforms=dict(p=dict(locales=dict(f=dict(complete=dict(fileUrl='http://evil.com')))))))
-        ret = self._post('/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
+        ret = self._post('/api/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
         self.assertStatusCode(ret, 400)
 
     def testDeleteRelease(self):
-        ret = self._delete("/releases/d", qs=dict(data_version=1))
+        ret = self._delete("/api/releases/d", qs=dict(data_version=1))
         self.assertStatusCode(ret, 200)
         ret = dbo.releases.t.count().where(dbo.releases.name=='d').execute().first()[0]
         self.assertEqual(ret, 0)
 
     def testDeleteNonExistentRelease(self):
-        ret = self._delete("/releases/ueo")
+        ret = self._delete("/api/releases/ueo")
         self.assertStatusCode(ret, 404)
 
     def testDeleteWithoutPermission(self):
-        ret = self._delete("/releases/a", username="bob")
+        ret = self._delete("/api/releases/a", username="bob")
         self.assertStatusCode(ret, 401)
 
     def testLocalePut(self):
         data = json.dumps(dict(complete=dict(filesize='435')))
-        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1, schema_version=1))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1, schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='a').execute().fetchone()[0]
@@ -136,14 +136,14 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutWithoutPermissionForProduct(self):
         data = json.dumps(dict(complete=dict(filesize='435')))
-        ret = self._put('/releases/a/builds/p/l', username='bob', data=dict(data=data, product='a', version='a', data_version=1))
+        ret = self._put('/api/releases/a/builds/p/l', username='bob', data=dict(data=data, product='a', version='a', data_version=1))
         self.assertStatusCode(ret, 401)
 
     def testLocalePutForNewRelease(self):
         data = json.dumps(dict(complete=dict(filesize='678')))
         # setting schema_version in the incoming blob is a hack for testing
         # SingleLocaleView._put() doesn't give us access to the form
-        ret = self._put('/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', schema_version=1))
+        ret = self._put('/api/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='e').execute().fetchone()[0]
@@ -167,7 +167,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutAppend(self):
         data = json.dumps(dict(partial=dict(fileUrl='http://good.com/blah')))
-        ret = self._put('/releases/d/builds/p/g', data=dict(data=data, product='d', version='d', data_version=1, schema_version=1))
+        ret = self._put('/api/releases/d/builds/p/g', data=dict(data=data, product='d', version='d', data_version=1, schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='d').execute().fetchone()[0]
@@ -198,7 +198,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         data = json.dumps(dict(complete=dict(filesize='678')))
         # setting schema_version in the incoming blob is a hack for testing
         # SingleLocaleView._put() doesn't give us access to the form
-        ret = self._put('/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', alias='["p2"]', schema_version=1))
+        ret = self._put('/api/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', alias='["p2"]', schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='e').execute().fetchone()[0]
@@ -225,7 +225,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutAppendWithAlias(self):
         data = json.dumps(dict(partial=dict(fileUrl='http://good.com/blah')))
-        ret = self._put('/releases/d/builds/q/g', data=dict(data=data, product='d', version='d', data_version=1, alias='["q2"]', schema_version=1))
+        ret = self._put('/api/releases/d/builds/q/g', data=dict(data=data, product='d', version='d', data_version=1, alias='["q2"]', schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='d').execute().fetchone()[0]
@@ -262,7 +262,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testLocalePutWithCopy(self):
         data = json.dumps(dict(partial=dict(filesize='123')))
         data = dict(data=data, product='a', version='a', copyTo=json.dumps(['ab']), data_version=1, schema_version=1)
-        ret = self._put('/releases/a/builds/p/l', data=data)
+        ret = self._put('/api/releases/a/builds/p/l', data=data)
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='a').execute().fetchone()[0]
@@ -304,7 +304,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     def testLocalePutChangeVersion(self):
         data = json.dumps(dict(extv='b'))
-        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='b', data_version=1, schema_version=1))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='a', version='b', data_version=1, schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=3)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='a').execute().fetchone()[0]
@@ -327,34 +327,34 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         self.assertEqual(newVersion, 'b')
 
     def testLocalePutBadJSON(self):
-        ret = self._put('/releases/a/builds/p/l', data=dict(data='a', product='a', version='a'))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data='a', product='a', version='a'))
         self.assertStatusCode(ret, 400)
 
     def testLocaleRejectedURL(self):
         data = json.dumps(dict(complete=dict(fileUrl='http://evil.com')))
-        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1))
         self.assertStatusCode(ret, 400)
 
     def testLocaleGet(self):
-        ret = self._get('/releases/d/builds/p/d')
+        ret = self._get('/api/releases/d/builds/p/d')
         self.assertStatusCode(ret, 200)
         self.assertEqual(json.loads(ret.data), dict(complete=dict(filesize='1234')))
         self.assertEqual(ret.headers['X-Data-Version'], '1')
 
     def testLocalePutNotAllowed(self):
-        ret = self.client.put('/releases/d/builds/p/d', data=dict(product='a'))
+        ret = self.client.put('/api/releases/d/builds/p/d', data=dict(product='a'))
         self.assertStatusCode(ret, 401)
 
     def testLocalePutCantChangeProduct(self):
         data = json.dumps(dict(complete=dict(filesize=435)))
-        ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='b', version='a', schema_version=1))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='b', version='a', schema_version=1))
         self.assertStatusCode(ret, 400)
 
     def testLocaleRevertsPartialUpdate(self):
         data = json.dumps(dict(complete=dict(filesize=1)))
         with mock.patch('auslib.dbo.releases.addLocaleToRelease') as r:
             r.side_effect = Exception("Fail")
-            ret = self._put('/releases/a/builds/p/l', data=dict(data=data, product='a', version='c', data_version=1, schema_version=1))
+            ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='a', version='c', data_version=1, schema_version=1))
             self.assertStatusCode(ret, 500)
             ret = dbo.releases.t.select().where(dbo.releases.name=='a').execute().fetchone()
             self.assertEqual(ret['product'], 'a')
@@ -384,7 +384,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 """), msg=ret.data)
 
     def testGetNonExistentReleaseBlob(self):
-        ret = self.client.get("/releases/huetno/data")
+        ret = self.client.get("/api/releases/huetno/data")
         self.assertStatusCode(ret, 404)
 
 
@@ -397,13 +397,13 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
 
     # Test get of a release's full data column, queried by name
     def testGetSingleRelease(self):
-        ret = self._get("/releases/d")
+        ret = self._get("/api/releases/d")
         self.assertStatusCode(ret, 200)
         self.assertTrue("<td> <a href='releases/d/data'>link</a></td>" in ret.data, msg=ret.data)
 
     def testNewReleasePut(self):
 
-        ret = self._put('/releases/new_release', data=dict(name='new_release', version='11', product='Firefox',
+        ret = self._put('/api/releases/new_release', data=dict(name='new_release', version='11', product='Firefox',
                                                             blob="""
 {
     "name": "a",
@@ -442,7 +442,7 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
 
     def testGMPReleasePut(self):
 
-        ret = self._put('/releases/gmprel', data=dict(name='gmprel', version='5', product='GMP',
+        ret = self._put('/api/releases/gmprel', data=dict(name='gmprel', version='5', product='GMP',
                                                             blob="""
 {
     "name": "gmprel",
@@ -498,7 +498,7 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
 
 class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
     def testGetNoRevisions(self):
-        url = '/releases/a/revisions/'
+        url = '/api/releases/a/revisions'
         ret = self._get(url)
         self.assertEquals(ret.status_code, 200, msg=ret.data)
         self.assertTrue('There were no previous revisions' in ret.data)
@@ -507,7 +507,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         # Make some changes to a release
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
         ret = self._post(
-            '/releases/d',
+            '/api/releases/d',
             data=dict(
                 data=data,
                 product='d',
@@ -518,7 +518,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         self.assertStatusCode(ret, 200)
 
         ret = self._post(
-            '/releases/d',
+            '/api/releases/d',
             data=dict(
                 data=data,
                 product='d',
@@ -528,7 +528,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         )
         self.assertStatusCode(ret, 200)
 
-        url = '/releases/d/revisions/'
+        url = '/api/releases/d/revisions'
         ret = self._get(url)
         self.assertEquals(ret.status_code, 200, msg=ret.data)
         self.assertTrue('There were no previous revisions' not in ret.data)
@@ -539,7 +539,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         # Make some changes to a release
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
         ret = self._post(
-            '/releases/d',
+            '/api/releases/d',
             data=dict(
                 data=data,
                 product='d',
@@ -552,7 +552,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         # XXX why does the data_version increment twice?
         data = json.dumps(dict(detailsUrl='blah', fakePartials=False, schema_version=1))
         ret = self._post(
-            '/releases/d',
+            '/api/releases/d',
             data=dict(
                 data=data,
                 product='d',
@@ -581,7 +581,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         change_id = row['change_id']
         assert row['name'] == 'd'  # one of the fixtures
 
-        url = '/releases/d/revisions/'
+        url = '/api/releases/d/revisions'
         ret = self._post(url, {'change_id': change_id})
         self.assertEquals(ret.status_code, 200, ret.data)
 
@@ -595,10 +595,10 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
 
     def testPostRevisionRollbackBadRequests(self):
         # when posting you need both the rule_id and the change_id
-        ret = self._post('/releases/CRAZYNAME/revisions/', {'change_id': 1})
+        ret = self._post('/api/releases/CRAZYNAME/revisions', {'change_id': 1})
         self.assertEquals(ret.status_code, 404)
 
-        url = '/releases/d/revisions/'
+        url = '/api/releases/d/revisions'
         ret = self._post(url, {'change_id': 999})
         self.assertEquals(ret.status_code, 404)
 
@@ -610,7 +610,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
         for i in range(0, 33, 2):  # any largish number
             ret = self._post(
-                '/releases/d',
+                '/api/releases/d',
                 data=dict(
                     data=data,
                     product='d',
@@ -620,7 +620,7 @@ class TestReleaseHistoryView(ViewTest, HTMLTestMixin):
             )
             self.assertStatusCode(ret, 200)
 
-        url = '/releases/d/revisions/'
+        url = '/api/releases/d/revisions'
         ret = self._get(url)
         self.assertEquals(ret.status_code, 200, msg=ret.data)
         self.assertTrue('There were no previous revisions' not in ret.data)
