@@ -115,7 +115,7 @@ class SpecificPermissionView(AdminView):
             dbo.permissions.revokePermission(changed_by, username, permission, form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
-            cef_event("Bad input", CEF_WARN, e.args)
+            cef_event("Bad input", CEF_WARN, errors=e.args)
             return Response(status=400, response=e.args)
 
 

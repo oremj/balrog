@@ -21,6 +21,10 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(json.loads(ret.data), dict(options=None, data_version=1))
 
+    def testPermissionGetMissing(self):
+        ret = self.client.get("/api/users/bill/permissions/rules")
+        self.assertEqual(ret.status_code, 404)
+
     def testPermissionPut(self):
         ret = self._put('/api/users/bob/permissions/admin')
         self.assertStatusCode(ret, 201)
@@ -37,6 +41,14 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         r = dbo.permissions.t.select().where(dbo.permissions.username=='bill').execute().fetchall()
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0], ('admin', 'bill', None, 2))
+
+    def testPermissionsPostMissing(self):
+        ret = self._post("/api/users/bill/permissions/rules/:id", data=dict(options="", data_version=1))
+        self.assertStatusCode(ret, 404)
+
+    def testPermissionsPostBadInput(self):
+        ret = self._post("/api/users/bill/permissions/admin")
+        self.assertStatusCode(ret, 400)
 
     def testPermissionUrl(self):
         ret = self._put('/api/users/cathy/permissions/releases/:name')
@@ -66,6 +78,11 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         query = query.where(dbo.permissions.permission=='/releases/:name')
         self.assertEqual(query.execute().fetchone(), ('/releases/:name', 'bob', json.dumps(dict(product='different')), 2))
 
+    def testPermissionModifyWithoutDataVersion(self):
+        ret = self._put("/api/users/bob/permissions/releases/:name",
+            data=dict(options=json.dumps(dict(product="different"))))
+        self.assertStatusCode(ret, 400)
+
     def testPermissionPutBadPermission(self):
         ret = self._put('/api/users/bob/permissions/fake')
         self.assertStatusCode(ret, 400)
@@ -81,6 +98,14 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
         query = query.where(dbo.permissions.username=='bob')
         query = query.where(dbo.permissions.permission=='/api/users/:id/permissions/:permission')
         self.assertEqual(query.execute().fetchone(), None)
+
+    def testPermissionDeleteMissing(self):
+        ret = self._delete("/api/users/bill/permissions/releases/:name")
+        self.assertStatusCode(ret, 404)
+
+    def testPermissionDeleteBadInput(self):
+        ret = self._delete("/api/users/bill/permissions/admin")
+        self.assertStatusCode(ret, 400)
 
 
 # TODO: kill when old ui goes away
