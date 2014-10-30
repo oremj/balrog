@@ -50,9 +50,6 @@ class RulesAPIView(AdminView):
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=json.dumps(form.errors))
 
-        print form
-        raise Exception
-
         what = dict(backgroundRate=form.backgroundRate.data,
                 mapping=form.mapping.data,
                 priority=form.priority.data,
