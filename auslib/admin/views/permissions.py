@@ -21,7 +21,7 @@ def permission2selector(permission):
     return permission.replace('/', '').replace(':', '')
 
 class UsersView(AdminView):
-    """/users"""
+    """/api/users"""
     def get(self):
         users = dbo.permissions.getAllPermissions()
         self.log.debug("Found users: %s", users)
@@ -34,7 +34,7 @@ class UsersView(AdminView):
             return render_template('fragments/users.html', users=users.keys())
 
 class PermissionsView(AdminView):
-    """/users/[user]/permissions"""
+    """/api/users/:username/permissions"""
     def get(self, username):
         permissions = dbo.permissions.getUserPermissions(username)
         fmt = request.args.get('format', 'html')
@@ -48,7 +48,7 @@ class PermissionsView(AdminView):
             return render_template('fragments/user_permissions.html', username=username, permissions=forms)
 
 class SpecificPermissionView(AdminView):
-    """/users/[user]/permissions/[permission]"""
+    """/api/users/:username/permissions/:permission"""
     @setpermission
     def get(self, username, permission):
         try:
@@ -115,6 +115,9 @@ class SpecificPermissionView(AdminView):
             cef_event("Bad input", CEF_WARN, e.args)
             return Response(status=400, response=e.args)
 
+
+
+# TODO: Kill me when old admin ui is shut off
 class PermissionsPageView(AdminView):
     """/permissions.html"""
     def get(self):

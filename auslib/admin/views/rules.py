@@ -11,51 +11,12 @@ from auslib.admin.views.forms import EditRuleForm, RuleForm
 from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 from auslib.util import getPagination
 
-class RulesPageView(AdminView):
-    """/rules.html"""
-    def get(self):
-        rules = dbo.rules.getOrderedRules()
-
-        releaseNames = dbo.releases.getReleaseNames()
-
-        new_rule_form = RuleForm(prefix="new_rule");
-        new_rule_form.mapping.choices = [(item['name'],item['name']) for item in
-                releaseNames]
-        new_rule_form.mapping.choices.insert(0, ('', 'NULL' ))
-        forms = {}
-
-        for rule in rules:
-            _id = rule['rule_id']
-            self.log.debug(rule)
-            forms[_id] = EditRuleForm(prefix=str(_id),
-                                    backgroundRate = rule['backgroundRate'],
-                                    mapping = rule['mapping'],
-                                    priority = rule['priority'],
-                                    product = rule['product'],
-                                    version = rule['version'],
-                                    build_id = rule['buildID'],
-                                    channel = rule['channel'],
-                                    locale = rule['locale'],
-                                    distribution = rule['distribution'],
-                                    build_target = rule['buildTarget'],
-                                    os_version = rule['osVersion'],
-                                    dist_version = rule['distVersion'],
-                                    comment = rule['comment'],
-                                    update_type = rule['update_type'],
-                                    header_arch = rule['headerArchitecture'],
-                                    data_version=rule['data_version'])
-            forms[_id].mapping.choices = [(item['name'],item['name']) for item in
-                                                releaseNames]
-            forms[_id].mapping.choices.insert(0, ('', 'NULL' ) )
-
-        return render_template('rules.html', rules=rules, forms=forms, new_rule_form=new_rule_form)
 
 
 class RulesAPIView(AdminView):
     """/api/rules"""
 
     @requirelogin
-    #@requirepermission('/rules')# XXX???
     def get(self, **kwargs):
         rules = dbo.rules.getOrderedRules()
         count = 0
@@ -130,7 +91,7 @@ class RulesAPIView(AdminView):
 
 
 class SingleRuleView(AdminView):
-    """ /rules/<rule_id> """
+    """ /api/rules/:id"""
 
     def get(self, rule_id):
         rule = dbo.rules.getRuleById(rule_id=rule_id)
@@ -168,8 +129,8 @@ class SingleRuleView(AdminView):
             return Response(response=render_template('fragments/single_rule.html', rule=rule, form=form), mimetype='text/html', headers=headers)
 
     # changed_by is available via the requirelogin decorator
-    # TODO: require permissions
     @requirelogin
+    # Permission checking is done below - WHY?!
     def _post(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
@@ -239,6 +200,7 @@ class SingleRuleView(AdminView):
         return response
 
     @requirelogin
+    # Permission checking is done below - WHY?!
     def _delete(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
@@ -274,109 +236,8 @@ class SingleRuleView(AdminView):
     _put = _post
 
 
-class RuleHistoryView(HistoryAdminView):
-    """ /rules/<rule_id>/revisions """
-
-    def get(self, rule_id):
-        rule = dbo.rules.getRuleById(rule_id=rule_id)
-        if not rule:
-            return Response(status=404,
-                            response='Requested rule does not exist')
-
-        table = dbo.rules.history
-
-        try:
-            page = int(request.args.get('page', 1))
-            limit = int(request.args.get('limit', 10))
-            assert page >= 1
-        except (ValueError, AssertionError), msg:
-            cef_event("Bad input", CEF_WARN, errors=msg)
-            return Response(status=400, response=str(msg))
-        offset = limit * (page - 1)
-        total_count, = (table.t.count()
-            .where(table.rule_id == rule_id)
-            .where(table.data_version != None)
-            .execute()
-            .fetchone()
-        )
-        if total_count > limit:
-            pagination = getPagination(page, total_count, limit)
-        else:
-            pagination = None
-
-        revisions = table.select(
-            where=[table.rule_id == rule_id,
-                   table.data_version != None],  # sqlalchemy
-            limit=limit,
-            offset=offset,
-            order_by=[table.timestamp.asc()],
-        )
-        primary_keys = table.base_primary_key
-        all_keys = self.getAllRevisionKeys(revisions, primary_keys)
-        self.annotateRevisionDifferences(revisions)
-
-        return render_template(
-            'revisions.html',
-            revisions=revisions,
-            label='rule',
-            primary_keys=primary_keys,
-            all_keys=all_keys,
-            total_count=total_count,
-            pagination=pagination,
-        )
-
-    @requirelogin
-    def _post(self, rule_id, transaction, changed_by):
-        rule_id = int(rule_id)
-
-        change_id = request.form.get('change_id')
-        if not change_id:
-            cef_event("Bad input", CEF_WARN, errors="no change_id")
-            return Response(status=400, response='no change_id')
-        change = dbo.rules.history.getChange(change_id=change_id)
-        if change is None:
-            return Response(status=404, response='bad change_id')
-        if change['rule_id'] != rule_id:
-            return Response(status=404, response='bad rule_id')
-        rule = dbo.rules.getRuleById(rule_id=rule_id)
-        if rule is None:
-            return Response(status=404, response='bad rule_id')
-        # Verify that the user has permission for the existing rule _and_ what the rule would become.
-        for product in (rule['product'], change['product']):
-            if not dbo.permissions.hasUrlPermission(changed_by, '/rules/:id', 'POST', urlOptions={'product': product}):
-                msg = "%s is not allowed to alter rules that affect %s" % (changed_by, product)
-                cef_event('Unauthorized access attempt', CEF_ALERT, msg=msg)
-                return Response(status=401, response=msg)
-        old_data_version = rule['data_version']
-
-        # now we're going to make a new insert based on this
-        what = dict(
-            backgroundRate=change['backgroundRate'],
-            mapping=change['mapping'],
-            priority=change['priority'],
-            product=change['product'],
-            version=change['version'],
-            buildID=change['buildID'],
-            channel=change['channel'],
-            locale=change['locale'],
-            distribution=change['distribution'],
-            buildTarget=change['buildTarget'],
-            osVersion=change['osVersion'],
-            distVersion=change['distVersion'],
-            comment=change['comment'],
-            update_type=change['update_type'],
-            headerArchitecture=change['headerArchitecture'],
-        )
-
-        dbo.rules.updateRule(changed_by=changed_by, rule_id=rule_id, what=what,
-            old_data_version=old_data_version, transaction=transaction)
-
-        return Response("Excellent!")
-
-
-
 class RuleHistoryAPIView(HistoryAdminView):
-    """ /rules/<rule_id>/revisions """
+    """/api/rules/:id/revisions"""
 
     def get(self, rule_id):
         rule = dbo.rules.getRuleById(rule_id=rule_id)
@@ -452,7 +313,148 @@ class RuleHistoryAPIView(HistoryAdminView):
         return response
 
     @requirelogin
-    # TODO: permissions
+    # Permission checking is done below - WHY?!
+    def _post(self, rule_id, transaction, changed_by):
+        rule_id = int(rule_id)
+
+        change_id = request.form.get('change_id')
+        if not change_id:
+            cef_event("Bad input", CEF_WARN, errors="no change_id")
+            return Response(status=400, response='no change_id')
+        change = dbo.rules.history.getChange(change_id=change_id)
+        if change is None:
+            return Response(status=404, response='bad change_id')
+        if change['rule_id'] != rule_id:
+            return Response(status=404, response='bad rule_id')
+        rule = dbo.rules.getRuleById(rule_id=rule_id)
+        if rule is None:
+            return Response(status=404, response='bad rule_id')
+        # Verify that the user has permission for the existing rule _and_ what the rule would become.
+        for product in (rule['product'], change['product']):
+            if not dbo.permissions.hasUrlPermission(changed_by, '/rules/:id', 'POST', urlOptions={'product': product}):
+                msg = "%s is not allowed to alter rules that affect %s" % (changed_by, product)
+                cef_event('Unauthorized access attempt', CEF_ALERT, msg=msg)
+                return Response(status=401, response=msg)
+        old_data_version = rule['data_version']
+
+        # now we're going to make a new insert based on this
+        what = dict(
+            backgroundRate=change['backgroundRate'],
+            mapping=change['mapping'],
+            priority=change['priority'],
+            product=change['product'],
+            version=change['version'],
+            buildID=change['buildID'],
+            channel=change['channel'],
+            locale=change['locale'],
+            distribution=change['distribution'],
+            buildTarget=change['buildTarget'],
+            osVersion=change['osVersion'],
+            distVersion=change['distVersion'],
+            comment=change['comment'],
+            update_type=change['update_type'],
+            headerArchitecture=change['headerArchitecture'],
+        )
+
+        dbo.rules.updateRule(changed_by=changed_by, rule_id=rule_id, what=what,
+            old_data_version=old_data_version, transaction=transaction)
+
+        return Response("Excellent!")
+
+
+# TODO: Kill me when old admin ui is shut off
+class RulesPageView(AdminView):
+    """/rules.html"""
+    def get(self):
+        rules = dbo.rules.getOrderedRules()
+
+        releaseNames = dbo.releases.getReleaseNames()
+
+        new_rule_form = RuleForm(prefix="new_rule");
+        new_rule_form.mapping.choices = [(item['name'],item['name']) for item in
+                releaseNames]
+        new_rule_form.mapping.choices.insert(0, ('', 'NULL' ))
+        forms = {}
+
+        for rule in rules:
+            _id = rule['rule_id']
+            self.log.debug(rule)
+            forms[_id] = EditRuleForm(prefix=str(_id),
+                                    backgroundRate = rule['backgroundRate'],
+                                    mapping = rule['mapping'],
+                                    priority = rule['priority'],
+                                    product = rule['product'],
+                                    version = rule['version'],
+                                    build_id = rule['buildID'],
+                                    channel = rule['channel'],
+                                    locale = rule['locale'],
+                                    distribution = rule['distribution'],
+                                    build_target = rule['buildTarget'],
+                                    os_version = rule['osVersion'],
+                                    dist_version = rule['distVersion'],
+                                    comment = rule['comment'],
+                                    update_type = rule['update_type'],
+                                    header_arch = rule['headerArchitecture'],
+                                    data_version=rule['data_version'])
+            forms[_id].mapping.choices = [(item['name'],item['name']) for item in
+                                                releaseNames]
+            forms[_id].mapping.choices.insert(0, ('', 'NULL' ) )
+
+        return render_template('rules.html', rules=rules, forms=forms, new_rule_form=new_rule_form)
+
+
+class RuleHistoryView(HistoryAdminView):
+    """ /rules/<rule_id>/revisions """
+
+    def get(self, rule_id):
+        rule = dbo.rules.getRuleById(rule_id=rule_id)
+        if not rule:
+            return Response(status=404,
+                            response='Requested rule does not exist')
+
+        table = dbo.rules.history
+
+        try:
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
+            assert page >= 1
+        except (ValueError, AssertionError), msg:
+            cef_event("Bad input", CEF_WARN, errors=msg)
+            return Response(status=400, response=str(msg))
+        offset = limit * (page - 1)
+        total_count, = (table.t.count()
+            .where(table.rule_id == rule_id)
+            .where(table.data_version != None)
+            .execute()
+            .fetchone()
+        )
+        if total_count > limit:
+            pagination = getPagination(page, total_count, limit)
+        else:
+            pagination = None
+
+        revisions = table.select(
+            where=[table.rule_id == rule_id,
+                   table.data_version != None],  # sqlalchemy
+            limit=limit,
+            offset=offset,
+            order_by=[table.timestamp.asc()],
+        )
+        primary_keys = table.base_primary_key
+        all_keys = self.getAllRevisionKeys(revisions, primary_keys)
+        self.annotateRevisionDifferences(revisions)
+
+        return render_template(
+            'revisions.html',
+            revisions=revisions,
+            label='rule',
+            primary_keys=primary_keys,
+            all_keys=all_keys,
+            total_count=total_count,
+            pagination=pagination,
+        )
+
+    @requirelogin
     def _post(self, rule_id, transaction, changed_by):
         rule_id = int(rule_id)
 

@@ -168,7 +168,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
 
 
 class SingleLocaleView(AdminView):
-    """/releases/[release]/builds/[platform]/[locale]"""
+    """/api/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
         try:
             locale = dbo.releases.getLocale(release, platform, locale)
@@ -202,31 +202,8 @@ class SingleLocaleView(AdminView):
 
         return changeRelease(release, changed_by, transaction, exists, commit, self.log)
 
-class ReleasesPageView(AdminView):
-    """ /releases.html """
-    def get(self):
-        releases = dbo.releases.getReleaseInfo()
-        addForm = NewReleaseForm(prefix="new_release")
-        forms = {}
-        for r in releases:
-            release = r["name"]
-            forms[release] = DbEditableForm(
-                prefix=release,
-                data_version=r["data_version"],
-            )
-        return render_template('releases.html', releases=releases, addForm=addForm, forms=forms)
-
-class SingleBlobView(AdminView):
-    """ /releases/[release]/data"""
-    def get(self, release):
-        try:
-            release_blob = dbo.releases.getReleaseBlob(name=release)
-            return jsonify(release_blob)
-        except KeyError:
-            return Response(status=404)
-
 class SingleReleaseView(AdminView):
-    """ /releases/[release]"""
+    """ /api/releases/:release"""
     def get(self, release):
         release = dbo.releases.getReleases(name=release, limit=1)
         if not release:
@@ -301,7 +278,7 @@ class SingleReleaseView(AdminView):
         return Response(status=200)
 
 class ReleaseHistoryView(HistoryAdminView):
-    """ /releases/<release>/revisions/ """
+    """ /api/releases/<release>/revisions/ """
 
     def get(self, release):
         releases = dbo.releases.getReleases(name=release, limit=1)
@@ -363,6 +340,8 @@ class ReleaseHistoryView(HistoryAdminView):
         )
 
     @requirelogin
+    # Permission checking is done below by hand
+    # TODO: WHY?!
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')
         if not change_id:
@@ -398,7 +377,7 @@ class ReleaseHistoryView(HistoryAdminView):
 
 
 class ReleasesAPIView(AdminView):
-    """/releases"""
+    """/api/releases"""
 
     @requirelogin
     def get(self, **kwargs):
@@ -461,3 +440,29 @@ class ReleasesAPIView(AdminView):
         )
         response.headers['Content-Type'] = 'application/json'
         return response
+
+
+# TODO: Kill me when old admin ui is shut off
+class ReleasesPageView(AdminView):
+    """ /releases.html """
+    def get(self):
+        releases = dbo.releases.getReleaseInfo()
+        addForm = NewReleaseForm(prefix="new_release")
+        forms = {}
+        for r in releases:
+            release = r["name"]
+            forms[release] = DbEditableForm(
+                prefix=release,
+                data_version=r["data_version"],
+            )
+        return render_template('releases.html', releases=releases, addForm=addForm, forms=forms)
+
+class SingleBlobView(AdminView):
+    """ /releases/[release]/data"""
+    def get(self, release):
+        try:
+            release_blob = dbo.releases.getReleaseBlob(name=release)
+            return jsonify(release_blob)
+        except KeyError:
+            return Response(status=404)
+
