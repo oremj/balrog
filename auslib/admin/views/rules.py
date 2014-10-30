@@ -21,30 +21,10 @@ class RulesAPIView(AdminView):
         rules = dbo.rules.getOrderedRules()
         count = 0
         _rules = []
-        _mapping = {
-            # return : db name
-            'id': 'rule_id',
-            'mapping': 'mapping',
-            'priority': 'priority',
-            'product': 'product',
-            'version': 'version',
-            'background_rate': 'backgroundRate',
-            'build_id': 'buildID',
-            'channel': 'channel',
-            'locale': 'locale',
-            'distribution': 'distribution',
-            'build_target': 'buildTarget',
-            'os_version': 'osVersion',
-            'dist_version': 'distVersion',
-            'comment': 'comment',
-            'update_type': 'update_type',
-            'header_arch': 'headerArchitecture',
-            'data_version': 'data_version',
-        }
         for rule in rules:
             _rules.append(dict(
-                (key, rule[db_key])
-                for key, db_key in _mapping.items()
+                (key, value)
+                for key, value in rule.items()
             ))
             count += 1
         response = make_response(json.dumps(
@@ -69,6 +49,9 @@ class RulesAPIView(AdminView):
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=json.dumps(form.errors))
+
+        print form
+        raise Exception
 
         what = dict(backgroundRate=form.backgroundRate.data,
                 mapping=form.mapping.data,
@@ -199,6 +182,8 @@ class SingleRuleView(AdminView):
         response.headers['Content-Type'] = 'application/json'
         return response
 
+    _put = _post
+
     @requirelogin
     # Permission checking is done below - WHY?!
     def _delete(self, rule_id, transaction, changed_by):
@@ -232,8 +217,6 @@ class SingleRuleView(AdminView):
             old_data_version=form.data_version.data, transaction=transaction)
 
         return Response(status=200)
-
-    _put = _post
 
 
 class RuleHistoryAPIView(HistoryAdminView):
