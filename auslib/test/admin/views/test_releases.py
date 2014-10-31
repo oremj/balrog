@@ -7,6 +7,21 @@ from auslib import dbo
 from auslib.test.admin.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
+    def testGetRelease(self):
+        ret = self._get("/api/releases/b")
+        self.assertStatusCode(ret, 200)
+        self.assertEqual(json.loads(ret.data), json.loads("""
+{
+    "name": "b",
+    "hashFunction": "sha512",
+    "schema_version": 1
+}
+"""))
+
+    def testGetRelease404(self):
+        ret = self._get("/api/releases/g")
+        self.assertStatusCode(ret, 404)
+
     def testReleasePostUpdateExisting(self):
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
         ret = self._post('/api/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
@@ -36,6 +51,16 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testReleasePostUpdateChangeHashFunction(self):
         data = json.dumps(dict(detailsUrl='blah', hashFunction="sha1024", schema_version=1))
         ret = self._post('/api/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
+        self.assertStatusCode(ret, 400)
+
+    def testReleasePostUpdateChangeProduct(self):
+        data = json.dumps(dict(detailsUrl="abc", schema_version=1))
+        ret = self._post("/api/releases/c", data=dict(data=data, product="h", version="c", data_version=1))
+        self.assertStatusCode(ret, 400)
+
+    def testReleasePostInvalidBlob(self):
+        data = json.dumps(dict(uehont="uhetn", schema_version=1))
+        ret = self._post("/api/releases/c", data=dict(data=data, product="c", version="c", data_version=1))
         self.assertStatusCode(ret, 400)
 
     def testReleasePostCreatesNewReleaseDefault(self):
@@ -368,6 +393,10 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         data = json.dumps(dict(complete=dict(filesize=435)))
         ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='b', version='a', schema_version=1))
         self.assertStatusCode(ret, 400)
+
+    def testLocaleGet404(self):
+        ret = self._get("/api/releases/c/builds/h/u")
+        self.assertStatusCode(ret, 404)
 
     def testLocaleRevertsPartialUpdate(self):
         data = json.dumps(dict(complete=dict(filesize=1)))

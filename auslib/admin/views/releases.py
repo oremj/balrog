@@ -173,7 +173,7 @@ class SingleLocaleView(AdminView):
         try:
             locale = dbo.releases.getLocale(release, platform, locale)
         except KeyError, e:
-            return Response(status=404, response=e.args)
+            return Response(status=404, response=json.dumps(e.args), mimetype="application/json")
         data_version = dbo.releases.getReleases(name=release)[0]['data_version']
         headers = {'X-Data-Version': data_version}
         headers.update(get_csrf_headers())
@@ -207,7 +207,7 @@ class SingleReleaseView(AdminView):
     def get(self, release):
         release = dbo.releases.getReleases(name=release, limit=1)
         if not release:
-            return Response(status=400)
+            return Response(status=404, mimetype="application/json")
         headers = {'X-Data-Version': release[0]['data_version']}
         headers.update(get_csrf_headers())
         # TODO: Only return json after old ui is dead
