@@ -330,7 +330,6 @@ class ReleaseHistoryView(HistoryAdminView):
                 }),
                 mimetype='application/json',
             )
-            print resp.mimetype
             return resp
 
         return render_template(
@@ -382,8 +381,6 @@ class ReleaseHistoryView(HistoryAdminView):
 
 class ReleasesAPIView(AdminView):
     """/api/releases"""
-
-    @requirelogin
     def get(self, **kwargs):
         if request.args.get('names_only'):
             releases = dbo.releases.getReleaseInfo(nameOnly=True)
@@ -393,7 +390,6 @@ class ReleasesAPIView(AdminView):
             data = {'names': names}
         else:
             releases = dbo.releases.getReleaseInfo()
-            count = 0
             _releases = []
             _mapping = {
                 # return : db name
@@ -408,12 +404,10 @@ class ReleasesAPIView(AdminView):
                     for key, db_key in _mapping.items()
                 ))
             data = {
-                'count': count,
                 'releases': _releases,
             }
-        response = make_response(json.dumps(data))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+
+        return Response(response=json.dumps(data), mimetype="application/json")
 
     @requirelogin
     @requirepermission('/releases')

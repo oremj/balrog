@@ -539,6 +539,22 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
+    def testGetReleases(self):
+        ret = self._get("/api/releases")
+        self.assertStatusCode(ret, 200)
+        data = json.loads(ret.data)
+        self.assertEquals(len(data["releases"]), 5)
+
+    def testGetReleasesNamesOnly(self):
+        ret = self._get("/api/releases", qs=dict(names_only=1))
+        self.assertStatusCode(ret, 200)
+        self.assertEquals(json.loads(ret.data), json.loads("""
+{
+    "names": [
+        "a", "ab", "b", "c", "d"
+    ]
+}
+"""))
 
 class TestReleaseHistoryView(ViewTest, JSONTestMixin):
     def testGetRevisions(self):
@@ -644,8 +660,6 @@ class TestReleaseHistoryView(ViewTest, JSONTestMixin):
         self.assertEquals(ret.status_code, 400)
 
     def testGetRevisionsWithPagination(self):
-        # TODO: why does this test fail with a bad mimetype?
-        return
         # Make some changes to a release
         data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
         for i in range(0, 33, 2):  # any largish number
@@ -665,8 +679,8 @@ class TestReleaseHistoryView(ViewTest, JSONTestMixin):
         self.assertEquals(ret.status_code, 200, msg=ret.data)
         self.assertTrue('There were no previous revisions' not in ret.data)
 
-        ret2 = self._get(url + '?page=2')
-        self.assertEquals(ret2.status_code, 200, msg=ret.data)
+        ret2 = self._get(url, qs=dict(page=2))
+        self.assertEquals(ret2.status_code, 200, msg=ret2.data)
         self.assertTrue(ret.data != ret2.data)
 
 

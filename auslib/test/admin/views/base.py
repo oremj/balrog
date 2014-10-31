@@ -92,12 +92,14 @@ class ViewTest(unittest.TestCase):
 class JSONTestMixin(object):
     """Provides a _get method that always asks for format='json', and checks
        the returned MIME type."""
-    def _get(self, url):
+    def _get(self, url, qs={}):
         headers = {
             "Accept-Encoding": "application/json",
             "Accept": "application/json"
         }
-        ret = self.client.get(url, query_string=dict(format='json'), headers=headers)
+        if "format" not in qs:
+            qs["format"] = "json"
+        ret = self.client.get(url, query_string=qs, headers=headers)
         self.assertEquals(ret.mimetype, 'application/json')
         return ret
 
