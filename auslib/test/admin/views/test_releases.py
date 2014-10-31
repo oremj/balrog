@@ -18,6 +18,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     "schema_version": 1,
     "detailsUrl": "blah",
     "fakePartials": true,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -31,6 +32,11 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     }
 }
 """))
+
+    def testReleasePostUpdateChangeHashFunction(self):
+        data = json.dumps(dict(detailsUrl='blah', hashFunction="sha1024", schema_version=1))
+        ret = self._post('/api/releases/d', data=dict(data=data, product='d', version='d', data_version=1))
+        self.assertStatusCode(ret, 400)
 
     def testReleasePostCreatesNewReleaseDefault(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
@@ -120,6 +126,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "a",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -134,6 +141,12 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 }
 """))
 
+    def testLocalePutWithBadHashFunction(self):
+        return
+        data = json.dumps(dict(complete=dict(filesize='435')))
+        ret = self._put('/api/releases/a/builds/p/l', data=dict(data=data, product='a', version='a', data_version=1, schema_version=1))
+        self.assertStatusCode(ret, 400)
+
     def testLocalePutWithoutPermissionForProduct(self):
         data = json.dumps(dict(complete=dict(filesize='435')))
         ret = self._put('/api/releases/a/builds/p/l', username='bob', data=dict(data=data, product='a', version='a', data_version=1))
@@ -143,7 +156,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         data = json.dumps(dict(complete=dict(filesize='678')))
         # setting schema_version in the incoming blob is a hack for testing
         # SingleLocaleView._put() doesn't give us access to the form
-        ret = self._put('/api/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', schema_version=1))
+        ret = self._put('/api/releases/e/builds/p/a', data=dict(data=data, product='e', version='e', hashFunction="sha512", schema_version=1))
         self.assertStatusCode(ret, 201)
         self.assertEqual(ret.data, json.dumps(dict(new_data_version=2)), "Data: %s" % ret.data)
         ret = select([dbo.releases.data]).where(dbo.releases.name=='e').execute().fetchone()[0]
@@ -151,6 +164,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "e",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -175,6 +189,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "d",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -233,6 +248,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "d",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -270,6 +286,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "a",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -288,6 +305,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "ab",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -312,6 +330,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "a",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
@@ -359,7 +378,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
             ret = dbo.releases.t.select().where(dbo.releases.name=='a').execute().fetchone()
             self.assertEqual(ret['product'], 'a')
             self.assertEqual(ret['version'], 'a')
-            self.assertEqual(json.loads(ret['data']), dict(name='a', schema_version=1))
+            self.assertEqual(json.loads(ret['data']), dict(name='a', hashFunction="sha512", schema_version=1))
 
     # Test get of a release's full data column, queried by name
     def testGetSingleReleaseBlob(self):
@@ -369,6 +388,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 {
     "name": "d",
     "schema_version": 1,
+    "hashFunction": "sha512",
     "platforms": {
         "p": {
             "locales": {
