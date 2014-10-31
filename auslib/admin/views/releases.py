@@ -278,6 +278,7 @@ class SingleReleaseView(AdminView):
 
         return Response(status=200)
 
+
 class ReleaseHistoryView(HistoryAdminView):
     """/api/releases/:release/revisions"""
     def get(self, release):
@@ -322,13 +323,15 @@ class ReleaseHistoryView(HistoryAdminView):
 
         # TODO: Only return json after old ui is dead
         if 'application/json' in request.headers.get('Accept', ''):
-            return Response(
+            resp = Response(
                 response=json.dumps({
                     'revisions': revisions,
                     'count': total_count,
                 }),
                 mimetype='application/json',
             )
+            print resp.mimetype
+            return resp
 
         return render_template(
             'revisions.html',
