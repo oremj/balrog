@@ -63,24 +63,6 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
         ret = self._post("/api/releases/c", data=dict(data=data, product="c", version="c", data_version=1))
         self.assertStatusCode(ret, 400)
 
-    def testReleasePostCreatesNewReleaseDefault(self):
-        data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
-        ret = self._post('/api/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
-        self.assertStatusCode(ret, 201)
-        ret = dbo.releases.t.select().where(dbo.releases.name=='e').execute().fetchone()
-        self.assertEqual(ret['product'], 'e')
-        self.assertEqual(ret['version'], 'e')
-        self.assertEqual(ret['name'], 'e')
-        self.assertEqual(json.loads(ret['data']), json.loads("""
-{
-    "name": "e",
-    "schema_version": 1,
-    "bouncerProducts": {
-        "linux": "foo"
-    }
-}
-"""))
-
     def testReleasePostCreatesNewReleasev1(self):
         data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e'))
         ret = self._post('/api/releases/e', data=dict(data=data, product='e', version='e', schema_version=1))
@@ -555,6 +537,25 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     ]
 }
 """))
+
+    def testReleasesPost(self):
+        data = json.dumps(dict(bouncerProducts=dict(linux='foo'), name='e', schema_version=1))
+        ret = self._post('/api/releases', data=dict(blob=data, name="e", product='e', version='e'))
+        self.assertStatusCode(ret, 201)
+        ret = dbo.releases.t.select().where(dbo.releases.name=='e').execute().fetchone()
+        self.assertEqual(ret['product'], 'e')
+        self.assertEqual(ret['version'], 'e')
+        self.assertEqual(ret['name'], 'e')
+        self.assertEqual(json.loads(ret['data']), json.loads("""
+{
+    "name": "e",
+    "schema_version": 1,
+    "bouncerProducts": {
+        "linux": "foo"
+    }
+}
+"""))
+
 
 class TestReleaseHistoryView(ViewTest, JSONTestMixin):
     def testGetRevisions(self):
