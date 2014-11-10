@@ -225,10 +225,6 @@ class RuleHistoryAPIView(HistoryAdminView):
             .execute()
             .fetchone()
         )
-        if total_count > limit:
-            pagination = getPagination(page, total_count, limit)
-        else:
-            pagination = None
 
         revisions = table.select(
             where=[table.rule_id == rule_id,
