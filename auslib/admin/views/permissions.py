@@ -23,7 +23,7 @@ def permission2selector(permission):
 class UsersView(AdminView):
     """/api/users"""
     def get(self):
-        users = dbo.permissions.getAllPermissions()
+        users = dbo.permissions.getAllUsers()
         self.log.debug("Found users: %s", users)
         # TODO: Only return json after old ui is dead
         fmt = request.args.get('format', 'html')
