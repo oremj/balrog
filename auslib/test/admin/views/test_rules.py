@@ -178,7 +178,7 @@ class TestSingleRuleView_JSON(ViewTest, JSONTestMixin):
         self.assertEquals(ret.status_code, 401)
 
 
-class TestRuleHistoryView(ViewTest, HTMLTestMixin):
+class TestRuleHistoryView(ViewTest, JSONTestMixin):
     # TODO: This probably is invalid
     #def testGetNoRevisions(self):
     #    url = '/api/rules/1/revisions'
@@ -189,7 +189,6 @@ class TestRuleHistoryView(ViewTest, HTMLTestMixin):
     def testGetRevisions(self):
         # Make some changes to a rule
         # TODO: probably invalid
-        return
         ret = self._post(
             '/api/rules/1',
             data=dict(
@@ -228,10 +227,9 @@ class TestRuleHistoryView(ViewTest, HTMLTestMixin):
 
         url = '/api/rules/1/revisions'
         ret = self._get(url)
+        got = json.loads(ret.data)
         self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue('There were no previous revisions' not in ret.data)
-        self.assertTrue('Firefox' in ret.data and 'Firefux' in ret.data)
-        self.assertTrue('71' in ret.data and '72' in ret.data)
+        self.assertEquals(got["count"], 2)
 
     def testPostRevisionRollback(self):
         # Make some changes to a rule

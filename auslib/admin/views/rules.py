@@ -269,14 +269,12 @@ class RuleHistoryAPIView(HistoryAdminView):
                 (key, rule[db_key])
                 for key, db_key in _mapping.items()
             ))
-        response = make_response(json.dumps(
-            {
-                'count': total_count,
-                'rules': _rules,
-            }
-        ))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+
+        ret = {
+            'count': total_count,
+            'rules': _rules,
+        }
+        return Response(response=json.dumps(ret), mimetype="application/json")
 
     @requirelogin
     # Permission checking is done below - WHY?!
