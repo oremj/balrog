@@ -49,7 +49,6 @@ class TestRulesAPI_JSON(ViewTest, JSONTestMixin):
 class TestSingleRuleView_JSON(ViewTest, JSONTestMixin):
     def testGetRule(self):
         ret = self._get("/api/rules/1")
-        got = json.loads(ret.data)
         expected = dict(
             backgroundRate=100,
             mapping="c",
