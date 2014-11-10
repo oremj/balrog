@@ -343,8 +343,6 @@ class ReleaseHistoryView(HistoryAdminView):
         )
 
     @requirelogin
-    # Permission checking is done below by hand
-    # TODO: WHY?!
     def _post(self, release, transaction, changed_by):
         change_id = request.form.get('change_id')
         if not change_id:

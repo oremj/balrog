@@ -105,7 +105,6 @@ class SingleRuleView(AdminView):
 
     # changed_by is available via the requirelogin decorator
     @requirelogin
-    # Permission checking is done below - WHY?!
     def _post(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
@@ -177,7 +176,6 @@ class SingleRuleView(AdminView):
     _put = _post
 
     @requirelogin
-    # Permission checking is done below - WHY?!
     def _delete(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
         rule = dbo.rules.getRuleById(rule_id, transaction=transaction)
@@ -277,7 +275,6 @@ class RuleHistoryAPIView(HistoryAdminView):
         return Response(response=json.dumps(ret), mimetype="application/json")
 
     @requirelogin
-    # Permission checking is done below - WHY?!
     def _post(self, rule_id, transaction, changed_by):
         rule_id = int(rule_id)
 

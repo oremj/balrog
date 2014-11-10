@@ -179,16 +179,15 @@ class TestSingleRuleView_JSON(ViewTest, JSONTestMixin):
 
 
 class TestRuleHistoryView(ViewTest, JSONTestMixin):
-    # TODO: This probably is invalid
-    #def testGetNoRevisions(self):
-    #    url = '/api/rules/1/revisions'
-    #    ret = self._get(url)
-    #    self.assertEquals(ret.status_code, 200, msg=ret.data)
-    #    self.assertTrue('There were no previous revisions' in ret.data)
+    def testGetNoRevisions(self):
+        url = '/api/rules/1/revisions'
+        ret = self._get(url)
+        self.assertEquals(ret.status_code, 200, msg=ret.data)
+        got = json.loads(ret.data)
+        self.assertEquals(got["count"], 0)
 
     def testGetRevisions(self):
         # Make some changes to a rule
-        # TODO: probably invalid
         ret = self._post(
             '/api/rules/1',
             data=dict(
@@ -366,42 +365,8 @@ class TestRuleHistoryView(ViewTest, JSONTestMixin):
         ret = self._post(url)  # no change_id posted
         self.assertEquals(ret.status_code, 400)
 
-    def testGetRevisionsWithPagination(self):
-        # TODO: probably invalid
-        return
-        # Make some changes to a rule
-        for i in range(33):  # some largish number
-            ret = self._post(
-                '/api/rules/1',
-                data=dict(
-                    backgroundRate=1 + i,
-                    mapping='d',
-                    priority=73,
-                    data_version=1 + i,
-                    product='Firefox',
-                    update_type='minor',
-                    channel='nightly'
-                )
-            )
-            self.assertEquals(
-                ret.status_code,
-                200,
-                "Status Code: %d, Data: %s" % (ret.status_code, ret.data)
-            )
 
-        url = '/api/rules/1/revisions'
-        ret = self._get(url)
-        self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue('There were no previous revisions' not in ret.data)
-        self.assertTrue('?page=2' in ret.data)
-
-        ret2 = self._get(url + '?page=2')
-        self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue(ret.data != ret2.data)
-
-
-
-# TODO: kill this
+# TODO: kill this when old ui goes away
 class TestRulesView_HTML(ViewTest, HTMLTestMixin):
     def testGetRules(self):
         ret = self._get('/rules.html')
