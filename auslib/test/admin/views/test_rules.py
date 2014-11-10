@@ -7,32 +7,11 @@ from auslib.test.admin.views.base import ViewTest, HTMLTestMixin, JSONTestMixin
 class TestRulesAPI_JSON(ViewTest, JSONTestMixin):
     maxDiff=1000
 
-    def testGetRule(self):
-        ret = self._get("/api/rules/1")
+    def testGetRules(self):
+        ret = self._get("/api/rules")
         got = json.loads(ret.data)
-        expected = dict(
-            backgroundRate=100,
-            mapping="c",
-            priority=100,
-            product=None,
-            version="3.5",
-            buildID=None,
-            channel=None,
-            locale=None,
-            distribution=None,
-            buildTarget="d",
-            osVersion=None,
-            distVersion=None,
-            comment=None,
-            update_type="minor",
-            headerArchitecture=None,
-            data_version=1,
-            rule_id=1,
-        )
-        self.assertEquals(json.loads(ret.data), expected)
+        self.assertEquals(got["count"], 5)
 
-
-class TestRulesAPI_HTML(ViewTest, HTMLTestMixin):
     def testNewRulePost(self):
         ret = self._post('/api/rules', data=dict(backgroundRate=31, mapping='c', priority=33,
                                                 product='Firefox', update_type='minor', channel='nightly'))
@@ -67,7 +46,35 @@ class TestRulesAPI_HTML(ViewTest, HTMLTestMixin):
         self.assertTrue('backgroundRate' in  ret.data, msg=ret.data)
         self.assertTrue('priority' in  ret.data, msg=ret.data)
 
-class TestSingleRuleView_HTML(ViewTest, HTMLTestMixin):
+class TestSingleRuleView_JSON(ViewTest, JSONTestMixin):
+    def testGetRule(self):
+        ret = self._get("/api/rules/1")
+        got = json.loads(ret.data)
+        expected = dict(
+            backgroundRate=100,
+            mapping="c",
+            priority=100,
+            product=None,
+            version="3.5",
+            buildID=None,
+            channel=None,
+            locale=None,
+            distribution=None,
+            buildTarget="d",
+            osVersion=None,
+            distVersion=None,
+            comment=None,
+            update_type="minor",
+            headerArchitecture=None,
+            data_version=1,
+            rule_id=1,
+        )
+        self.assertEquals(json.loads(ret.data), expected)
+
+    def testGetRule404(self):
+        ret = self.client.get("/api/rules/123")
+        self.assertEquals(ret.status_code, 404)
+
     def testPost(self):
         # Make some changes to a rule
         ret = self._post('/api/rules/1', data=dict(backgroundRate=71, mapping='d', priority=73, data_version=1,
@@ -130,6 +137,14 @@ class TestSingleRuleView_HTML(ViewTest, HTMLTestMixin):
         self.assertEquals(r[0]['buildTarget'], 'd')
         self.assertEquals(r[0]['product'], 'fake')
 
+    def testPost404(self):
+        ret = self._post("/api/rules/555", data=dict(mapping="d"))
+        self.assertEquals(ret.status_code, 404)
+
+    def testPostWithBadData(self):
+        ret = self._post("/api/rules/1", data=dict(mapping="uhet"))
+        self.assertEquals(ret.status_code, 400)
+
     def testBadAuthPost(self):
         ret = self._badAuthPost('/api/rules/1', data=dict(backgroundRate=100, mapping='c', priority=100, data_version=1))
         self.assertEquals(ret.status_code, 401, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
@@ -154,14 +169,13 @@ class TestSingleRuleView_HTML(ViewTest, HTMLTestMixin):
         ret = self._delete('/api/rules/1', qs=dict(data_version=1))
         self.assertEquals(ret.status_code, 200, msg=ret.data)
 
+    def testDeleteRule404(self):
+        ret = self._delete("/api/rules/112")
+        self.assertEquals(ret.status_code, 404)
 
-class TestRulesView_HTML(ViewTest, HTMLTestMixin):
-    def testGetRules(self):
-        ret = self._get('/rules.html')
-        self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue("<form id='rules_form'" in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-backgroundRate" name="1-backgroundRate" type="text" value="100">' in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="100">' in ret.data, msg=ret.data)
+    def testDeleteWithoutPermission(self):
+        ret = self._delete("/api/rules/2", username="tony", qs=dict(data_version=1))
+        self.assertEquals(ret.status_code, 401)
 
 
 class TestRuleHistoryView(ViewTest, HTMLTestMixin):
@@ -386,3 +400,15 @@ class TestRuleHistoryView(ViewTest, HTMLTestMixin):
         ret2 = self._get(url + '?page=2')
         self.assertEquals(ret.status_code, 200, msg=ret.data)
         self.assertTrue(ret.data != ret2.data)
+
+
+
+# TODO: kill this
+class TestRulesView_HTML(ViewTest, HTMLTestMixin):
+    def testGetRules(self):
+        ret = self._get('/rules.html')
+        self.assertEquals(ret.status_code, 200, msg=ret.data)
+        self.assertTrue("<form id='rules_form'" in ret.data, msg=ret.data)
+        self.assertTrue('<input id="1-backgroundRate" name="1-backgroundRate" type="text" value="100">' in ret.data, msg=ret.data)
+        self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="100">' in ret.data, msg=ret.data)
+

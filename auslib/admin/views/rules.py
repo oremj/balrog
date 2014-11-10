@@ -7,16 +7,13 @@ from auslib.admin.views.base import (
     requirelogin, requirepermission, AdminView, HistoryAdminView,
 )
 from auslib.admin.views.csrf import get_csrf_headers
-from auslib.admin.views.forms import EditRuleForm, RuleForm
+from auslib.admin.views.forms import EditRuleForm, RuleForm, DbEditableForm
 from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 from auslib.util import getPagination
 
 
-
 class RulesAPIView(AdminView):
     """/api/rules"""
-
-    @requirelogin
     def get(self, **kwargs):
         rules = dbo.rules.getOrderedRules()
         count = 0
@@ -27,14 +24,11 @@ class RulesAPIView(AdminView):
                 for key, value in rule.items()
             ))
             count += 1
-        response = make_response(json.dumps(
-            {
-                'count': count,
-                'rules': _rules,
-            }
-        ))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        ret = {
+            "count": count,
+            "rules": _rules,
+        }
+        return Response(response=json.dumps(ret), mimetype="application/json")
 
     # changed_by is available via the requirelogin decorator
     @requirelogin
@@ -195,16 +189,7 @@ class SingleRuleView(AdminView):
         # Even though we aren't going to use most of the form fields (just
         # rule_id and data_version), we still want to create and validate the
         # form to make sure that the CSRF token is checked.
-        form = EditRuleForm(request.args)
-
-        releaseNames = dbo.releases.getReleaseNames()
-
-        form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
-        form.mapping.choices.insert(0, ('', 'NULL' ))
-
-        if not form.validate():
-            cef_event("Bad input", CEF_WARN, errors=form.errors)
-            return Response(status=400, response=form.errors)
+        form = DbEditableForm(request.args)
 
         if not dbo.permissions.hasUrlPermission(changed_by, '/rules/:id', 'DELETE', urlOptions={'product': rule['product']}):
             msg = "%s is not allowed to alter rules that affect %s" % (changed_by, rule['product'])
