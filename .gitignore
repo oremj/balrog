@@ -7,3 +7,4 @@ balrog.ini
 .coverage
 htmlcov
 cef.log
+ui/node_modules
