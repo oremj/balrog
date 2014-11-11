@@ -323,13 +323,10 @@ class ReleaseHistoryView(HistoryAdminView):
 
         # TODO: Only return json after old ui is dead
         if 'application/json' in request.headers.get('Accept', ''):
-            resp = Response(
-                response=json.dumps({
-                    'revisions': revisions,
-                    'count': total_count,
-                }),
-                mimetype='application/json',
-            )
+            return jsonify({
+                'revisions': revisions,
+                'count': total_count,
+            })
             return resp
 
         return render_template(

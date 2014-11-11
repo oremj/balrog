@@ -28,7 +28,7 @@ class RulesAPIView(AdminView):
             "count": count,
             "rules": _rules,
         }
-        return Response(response=json.dumps(ret), mimetype="application/json")
+        return jsonify(ret)
 
     # changed_by is available via the requirelogin decorator
     @requirelogin
