@@ -7,4 +7,7 @@ balrog.ini
 .coverage
 htmlcov
 cef.log
+# locally installed node modules
 ui/node_modules
+# dev version of built ui
+ui/generated
