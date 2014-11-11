@@ -1,0 +1,140 @@
+<div loader ng-show="loading"></div>
+
+
+<form role="form" class="search-form">
+  <div class="form-group form-group-search">
+    <save-search results="filtered_items.length" input="filters.search"></save-search>
+    <input type="search" class="form-control" placeholder="Search for anything"
+           ng-model="filters.search">
+    <span ng-show="filters.search.length" ng-click="filters.search=''"
+           class="glyphicon glyphicon-remove-circle clear-search"></span>
+  </div>
+  <div class="form-group form-group-ordering" ng-show="ordering_options.length > 1">
+    <label>Order by:</label>
+    <select ng-model="ordering_str" name="ordering_str"
+      ng-options="o.text for o in ordering_options track by o.value">
+    </select>
+  </div>
+</form>
+
+
+<h2>
+  <span ng-show="!rule_id">Rules</span>
+  <span ng-show="rule_id">Revisions of a Rule</span>
+
+  <span class="count">
+    ({{ filtered_items.length | number:0 }}
+    <span ng-bind="hasFilter() ? 'found' : 'in total'"></span>)
+  </span>
+
+  <button class="btn btn-primary btn-xs"
+          ng-show="!rule_id" ng-click="openNewRuleModal()">
+    Add a new Rule
+    <i class="glyphicon glyphicon-plus"></i>
+  </button>
+
+</h2>
+
+
+<div class="pagination-container" ng-show="filtered_items.length > pageSize">
+  <pagination
+    class="pagination-sm"
+    total-items="filtered_items.length"
+    ng-model="currentPage"
+    items-per-page="pageSize"
+  ></pagination>
+</div>
+
+
+<div class="undofilters" ng-show="!filtered_items.length" ng-cloak>
+  <p ng-if="filters.search">
+    Filtered too much?<br>
+    Remove
+    <ul>
+      <li ng-repeat="word_regex in getWordRegexes()">
+        <a href="#" ng-click="filters.search = removeFilterSearchWord(word_regex[2], filters.search)">{{ word_regex[2] }}</a>
+      </li>
+    </ul>
+  </p>
+</div>
+
+
+<div class="panel panel-default" style="clear:right"
+     ng-repeat="rule in filtered_items = (rules | filter:filterBySearch) | orderBy:ordering | startFrom:(currentPage - 1)*pageSize | limitTo:pageSize">
+  <div class="panel-heading">
+
+    <h3 class="panel-title">
+      <div style="float: right">
+        <i ng-show="rule_id && $first">Current</i>
+        <button ng-show="rule_id && !$first" class="btn btn-default btn-xs" ng-click="openRevertModal(rule)">Revert to this</button>
+        <button ng-show="!rule_id" class="btn btn-default btn-xs" ng-click="openUpdateModal(rule)">Update</button>
+        <button ng-show="!rule_id" class="btn btn-default btn-xs" ng-click="openDeleteModal(rule)">Delete</button>
+        <button ng-show="!rule_id" class="btn btn-default btn-xs" ng-click="openDuplicateModal(rule)">Duplicate</button>
+        <a ng-show="!rule_id" class="btn btn-default btn-xs" ng-href="/rules/{{ rule.rule_id }}">History</a>
+      </div>
+
+      <i title="Product" ng-show="!rule.product">no product</i>
+      <b title="Product" ng-show="rule.product" ng-bind-html="highlightSearch(rule.product, 'product')"></b>
+      :
+      <i title="Channel" ng-show="!rule.channel">no channel</i>
+      <b title="Channel" ng-show="rule.channel" ng-bind-html="highlightSearch(rule.channel, 'channel')"></b>
+    </h3>
+  </div>
+  <div class="panel-body">
+    <div class="left" style="float: left">
+
+      <h5 title="Mapping">
+        Mapping: <b ng-bind-html="highlightSearch(rule.mapping, 'mapping')"></b>
+      </h5>
+      <h5 title="Data version">
+        Data version: <b>{{ rule.data_version }}</b>
+      </h5>
+      <p ng-if="rule.comment">
+        <b>Comment:</b>
+        <span ng-bind-html="highlightSearch(rule.comment, 'comment')"></span>
+      </p>
+
+    </div>
+
+    <dl class="dl-horizontal" style="float:right">
+      <dt>Rate:</dt>
+      <dd>{{ rule.backgroundRate }}</dd>
+      <dt>Priority:</dt>
+      <dd>{{ rule.priority }}</dd>
+      <dt>Version:</dt>
+      <dd>{{ rule.version }}</dd>
+      <dt>Build ID:</dt>
+      <dd>{{ rule.buildID }}</dd>
+      <dt>Locale:</dt>
+      <dd>{{ rule.locale }}</dd>
+      <dt>Distribution:</dt>
+      <dd>{{ rule.distribution }}</dd>
+      <dt>Build Target:</dt>
+      <dd>{{ rule.buildTarget }}</dd>
+      <dt>OS Version:</dt>
+      <dd>{{ rule.osVersion }}</dd>
+      <dt>Dist Version:</dt>
+      <dd>{{ rule.distVersion }}</dd>
+      <dt>Update type:</dt>
+      <dd>{{ rule.update_type }}</dd>
+      <dt>Header Architecture:</dt>
+      <dd>{{ rule.headerArchitecture }}</dd>
+    </dl>
+
+  </div>
+  <div class="panel-footer" ng-show="rule_id">
+    Changed by <code>{{ rule.changed_by }}</code>
+    <span moment="rule.timestamp"></span>
+  </div>
+
+</div>
+
+
+<div class="pagination-container" ng-show="filtered_items.length > pageSize">
+  <pagination
+    class="pagination-sm"
+    total-items="filtered_items.length"
+    ng-model="currentPage"
+    items-per-page="pageSize"
+  ></pagination>
+</div>
