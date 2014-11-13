@@ -327,7 +327,6 @@ class ReleaseHistoryView(HistoryAdminView):
                 'revisions': revisions,
                 'count': total_count,
             })
-            return resp
 
         return render_template(
             'revisions.html',
