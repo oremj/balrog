@@ -63,6 +63,13 @@ class AUSConfig(object):
         except (NoSectionError, NoOptionError):
             return tuple()
 
+    def getCacheSize(self):
+        if self.cfg.has_option("site-specific", "cache_size"):
+            return int(self.get.get("site-specific", "cache_size"))
+        else:
+            return 0
+
+
 class AdminConfig(AUSConfig):
     required_options = {
         'logging': ['logfile'],

@@ -26,10 +26,14 @@ if errors:
 logging.setLoggerClass(auslib.log.BalrogLogger)
 logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=auslib.log.log_format)
 
-from auslib import dbo
+from auslib import dbo, cache
 from auslib.admin.base import app as application
 
 auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
+if cfg.getCacheSize():
+    cache.maxsize = cfg.getCacheSize()
+else:
+    cache = None
 dbo.setDb(cfg.getDburi())
 dbo.setupChangeMonitors(cfg.getSystemAccounts())
 dbo.setDomainWhitelist(cfg.getDomainWhitelist())

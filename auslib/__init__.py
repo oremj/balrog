@@ -22,3 +22,8 @@ class DbWrapper(object):
         return getattr(self.db, name)
 
 dbo = DbWrapper()
+
+# TODO: add comment
+from repoze.lru import CacheMaker
+
+cache = CacheMaker()

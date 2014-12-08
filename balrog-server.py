@@ -32,6 +32,7 @@ if __name__ == "__main__":
     parser.add_option("--special-force-host", dest="specialForceHosts", action="append",
                       help="Hosts to forward force=1 on to, use a protocol prefix like http://")
     parser.add_option("--cef-log", dest="cefLog", default="cef.log")
+    parser.add_option("--cache-size", dest="cache_size", default=300),
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
         help="Verbose output")
     options, args = parser.parse_args()
@@ -46,10 +47,11 @@ if __name__ == "__main__":
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
-    from auslib import dbo
+    from auslib import dbo, cache
     from auslib.web.base import app
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
+    cache.maxsize = options.cache_size
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:

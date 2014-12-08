@@ -43,11 +43,13 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
-    from auslib import dbo
+    from auslib import dbo, cache
     from auslib.admin.base import app
     from migrate.exceptions import DatabaseAlreadyControlledError
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
+    # The admin interface should never cache objects from the database.
+    cache.maxsize = 0
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:
