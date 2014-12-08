@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from auslib.web.base import app
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
-    cache.maxsize = options.cache_size
+    cache._maxsize = options.cache_size
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:

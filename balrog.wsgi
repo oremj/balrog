@@ -31,7 +31,7 @@ from auslib.web.base import app as application
 
 auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 if cfg.getCacheSize():
-    cache.maxsize = cfg.getCacheSize()
+    cache._maxsize = cfg.getCacheSize()
 else:
     cache = None
 dbo.setDb(cfg.getDburi())
