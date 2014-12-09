@@ -13,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import migrate.versioning.schema
 import migrate.versioning.api
 
+from auslib import cache
 from auslib.AUS import isForbiddenUrl
 from auslib.blobs.base import createBlob
 from auslib.log import cef_event, CEF_ALERT
@@ -871,11 +872,16 @@ class Releases(AUSTable):
         return self.getReleaseInfo(nameOnly=True, **kwargs)
 
     def getReleaseBlob(self, name, transaction=None):
+        cached_blob = cache.get(name)
+        if cached_blob:
+            return cached_blob
+
         try:
             row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
         except IndexError:
             raise KeyError("Couldn't find release with name '%s'" % name)
         blob = createBlob(row['data'])
+        cache.put(name, blob)
         return blob
 
     def addRelease(self, name, product, version, blob, changed_by, transaction=None):

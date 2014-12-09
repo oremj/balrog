@@ -24,6 +24,6 @@ class DbWrapper(object):
 dbo = DbWrapper()
 
 # TODO: add comment
-from repoze.lru import CacheMaker
+from auslib.cache import MaybeCacher
 
-cache = CacheMaker()
+cache = MaybeCacher()
