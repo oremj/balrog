@@ -50,6 +50,7 @@ if __name__ == '__main__':
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
     # The admin interface should never cache objects from the database.
     cache._maxsize = 0
+    cache._timeout = 0
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:

@@ -4,6 +4,7 @@ from repoze.lru import ExpiringLRUCache
 
 
 class MaybeCacher(object):
+    # TODO: Add docs
     def __init__(self, maxsize=None, timeout=None):
         self._maxsize = maxsize
         self._timeout = timeout
@@ -16,7 +17,7 @@ class MaybeCacher(object):
 
         # Otherwise, delegate to the real cache object.
         return getattr(self.cache, name)
-        
+
 
 #    def get(self, name, key):
 #        if self._maxsize < 1:

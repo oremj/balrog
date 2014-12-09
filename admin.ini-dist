@@ -20,5 +20,8 @@ system_accounts=
 ; domains that are allowed in update data, comma separated
 domain_whitelist=download.mozilla.org,stage.mozilla.org,ftp.mozilla.org
 page_title=AUS Management
-; cache size should almost always be 0 for the admin app
-cache_size=0
+
+[cache]
+; cache size and timeout should almost always be 0 for the admin app
+size=0
+timeout=0

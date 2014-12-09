@@ -33,6 +33,7 @@ if __name__ == "__main__":
                       help="Hosts to forward force=1 on to, use a protocol prefix like http://")
     parser.add_option("--cef-log", dest="cefLog", default="cef.log")
     parser.add_option("--cache-size", dest="cache_size", default=300),
+    parser.add_option("--cache-timeout", dest="cache_timeout", default=60),
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
         help="Verbose output")
     options, args = parser.parse_args()
@@ -52,6 +53,7 @@ if __name__ == "__main__":
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
     cache._maxsize = options.cache_size
+    cache._timeout = options.cache_timeout
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:
