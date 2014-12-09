@@ -872,16 +872,29 @@ class Releases(AUSTable):
         return self.getReleaseInfo(nameOnly=True, **kwargs)
 
     def getReleaseBlob(self, name, transaction=None):
-        cached_blob = cache.get("blob", name)
-        if cached_blob:
-            return cached_blob
+        # We need to get the current data version of the blob no matter what,
+        # because we need to invalidate the cache of the cached version is
+        # of a different version.
+        try:
+            data_version = self.select(where=[self.name==name], columns=[self.data_version], limit=1, transaction=transaction)[0]
+        except IndexError:
+            raise KeyError("Couldn't find release with name '%s'" % name)
+
+        cached = cache.get("blob", name)
+        if cached:
+            if cached["data_version"] == data_version:
+                return cached["blob"]
+            else:
+                cache.invalidate("blob", name)
 
         try:
             row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
         except IndexError:
             raise KeyError("Couldn't find release with name '%s'" % name)
+
         blob = createBlob(row['data'])
-        cache.put("blob", name, blob)
+
+        cache.put("blob", name, {"data_version": data_version, "blob": blob})
         return blob
 
     def addRelease(self, name, product, version, blob, changed_by, transaction=None):
