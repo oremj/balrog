@@ -872,7 +872,7 @@ class Releases(AUSTable):
         return self.getReleaseInfo(nameOnly=True, **kwargs)
 
     def getReleaseBlob(self, name, transaction=None):
-        cached_blob = cache.get(name)
+        cached_blob = cache.get("blob", name)
         if cached_blob:
             return cached_blob
 
@@ -881,7 +881,7 @@ class Releases(AUSTable):
         except IndexError:
             raise KeyError("Couldn't find release with name '%s'" % name)
         blob = createBlob(row['data'])
-        cache.put(name, blob)
+        cache.put("blob", name, blob)
         return blob
 
     def addRelease(self, name, product, version, blob, changed_by, transaction=None):

@@ -24,6 +24,6 @@ class DbWrapper(object):
 dbo = DbWrapper()
 
 # TODO: add comment
-from auslib.cache import MaybeCacher
+from auslib.util.cache import MaybeCacher
 
 cache = MaybeCacher()
