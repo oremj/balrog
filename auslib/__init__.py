@@ -23,7 +23,9 @@ class DbWrapper(object):
 
 dbo = DbWrapper()
 
-# TODO: add comment
+# Similar to the above, we have a complication around having two separate
+# applications existing in the same library. This cache class is a simple
+# wrapper that does nothing if caching is disabled, and uses a 3rd party
+# caching library if it is enabled.
 from auslib.util.cache import MaybeCacher
-
 cache = MaybeCacher()

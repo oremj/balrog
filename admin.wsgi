@@ -33,8 +33,6 @@ auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 if cfg.getCacheSize():
     cache._maxsize = cfg.getCacheSize()
     cache._timeout = cfg.getCacheTimeout()
-else:
-    cache = None
 dbo.setDb(cfg.getDburi())
 dbo.setupChangeMonitors(cfg.getSystemAccounts())
 dbo.setDomainWhitelist(cfg.getDomainWhitelist())

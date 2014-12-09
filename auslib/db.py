@@ -882,6 +882,9 @@ class Releases(AUSTable):
 
         cached = cache.get("blob", name)
         if cached:
+            # Even if the blob is in the cache, we can't use it if its
+            # data_version differs from the current one that we retrieved
+            # above.
             if cached["data_version"] == data_version:
                 return cached["blob"]
             else:
