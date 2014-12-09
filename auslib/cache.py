@@ -5,15 +5,19 @@ from repoze.lru import ExpiringLRUCache
 
 class MaybeCacher(object):
     # TODO: Add docs
-    def __init__(self, maxsize=None, timeout=None):
+    def __init__(self, maxsize=0, timeout=0):
         self._maxsize = maxsize
         self._timeout = timeout
         self.cache = defaultdict(lambda: ExpiringLRUCache(self._maxsize, self._timeout))
 
     def __getattr__(self, name):
+        # TODO: is do_nothing too much of a hack? maybe it's better to override specific methods instead?
+        def do_nothing(*args, **kwargs):
+            return None
+
         # Nothing to do if we have no cache!
         if self._maxsize < 1:
-            return None
+            return do_nothing
 
         # Otherwise, delegate to the real cache object.
         return getattr(self.cache, name)
