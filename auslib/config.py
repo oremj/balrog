@@ -65,13 +65,13 @@ class AUSConfig(object):
 
     def getCacheSize(self):
         if self.cfg.has_option("cache", "size"):
-            return int(self.get.get("cache", "size"))
+            return int(self.cfg.get("cache", "size"))
         else:
             return 0
 
     def getCacheTimeout(self):
         if self.cfg.has_option("cache", "timeout"):
-            return int(self.get.get("cache", "timeout"))
+            return int(self.cfg.get("cache", "timeout"))
         else:
             return 0
 

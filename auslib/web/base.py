@@ -22,7 +22,7 @@ def fourohfour(error):
     response.mimetype = 'text/xml'
     return response
 
-@app.errorhandler(Exception)
+#@app.errorhandler(Exception)
 def generic(error):
     """Deals with any unhandled exceptions. If the exception is not a
     BadDataError, it will be sent to Sentry. Regardless of the exception,
