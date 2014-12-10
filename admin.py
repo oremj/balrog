@@ -43,7 +43,7 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
-    from auslib import dbo, cache
+    from auslib.global_state import dbo, cache
     from auslib.admin.base import app
     from migrate.exceptions import DatabaseAlreadyControlledError
 

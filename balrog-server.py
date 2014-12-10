@@ -48,7 +48,7 @@ if __name__ == "__main__":
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level, format=auslib.log.log_format)
 
-    from auslib import dbo, cache
+    from auslib.global_state import dbo, cache
     from auslib.web.base import app
 
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)

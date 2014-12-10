@@ -9,7 +9,7 @@ from sqlalchemy.engine.reflection import Inspector
 
 import migrate.versioning.api
 
-from auslib import cache
+from auslib.global_state import cache
 from auslib.db import AUSDatabase, AUSTable, AlreadySetupError, \
   AUSTransaction, TransactionError, OutdatedDataError
 from auslib.blobs.apprelease import ReleaseBlobV1
