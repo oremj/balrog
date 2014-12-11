@@ -940,6 +940,18 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
             self.assertEquals(blob_cache.hits, 4)
             self.assertEquals(blob_cache.misses, 1)
 
+    def testGetReleasesUsesBlobCache(self):
+        with mock.patch("time.time") as t:
+            t.return_value = 0
+            for i in range(5):
+                self.releases.getReleases()
+                t.return_value += 1
+
+            blob_cache = cache.cache["blob"]
+            self.assertEquals(blob_cache.lookups, 10)
+            self.assertEquals(blob_cache.hits, 8)
+            self.assertEquals(blob_cache.misses, 2)
+
     def testGetReleaseBlobCachingWithExpiry(self):
         with mock.patch("time.time") as t:
             t.return_value = 0

@@ -845,9 +845,10 @@ class Releases(AUSTable):
             where.append(self.product==product)
         if version:
             where.append(self.version==version)
-        rows = self.select(where=where, limit=limit, transaction=transaction)
+        rows = self.select(columns=[self.name, self.product, self.version, self.data_version],
+                           where=where, limit=limit, transaction=transaction)
         for row in rows:
-            row['data'] = createBlob(row['data'])
+            row["data"] = self.getReleaseBlob(row["name"], transaction)
         return rows
 
     def countReleases(self, transaction=None):
