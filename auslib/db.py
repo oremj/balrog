@@ -203,6 +203,7 @@ class AUSTable(object):
 
            @rtype: sqlalchemy.sql.expression.Select
         """
+        self.log.debug("Selecting columns: %s with conditions: %s", columns, where)
         if columns:
             query = select(columns, order_by=order_by, limit=limit, offset=offset, distinct=distinct)
         else:

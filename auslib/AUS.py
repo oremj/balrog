@@ -3,7 +3,7 @@ from urlparse import urlparse
 
 import logging
 
-from auslib.global_state import dbo
+from auslib.global_state import cache, dbo
 from auslib.log import cef_event, CEF_ALERT
 
 
@@ -46,21 +46,38 @@ class AUS:
         self.log = logging.getLogger(self.__class__.__name__)
 
     def evaluateRules(self, updateQuery):
-        self.log.debug("Looking for rules that apply to:")
-        self.log.debug(updateQuery)
-        rules = dbo.rules.getRulesMatchingQuery(
-            updateQuery,
-            fallbackChannel=getFallbackChannel(updateQuery['channel'])
-        )
+        # The cache key needs to be hashable, so we can't use the updateQuery
+        # object. Sorting the values of updateQuery makes sure we don't have
+        # cache misses if the natural "order" of the updateQuery dict changes
+        # from request to request
+        # This is a complex statement, so here's an unpacked explanation
+        # from the inner most portion to outer:
+        # * Start with all of the values in the updateQuery
+        # * Sort them, for consistency across requests
+        # * Coerce them to strings, because some may not be
+        # * Join them into a single string, delimited by "-"
+        cache_key = "-".join([str(v) for v in sorted(updateQuery.values())])
+        cached = cache.get("evaluated_rules", cache_key)
+        if cached:
+            self.log.debug("Using evaluated rules from cache.")
+            rule = cached
+        else:
+            self.log.debug("Looking for rules that apply to:")
+            self.log.debug(updateQuery)
+            rules = dbo.rules.getRulesMatchingQuery(
+                updateQuery,
+                fallbackChannel=getFallbackChannel(updateQuery['channel'])
+            )
 
-        ### XXX throw any N->N update rules and keep the highest priority remaining one
-        if len(rules) < 1:
-            return None, None
+            ### XXX throw any N->N update rules and keep the highest priority remaining one
+            if len(rules) < 1:
+                return None, None
 
-        rules = sorted(rules,key=lambda rule: rule['priority'], reverse=True)
-        rule = rules[0]
+            rules = sorted(rules,key=lambda rule: rule['priority'], reverse=True)
+            rule = rules[0]
+            cache.put("evaluated_rules", cache_key, rule)
+
         self.log.debug("Matching rule: %s" % rule)
-
         # There's a few cases where we have a matching rule but don't want
         # to serve an update:
         # 1) No mapping.
