@@ -34,6 +34,8 @@ if __name__ == "__main__":
     parser.add_option("--cef-log", dest="cefLog", default="cef.log")
     parser.add_option("--cache-size", dest="cache_size", default=300),
     parser.add_option("--cache-timeout", dest="cache_timeout", default=60),
+    parser.add_option("--profile-log", dest="profile_log", default=None,
+                      help="Enables profiling and logs to the specified file."),
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
         help="Verbose output")
     options, args = parser.parse_args()
@@ -61,8 +63,17 @@ if __name__ == "__main__":
     except DatabaseAlreadyControlledError:
         pass
 
+    if options.profile_log:
+        from werkzeug.contrib.profiler import ProfilerMiddleware
+        f = open(options.profile_log, "w+")
+        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, stream=f)
+
     app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
     app.config['SPECIAL_FORCE_HOSTS'] = options.specialForceHosts
     app.config['SECRET_KEY'] = 'abc123'
     app.config['DEBUG'] = True
+
     app.run(port=options.port, host=options.host)
+
+    if options.profile_log:
+        f.close()
