@@ -68,12 +68,15 @@ class ReleaseBlobBase(Blob):
             return self['platforms'][platform]['buildID']
 
     def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
-        try:
-            fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-        except KeyError:
+        if patch["from"] != "*":
+            try:
+                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
+            except KeyError:
+                fromRelease = None
+        else:
             fromRelease = None
 
-        if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+        if fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
             return None
 
         url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
@@ -287,9 +290,12 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixi
             if not patch:
                 continue
 
-            try:
-                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-            except KeyError:
+            if patch["from"] != "*":
+                try:
+                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
+                except KeyError:
+                    fromRelease = None
+            else:
                 fromRelease = None
 
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
@@ -478,9 +484,12 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
             if not patch:
                 continue
 
-            try:
-                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-            except KeyError:
+            if patch["from"] != "*":
+                try:
+                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
+                except KeyError:
+                    fromRelease = None
+            else:
                 fromRelease = None
 
             if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):

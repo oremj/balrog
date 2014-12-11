@@ -98,10 +98,9 @@ class AUS:
         # 3) Incoming release is older than the one in the mapping, defined as one of:
         #    * version decreases
         #    * version is the same and buildID doesn't increase
-        release = dbo.releases.getReleases(name=rule['mapping'], limit=1)[0]
-        blob = release['data']
+        blob = dbo.releases.getReleaseBlob(name=rule["mapping"])
         if not blob.shouldServeUpdate(updateQuery):
             return None, None
 
-        self.log.debug("Returning release %s", release['name'])
+        self.log.debug("Returning release %s", blob["name"])
         return blob, rule['update_type']

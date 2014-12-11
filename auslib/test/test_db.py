@@ -973,6 +973,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
             self.assertEquals(blob_cache.misses, 4)
 
     def testGetReleaseBlobCachingDataVersionExpiry(self):
+        # TODO: This test doesn't work now that we're caching data versions too.
         with mock.patch("time.time") as t:
             # Because we're testing expiration due to the data version changing
             # we want the time.time return value to remain constant to ensure
