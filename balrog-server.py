@@ -1,3 +1,4 @@
+import os
 from os import path
 import site
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     parser.add_option("--cef-log", dest="cefLog", default="cef.log")
     parser.add_option("--cache-size", dest="cache_size", default=300),
     parser.add_option("--cache-timeout", dest="cache_timeout", default=60),
-    parser.add_option("--profile-log", dest="profile_log", default=None,
+    parser.add_option("--profile-dir", dest="profile_dir", default=None,
                       help="Enables profiling and logs to the specified file."),
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
         help="Verbose output")
@@ -63,10 +64,11 @@ if __name__ == "__main__":
     except DatabaseAlreadyControlledError:
         pass
 
-    if options.profile_log:
+    if options.profile_dir:
         from werkzeug.contrib.profiler import ProfilerMiddleware
-        f = open(options.profile_log, "w+")
-        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, stream=f)
+        if not path.exists(options.profile_dir):
+            os.makedirs(options.profile_dir)
+        app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=options.profile_dir)
 
     app.config['WHITELISTED_DOMAINS'] = options.whitelistedDomains
     app.config['SPECIAL_FORCE_HOSTS'] = options.specialForceHosts
@@ -74,6 +76,3 @@ if __name__ == "__main__":
     app.config['DEBUG'] = True
 
     app.run(port=options.port, host=options.host)
-
-    if options.profile_log:
-        f.close()
