@@ -915,6 +915,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
         MemoryDatabaseMixin.setUp(self)
         cache.reset()
         cache.make_cache("blob", 10, 10)
+        cache.make_cache("blob_version", 10, 4)
         self.db = AUSDatabase(self.dburi)
         self.db.create()
         self.releases = self.db.releases
@@ -924,6 +925,11 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
     def tearDown(self):
         cache.reset()
 
+    def _checkCacheStats(self, cache, lookups, hits, misses):
+        self.assertEquals(cache.lookups, lookups)
+        self.assertEquals(cache.hits, hits)
+        self.assertEquals(cache.misses, misses)
+
     def testGetReleaseBlobCaching(self):
         with mock.patch("time.time") as t:
             t.return_value = 0
@@ -931,10 +937,8 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleaseBlob(name="a")
                 t.return_value += 1
 
-            blob_cache = cache.caches["blob"]
-            self.assertEquals(blob_cache.lookups, 5)
-            self.assertEquals(blob_cache.hits, 4)
-            self.assertEquals(blob_cache.misses, 1)
+            self._checkCacheStats(cache.caches["blob"], 5, 4, 1)
+            self._checkCacheStats(cache.caches["blob_version"], 5, 3, 2)
 
     def testGetReleasesUsesBlobCache(self):
         with mock.patch("time.time") as t:
@@ -943,12 +947,10 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleases()
                 t.return_value += 1
 
-            blob_cache = cache.caches["blob"]
-            self.assertEquals(blob_cache.lookups, 10)
-            self.assertEquals(blob_cache.hits, 8)
-            self.assertEquals(blob_cache.misses, 2)
+            self._checkCacheStats(cache.caches["blob"], 10, 8, 2)
+            self._checkCacheStats(cache.caches["blob_version"], 10, 6, 4)
 
-    def testGetReleaseBlobCachingWithExpiry(self):
+    def testGetReleaseBlobCachingWithBlobCacheExpiry(self):
         with mock.patch("time.time") as t:
             t.return_value = 0
             # Because timeout is set to 10 and we increment by one second each
@@ -963,50 +965,54 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleaseBlob(name="b")
                 t.return_value += 1
 
-            blob_cache = cache.caches["blob"]
-            self.assertEquals(blob_cache.lookups, 22)
-            self.assertEquals(blob_cache.hits, 18)
-            self.assertEquals(blob_cache.misses, 4)
+            self._checkCacheStats(cache.caches["blob"], 22, 18, 4)
+            self._checkCacheStats(cache.caches["blob_version"], 22, 16, 6)
 
-    def testGetReleaseBlobCachingDataVersionExpiry(self):
-        # TODO: This test doesn't work now that we're caching data versions too.
+    def testGetReleaseBlobCachingWithDataVersionChange(self):
         with mock.patch("time.time") as t:
-            # Because we're testing expiration due to the data version changing
-            # we want the time.time return value to remain constant to ensure
-            # that the cache isn't expired for _that_ reason.
             t.return_value = 0
-
             # Retrieve the blob a few times to warm the cache.
             self.releases.getReleaseBlob(name="b")
+            t.return_value += 1
             self.releases.getReleaseBlob(name="b")
+            t.return_value += 1
             self.releases.getReleaseBlob(name="b")
+            t.return_value += 1
 
-            blob_cache = cache.caches["blob"]
-            self.assertEquals(blob_cache.lookups, 3)
-            self.assertEquals(blob_cache.hits, 2)
-            self.assertEquals(blob_cache.misses, 1)
+            self._checkCacheStats(cache.caches["blob"], 3, 2, 1)
+            self._checkCacheStats(cache.caches["blob_version"], 3, 2, 1)
 
             # Now change it, which will change data_version.
             newBlob = ReleaseBlobV1(name="b", appv="2")
             self.releases.updateRelease("b", "bob", 1, blob=newBlob)
 
+            # Because the ttl of the blob_version cache is 4 and t is only at 3
+            # we need to retrieve the blob one more time before we will get the
+            # updated version.
+            blob = self.releases.getReleaseBlob(name="b")
+            self.assertTrue("appv" not in blob)
+            t.return_value += 1
+
             # Ensure that we have the updated version, not the originally
             # cached one.
             blob = self.releases.getReleaseBlob(name="b")
             self.assertEquals(blob["appv"], "2")
+            t.return_value += 1
 
             # And retrieve it a few more times for good measure
             self.releases.getReleaseBlob(name="b")
+            t.return_value += 1
             self.releases.getReleaseBlob(name="b")
+            t.return_value += 1
             self.releases.getReleaseBlob(name="b")
 
             # Because getReleaseBlob can't decide whether or not the cached
             # blob is fresh enough until after it retrieves it (and adjusts
             # the statistics), these numbers are a bit of a lie. In an ideal
             # world we'd adjust these to be 100% accurate.
-            self.assertEquals(blob_cache.lookups, 7)
-            self.assertEquals(blob_cache.hits, 6)
-            self.assertEquals(blob_cache.misses, 1)
+            self._checkCacheStats(cache.caches["blob"], 8, 7, 1)
+            # Data version hit counts are 100% accurate though.
+            self._checkCacheStats(cache.caches["blob_version"], 8, 6, 2)
 
 
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):

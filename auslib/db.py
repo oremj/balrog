@@ -883,6 +883,7 @@ class Releases(AUSTable):
                 raise KeyError("Couldn't find release with name '%s'" % name)
 
         cached_blob = cache.get("blob", name)
+        blob = None
         if cached_blob:
             # Even if the blob is in the cache, we can't use it if its
             # data_version differs from the current one that we retrieved
@@ -891,7 +892,8 @@ class Releases(AUSTable):
                 cache.invalidate("blob", name)
             else:
                 blob = cached_blob["blob"]
-        else:
+
+        if not blob:
             try:
                 row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
                 blob = createBlob(row['data'])
