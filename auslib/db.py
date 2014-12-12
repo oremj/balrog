@@ -876,6 +876,10 @@ class Releases(AUSTable):
         return self.getReleaseInfo(nameOnly=True, **kwargs)
 
     def getReleaseBlob(self, name, transaction=None):
+        # Putting the data_version and blob getters into these methods lets us
+        # delegate the decision about whether or not to use the cached values
+        # to the cache class. It will either return as a cached value, or use
+        # the getter to return a fresh value (and cache it).
         def getDataVersion():
             try:
                 return self.select(where=[self.name==name], columns=[self.data_version], limit=1, transaction=transaction)[0]
@@ -894,8 +898,11 @@ class Releases(AUSTable):
 
         cached_blob = cache.get("blob", name, getBlob)
 
+        # Even though we may have retrieved a cached blob, we need to make sure
+        # that it's not older than the one in the database. If the data version
+        # of the cached blob and the latest data version don't match, we need
+        # to update the cache with the latest blob.
         if cached_blob["data_version"] != data_version:
-            cache.invalidate("blob", name)
             blob_info = getBlob()
             cache.put("blob", name, blob_info)
             blob = blob_info["blob"]
