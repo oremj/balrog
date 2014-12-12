@@ -845,6 +845,9 @@ class Releases(AUSTable):
             where.append(self.product==product)
         if version:
             where.append(self.version==version)
+        # We could get the "data" column here too, but getReleaseBlob knows how
+        # to grab cached versions of that, so it's better to let it take care
+        # of it.
         rows = self.select(columns=[self.name, self.product, self.version, self.data_version],
                            where=where, limit=limit, transaction=transaction)
         for row in rows:

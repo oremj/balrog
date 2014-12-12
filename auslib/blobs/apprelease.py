@@ -68,6 +68,9 @@ class ReleaseBlobBase(Blob):
             return self['platforms'][platform]['buildID']
 
     def _getFromRelease(self, patch):
+        # "*" is a special case for the "from" field that means "any release".
+        # Because we know it doesn't exist in the database it's wasteful to
+        # even attempt to look it up.
         if patch["from"] != "*":
             return dbo.releases.getReleaseBlob(name=patch["from"])
         else:
