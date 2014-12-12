@@ -937,7 +937,12 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleaseBlob(name="a")
                 t.return_value += 1
 
+            # We've retrieved the blob and blob version 5 times.
+            # The blob cache has a ttl of 5, so we're expecting the first one
+            # to be a miss, and the rest to be hits.
             self._checkCacheStats(cache.caches["blob"], 5, 4, 1)
+            # But blob version has a ttl of 4, so we should see the first one
+            # miss, the next three hit, and then the last one miss again.
             self._checkCacheStats(cache.caches["blob_version"], 5, 3, 2)
 
     def testGetReleasesUsesBlobCache(self):
@@ -947,6 +952,9 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleases()
                 t.return_value += 1
 
+            # We have the same hit rates as testGetReleaseBlobCaching, but
+            # they're doubled because we're retrieving both releases instead
+            # of just one.
             self._checkCacheStats(cache.caches["blob"], 10, 8, 2)
             self._checkCacheStats(cache.caches["blob_version"], 10, 6, 4)
 
@@ -960,6 +968,16 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
             # * One more miss (because the cache expired)
             #
             # Times two gives us 22 lookups, 18 hits, 4 misses
+            #
+            # The blob version is a bit different because of its 4 second ttl:
+            # * One miss (initial lookup)
+            # * Three hits (t=1 through 3)
+            # * One miss (cache expired @ t=4)
+            # * Three hits (t=5 through 8)
+            # * One miss (cache expired @ t=9)
+            # * Two hits (t=10 and 11)
+            #
+            # Times two gives us 22 lookups, 16 hits, 6 misses
             for i in range(11):
                 self.releases.getReleaseBlob(name="a")
                 self.releases.getReleaseBlob(name="b")
