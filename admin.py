@@ -47,6 +47,7 @@ if __name__ == '__main__':
     from auslib.admin.base import app
     from migrate.exceptions import DatabaseAlreadyControlledError
 
+    cache.enabled = False
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
