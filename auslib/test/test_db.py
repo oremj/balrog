@@ -913,11 +913,8 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
 class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
-        self.old_maxsize = cache._maxsize
-        self.old_timeout = cache._timeout
-        cache._maxsize = 10
-        cache._timeout = 10
-        cache.clear("blob")
+        cache.reset()
+        cache.make_cache("blob", 10, 10)
         self.db = AUSDatabase(self.dburi)
         self.db.create()
         self.releases = self.db.releases
@@ -925,8 +922,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
         self.releases.t.insert().execute(name='b', product='b', version='b', data=json.dumps(dict(name="b", schema_version=1)), data_version=1)
 
     def tearDown(self):
-        cache._maxsize = self.old_maxsize
-        cache._timeout = self.old_timeout
+        cache.reset()
 
     def testGetReleaseBlobCaching(self):
         with mock.patch("time.time") as t:
@@ -935,7 +931,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleaseBlob(name="a")
                 t.return_value += 1
 
-            blob_cache = cache.cache["blob"]
+            blob_cache = cache.caches["blob"]
             self.assertEquals(blob_cache.lookups, 5)
             self.assertEquals(blob_cache.hits, 4)
             self.assertEquals(blob_cache.misses, 1)
@@ -947,7 +943,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleases()
                 t.return_value += 1
 
-            blob_cache = cache.cache["blob"]
+            blob_cache = cache.caches["blob"]
             self.assertEquals(blob_cache.lookups, 10)
             self.assertEquals(blob_cache.hits, 8)
             self.assertEquals(blob_cache.misses, 2)
@@ -967,7 +963,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 self.releases.getReleaseBlob(name="b")
                 t.return_value += 1
 
-            blob_cache = cache.cache["blob"]
+            blob_cache = cache.caches["blob"]
             self.assertEquals(blob_cache.lookups, 22)
             self.assertEquals(blob_cache.hits, 18)
             self.assertEquals(blob_cache.misses, 4)
@@ -985,7 +981,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
             self.releases.getReleaseBlob(name="b")
             self.releases.getReleaseBlob(name="b")
 
-            blob_cache = cache.cache["blob"]
+            blob_cache = cache.caches["blob"]
             self.assertEquals(blob_cache.lookups, 3)
             self.assertEquals(blob_cache.hits, 2)
             self.assertEquals(blob_cache.misses, 1)

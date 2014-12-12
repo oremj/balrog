@@ -56,8 +56,9 @@ class AUS:
         # * Sort them, for consistency across requests
         # * Coerce them to strings, because some may not be
         # * Join them into a single string, delimited by "-"
-        cache_key = "-".join([str(v) for v in sorted(updateQuery.values())])
-        cached = cache.get("evaluated_rules", cache_key)
+        #cache_key = "-".join([str(v) for v in sorted(updateQuery.values())])
+        #cached = cache.get("evaluated_rules", cache_key)
+        cached = False
         if cached:
             self.log.debug("Using evaluated rules from cache.")
             rule = cached
@@ -75,7 +76,7 @@ class AUS:
 
             rules = sorted(rules,key=lambda rule: rule['priority'], reverse=True)
             rule = rules[0]
-            cache.put("evaluated_rules", cache_key, rule)
+            #cache.put("evaluated_rules", cache_key, rule)
 
         self.log.debug("Matching rule: %s" % rule)
         # There's a few cases where we have a matching rule but don't want

@@ -49,7 +49,7 @@ Hit Percentage: %s%%<br/>
 Requests: %s<br/>
 Hits: %s<br/>
 Misses: %s<br/>
-""" % (float(cache.cache["blob"].hits) / float(cache.cache["blob"].lookups) *100, cache.cache["blob"].lookups, cache.cache["blob"].hits, cache.cache["blob"].misses)
+""" % (float(cache.caches["blob"].hits) / float(cache.caches["blob"].lookups) *100, cache.caches["blob"].lookups, cache.caches["blob"].hits, cache.caches["blob"].misses)
 
 app.add_url_rule(
     '/update/2/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/<osVersion>/update.xml',

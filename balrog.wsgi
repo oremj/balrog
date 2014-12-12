@@ -29,10 +29,10 @@ logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=a
 from auslib.global_state import dbo, cache
 from auslib.web.base import app as application
 
+for cache_name, cfg in cfg.getCaches().iteritems():
+    cache.make_cache(cache_name, *cfg)
+
 auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
-if cfg.getCacheSize():
-    cache._maxsize = cfg.getCacheSize()
-    cache._timeout = cfg.getCacheTimeout()
 dbo.setDb(cfg.getDburi())
 dbo.setDomainWhitelist(cfg.getDomainWhitelist())
 application.config['WHITELISTED_DOMAINS'] = cfg.getDomainWhitelist()

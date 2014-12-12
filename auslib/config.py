@@ -63,18 +63,6 @@ class AUSConfig(object):
         except (NoSectionError, NoOptionError):
             return tuple()
 
-    def getCacheSize(self):
-        if self.cfg.has_option("cache", "size"):
-            return int(self.cfg.get("cache", "size"))
-        else:
-            return 0
-
-    def getCacheTimeout(self):
-        if self.cfg.has_option("cache", "timeout"):
-            return int(self.cfg.get("cache", "timeout"))
-        else:
-            return 0
-
 
 class AdminConfig(AUSConfig):
     required_options = {
@@ -103,3 +91,11 @@ class ClientConfig(AUSConfig):
         except (NoSectionError, NoOptionError):
             return None
 
+    def getCaches(self):
+        caches = {}
+        if self.cfg.has_section("caches"):
+            for cache_name in self.cfg.options("caches"):
+                size, timeout = self.cfg.get("caches", cache_name).split(",")
+                caches[cache_name] = (size, timeout)
+
+        return caches

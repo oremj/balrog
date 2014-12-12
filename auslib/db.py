@@ -875,8 +875,6 @@ class Releases(AUSTable):
 
     def getReleaseBlob(self, name, transaction=None):
         data_version = cache.get("blob_version", name)
-        self.log.debug("NAME: %s", name)
-        self.log.debug("CACHED VERSION: %s", data_version)
         if not data_version:
             try:
                 data_version = self.select(where=[self.name==name], columns=[self.data_version], limit=1, transaction=transaction)[0]

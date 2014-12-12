@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from repoze.lru import ExpiringLRUCache
 
 
@@ -15,36 +13,41 @@ class MaybeCacher(object):
     If maxsize is 1 or more, caching will be performed. It is up to callers to
     cope with both cases. In a world where bug 1109295 is fixed, we may not
     need this anymore."""
-    def __init__(self, maxsize=0, timeout=0):
-        self._maxsize = maxsize
-        self._timeout = timeout
-        # By using a dict of caches, we can have multiple namespaces with
-        # different sizes. This allows us to do things like have smaller cache
-        # for blobs (which are very large) and a larger one for rules
-        # (which are tiny). This idea is completely ripped off from repoze's
-        # CacheMaker class.
-        self.cache = defaultdict(lambda: ExpiringLRUCache(self._maxsize, self._timeout))
+    def __init__(self):
+        self.caches = {}
+
+    def make_cache(self, name, maxsize, timeout):
+        if name in self.caches:
+            raise Exception()
+        self.caches[name] = ExpiringLRUCache(maxsize, timeout)
+
+    def reset(self):
+        self.caches.clear()
 
     def get(self, name, key):
-        if self._maxsize < 1:
+        if name not in self.caches:
             return
 
-        return self.cache[name].get(key)
+        return self.caches[name].get(key)
 
     def put(self, name, key, value):
-        if self._maxsize < 1:
+        if name not in self.caches:
             return
 
-        return self.cache[name].put(key, value)
+        return self.caches[name].put(key, value)
 
-    def clear(self, name):
-        if self._maxsize < 1:
+    def clear(self, name=None):
+        if name and name not in self.caches:
             return
 
-        self.cache[name].clear()
+        if not name:
+            for c in self.caches.values():
+                c.clear()
+
+        self.caches[name].clear()
 
     def invalidate(self, name, key):
-        if self._maxsize < 1:
+        if name not in self.caches:
             return
 
-        self.cache[name].invalidate(key)
+        self.caches[name].invalidate(key)

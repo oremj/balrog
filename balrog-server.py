@@ -33,8 +33,6 @@ if __name__ == "__main__":
     parser.add_option("--special-force-host", dest="specialForceHosts", action="append",
                       help="Hosts to forward force=1 on to, use a protocol prefix like http://")
     parser.add_option("--cef-log", dest="cefLog", default="cef.log")
-    parser.add_option("--cache-size", dest="cache_size", default=300),
-    parser.add_option("--cache-timeout", dest="cache_timeout", default=60),
     parser.add_option("--profile-dir", dest="profile_dir", default=None,
                       help="Enables profiling and logs to the specified file."),
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
@@ -54,9 +52,10 @@ if __name__ == "__main__":
     from auslib.global_state import dbo, cache
     from auslib.web.base import app
 
+    cache.make_cache("blob", 500, 3600)
+    cache.make_cache("blob_version", 500, 60)
+
     auslib.log.cef_config = auslib.log.get_cef_config(options.cefLog)
-    cache._maxsize = options.cache_size
-    cache._timeout = options.cache_timeout
     dbo.setDb(options.db)
     dbo.setDomainWhitelist(options.whitelistedDomains)
     try:
