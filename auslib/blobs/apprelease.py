@@ -67,15 +67,14 @@ class ReleaseBlobBase(Blob):
         except KeyError:
             return self['platforms'][platform]['buildID']
 
-    def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
+    def _getFromRelease(self, patch):
         if patch["from"] != "*":
-            try:
-                fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-            except KeyError:
-                fromRelease = None
+            return dbo.releases.getReleaseBlob(name=patch["from"])
         else:
-            fromRelease = None
+            return None
 
+    def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
+        fromRelease = self._getFromRelease(patch)
         if fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
             return None
 
@@ -290,15 +289,8 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixi
             if not patch:
                 continue
 
-            if patch["from"] != "*":
-                try:
-                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-                except KeyError:
-                    fromRelease = None
-            else:
-                fromRelease = None
-
-            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+            fromRelease = self._getFromRelease(patch)
+            if fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
             url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
@@ -484,15 +476,8 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
             if not patch:
                 continue
 
-            if patch["from"] != "*":
-                try:
-                    fromRelease = dbo.releases.getReleaseBlob(name=patch["from"])
-                except KeyError:
-                    fromRelease = None
-            else:
-                fromRelease = None
-
-            if patch["from"] != "*" and fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
+            fromRelease = self._getFromRelease(patch)
+            if fromRelease and not fromRelease.matchesUpdateQuery(updateQuery):
                 continue
 
             url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
