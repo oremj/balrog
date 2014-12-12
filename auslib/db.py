@@ -876,32 +876,31 @@ class Releases(AUSTable):
         return self.getReleaseInfo(nameOnly=True, **kwargs)
 
     def getReleaseBlob(self, name, transaction=None):
-        data_version = cache.get("blob_version", name)
-        if not data_version:
+        def getDataVersion():
             try:
-                data_version = self.select(where=[self.name==name], columns=[self.data_version], limit=1, transaction=transaction)[0]
-                cache.put("blob_version", name, data_version)
+                return self.select(where=[self.name==name], columns=[self.data_version], limit=1, transaction=transaction)[0]
             except IndexError:
                 raise KeyError("Couldn't find release with name '%s'" % name)
 
-        cached_blob = cache.get("blob", name)
-        blob = None
-        if cached_blob:
-            # Even if the blob is in the cache, we can't use it if its
-            # data_version differs from the current one that we retrieved
-            # above.
-            if cached_blob["data_version"] != data_version:
-                cache.invalidate("blob", name)
-            else:
-                blob = cached_blob["blob"]
+        data_version = cache.get("blob_version", name, getDataVersion)
 
-        if not blob:
+        def getBlob():
             try:
                 row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]
                 blob = createBlob(row['data'])
-                cache.put("blob", name, {"data_version": data_version, "blob": blob})
+                return {"data_version": data_version, "blob": blob}
             except IndexError:
                 raise KeyError("Couldn't find release with name '%s'" % name)
+
+        cached_blob = cache.get("blob", name, getBlob)
+
+        if cached_blob["data_version"] != data_version:
+            cache.invalidate("blob", name)
+            blob_info = getBlob()
+            cache.put("blob", name, blob_info)
+            blob = blob_info["blob"]
+        else:
+            blob = cached_blob["blob"]
 
         return blob
 

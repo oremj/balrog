@@ -24,11 +24,19 @@ class MaybeCacher(object):
     def reset(self):
         self.caches.clear()
 
-    def get(self, name, key):
+    def get(self, name, key, get_value=None):
         if name not in self.caches:
-            return
+            if callable(get_value):
+                return get_value()
+            else:
+                return None
 
-        return self.caches[name].get(key)
+        value = self.caches[name].get(key)
+        if not value and callable(get_value):
+            value = get_value()
+            self.put(name, key, value)
+
+        return value
 
     def put(self, name, key, value):
         if name not in self.caches:
