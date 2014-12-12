@@ -32,7 +32,7 @@ def generic(error):
     if not isinstance(error, BadDataError):
         if sentry.client:
             sentry.captureException()
-    log.debug('Hit exception, sending an empty response')
+    log.debug('Hit exception, sending an empty response', exc_info=True)
     response = make_response('<?xml version="1.0"?>\n<updates>\n</updates>')
     response.mimetype = 'text/xml'
     return response

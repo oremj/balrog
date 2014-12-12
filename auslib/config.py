@@ -96,6 +96,6 @@ class ClientConfig(AUSConfig):
         if self.cfg.has_section("caches"):
             for cache_name in self.cfg.options("caches"):
                 size, timeout = self.cfg.get("caches", cache_name).split(",")
-                caches[cache_name] = (size, timeout)
+                caches[cache_name] = (int(size), int(timeout))
 
         return caches

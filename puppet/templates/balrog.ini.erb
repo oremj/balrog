@@ -9,6 +9,7 @@ level=DEBUG
 ; domains that are allowed in update data, comma separated
 domain_whitelist=download.mozilla.org,stage.mozilla.org,ftp.mozilla.org
 
-[cache]
-size=300
-timeout=60
+[caches]
+; Caches to set-up. Keys are cache names, values are size and ttl
+blob=500,3600
+blob_version=500,60

@@ -29,8 +29,8 @@ logging.basicConfig(filename=cfg.getLogfile(), level=cfg.getLogLevel(), format=a
 from auslib.global_state import dbo, cache
 from auslib.web.base import app as application
 
-for cache_name, cfg in cfg.getCaches().iteritems():
-    cache.make_cache(cache_name, *cfg)
+for cache_name, cache_cfg in cfg.getCaches().iteritems():
+    cache.make_cache(cache_name, *cache_cfg)
 
 auslib.log.cef_config = auslib.log.get_cef_config(cfg.getCefLogfile())
 dbo.setDb(cfg.getDburi())
