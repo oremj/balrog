@@ -24,7 +24,7 @@ class MaybeCacher(object):
         self.caches.clear()
 
     def get(self, name, key, value_getter=None):
-        """Returns the value of the specified key from the named cached.
+        """Returns the value of the specified key from the named cache.
         If value_getter is provided and no cache is found, or no value is
         found for the key, the return value of value_getter will be returned
         instead."""
@@ -55,8 +55,8 @@ class MaybeCacher(object):
         if not name:
             for c in self.caches.values():
                 c.clear()
-
-        self.caches[name].clear()
+        else:
+            self.caches[name].clear()
 
     def invalidate(self, name, key):
         if name not in self.caches:

@@ -938,7 +938,7 @@ class TestBlobCaching(unittest.TestCase, MemoryDatabaseMixin):
                 t.return_value += 1
 
             # We've retrieved the blob and blob version 5 times.
-            # The blob cache has a ttl of 5, so we're expecting the first one
+            # The blob cache has a ttl of 10, so we're expecting the first one
             # to be a miss, and the rest to be hits.
             self._checkCacheStats(cache.caches["blob"], 5, 4, 1)
             # But blob version has a ttl of 4, so we should see the first one
