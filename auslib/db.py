@@ -902,11 +902,22 @@ class Releases(AUSTable):
         # that it's not older than the one in the database. If the data version
         # of the cached blob and the latest data version don't match, we need
         # to update the cache with the latest blob.
-        if cached_blob["data_version"] != data_version:
+        if data_version > cached_blob["data_version"]:
             blob_info = getBlob()
             cache.put("blob", name, blob_info)
             blob = blob_info["blob"]
         else:
+            # And while it's extremely unlikely, there is a remote possibility
+            # that the cached blob actually has a newer data version than the
+            # blob version cache. This can occur if the blob cache expired
+            # between retrieving the cached data version and cached blob.
+            # (Because the blob version cache ttl should be shorter than the
+            # blob cache ttl, if the blob cache expired prior to retrieving the
+            # data version, the blob version cache would've expired as well.
+            # If we hit one of these cases, we should bring the blob version
+            # cache up to date since we have it.
+            if cached_blob["data_version"] > data_version:
+                cache.put("blob_version", name, data_version)
             blob = cached_blob["blob"]
 
         return blob
