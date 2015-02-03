@@ -1,9 +1,9 @@
 import flask_wtf.form
 
 from auslib.admin.base import app
-from auslib.test.admin.views.base import ViewTest, JSONTestMixin
+from auslib.test.admin.views.base import ViewTest
 
-class TestCSRFEndpoint(ViewTest, JSONTestMixin):
+class TestCSRFEndpoint(ViewTest):
     def setUp(self):
         ViewTest.setUp(self)
         app.config['WTF_CSRF_ENABLED'] = True
