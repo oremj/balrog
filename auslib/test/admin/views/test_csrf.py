@@ -19,6 +19,6 @@ class TestCSRFEndpoint(ViewTest, JSONTestMixin):
         ViewTest.tearDown(self)
 
     def testCsrfGet(self):
-        ret = self._get('/api/csrf_token')
+        ret = self.client.get('/csrf_token')
         self.assertEquals(ret.status_code, 200)
         self.assertEquals(ret.headers['X-CSRF-Token'], '111')

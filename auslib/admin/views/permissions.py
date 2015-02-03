@@ -21,7 +21,7 @@ def permission2selector(permission):
     return permission.replace('/', '').replace(':', '')
 
 class UsersView(AdminView):
-    """/api/users"""
+    """/users"""
     def get(self):
         users = dbo.permissions.getAllUsers()
         self.log.debug("Found users: %s", users)
@@ -30,13 +30,13 @@ class UsersView(AdminView):
         return jsonify(dict(users=users))
 
 class PermissionsView(AdminView):
-    """/api/users/:username/permissions"""
+    """/users/:username/permissions"""
     def get(self, username):
         permissions = dbo.permissions.getUserPermissions(username)
         return jsonify(permissions)
 
 class SpecificPermissionView(AdminView):
-    """/api/users/:username/permissions/:permission"""
+    """/users/:username/permissions/:permission"""
     @setpermission
     def get(self, username, permission):
         try:

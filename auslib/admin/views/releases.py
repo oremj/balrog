@@ -167,7 +167,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
 
 
 class SingleLocaleView(AdminView):
-    """/api/releases/[release]/builds/[platform]/[locale]"""
+    """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
         try:
             locale = dbo.releases.getLocale(release, platform, locale)
@@ -202,7 +202,7 @@ class SingleLocaleView(AdminView):
         return changeRelease(release, changed_by, transaction, exists, commit, self.log)
 
 class SingleReleaseView(AdminView):
-    """ /api/releases/:release"""
+    """ /releases/:release"""
     def get(self, release):
         release = dbo.releases.getReleases(name=release, limit=1)
         if not release:
@@ -276,7 +276,7 @@ class SingleReleaseView(AdminView):
 
 
 class ReleaseHistoryView(HistoryAdminView):
-    """/api/releases/:release/revisions"""
+    """/releases/:release/revisions"""
     def get(self, release):
         releases = dbo.releases.getReleases(name=release, limit=1)
         if not releases:
@@ -352,7 +352,7 @@ class ReleaseHistoryView(HistoryAdminView):
 
 
 class ReleasesAPIView(AdminView):
-    """/api/releases"""
+    """/releases"""
     def get(self, **kwargs):
         if request.args.get('names_only'):
             releases = dbo.releases.getReleaseInfo(nameOnly=True)

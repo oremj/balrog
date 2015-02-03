@@ -12,7 +12,7 @@ from auslib.log import cef_event, CEF_WARN, CEF_ALERT
 
 
 class RulesAPIView(AdminView):
-    """/api/rules"""
+    """/rules"""
     def get(self, **kwargs):
         rules = dbo.rules.getOrderedRules()
         count = 0
@@ -64,7 +64,7 @@ class RulesAPIView(AdminView):
 
 
 class SingleRuleView(AdminView):
-    """ /api/rules/:id"""
+    """ /rules/:id"""
 
     def get(self, rule_id):
         rule = dbo.rules.getRuleById(rule_id=rule_id)
@@ -174,7 +174,7 @@ class SingleRuleView(AdminView):
 
 
 class RuleHistoryAPIView(HistoryAdminView):
-    """/api/rules/:id/revisions"""
+    """/rules/:id/revisions"""
 
     def get(self, rule_id):
         rule = dbo.rules.getRuleById(rule_id=rule_id)
