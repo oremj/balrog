@@ -71,5 +71,8 @@ if __name__ == '__main__':
     app.config['PAGE_TITLE'] = options.pageTitle
     def auth(environ, username, password):
         return username == password
+    # The deployed version of Balrog (and the Vagrant environment) both put the
+    # admin API endpoints behind "/api". We should do the same here for
+    # consistency.
     app.wsgi_app = APIMiddleware(AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth))
     app.run(port=options.port, host=options.host)
