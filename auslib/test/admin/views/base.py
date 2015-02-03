@@ -102,13 +102,3 @@ class JSONTestMixin(object):
         ret = self.client.get(url, query_string=qs, headers=headers)
         self.assertEquals(ret.mimetype, 'application/json')
         return ret
-
-class HTMLTestMixin(object):
-    """Provides a _get method that always asks for format='html', and checks
-       the returned MIME type."""
-    def _get(self, url, query_string=dict()):
-        qs = query_string.copy()
-        qs['format'] = 'html'
-        ret = self.client.get(url, query_string=qs)
-        self.assertEquals(ret.mimetype, 'text/html')
-        return ret

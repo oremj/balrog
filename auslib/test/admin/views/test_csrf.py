@@ -1,9 +1,9 @@
 import flask_wtf.form
 
 from auslib.admin.base import app
-from auslib.test.admin.views.base import ViewTest, HTMLTestMixin
+from auslib.test.admin.views.base import ViewTest, JSONTestMixin
 
-class TestCSRFEndpoint(ViewTest, HTMLTestMixin):
+class TestCSRFEndpoint(ViewTest, JSONTestMixin):
     def setUp(self):
         ViewTest.setUp(self)
         app.config['WTF_CSRF_ENABLED'] = True
@@ -19,6 +19,6 @@ class TestCSRFEndpoint(ViewTest, HTMLTestMixin):
         ViewTest.tearDown(self)
 
     def testCsrfGet(self):
-        ret = self._get('/csrf_token')
+        ret = self._get('/api/csrf_token')
         self.assertEquals(ret.status_code, 200)
         self.assertEquals(ret.headers['X-CSRF-Token'], '111')

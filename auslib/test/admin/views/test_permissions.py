@@ -1,7 +1,7 @@
 import simplejson as json
 
 from auslib.global_state import dbo
-from auslib.test.admin.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
+from auslib.test.admin.views.base import ViewTest, JSONTestMixin
 
 class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
     def testUsers(self):
@@ -106,19 +106,3 @@ class TestPermissionsAPI_JSON(ViewTest, JSONTestMixin):
     def testPermissionDeleteBadInput(self):
         ret = self._delete("/api/users/bill/permissions/admin")
         self.assertStatusCode(ret, 400)
-
-
-# TODO: kill when old ui goes away
-class TestPermissionsPage(ViewTest, HTMLTestMixin):
-    def testGet(self):
-        ret = self._get('/permissions.html')
-        self.assertEqual(ret.status_code, 200)
-        self.assertTrue('bill' in ret.data, msg=ret.data)
-        self.assertTrue('bob' in ret.data, msg=ret.data)
-
-# TODO: kill when old ui goes away
-class TestUserPermissionsPage(ViewTest, HTMLTestMixin):
-    def testGet(self):
-        ret = self._get('/user_permissions.html', query_string=dict(username='bill'))
-        self.assertEqual(ret.status_code, 200)
-        self.assertTrue('admin' in ret.data, msg=ret.data)

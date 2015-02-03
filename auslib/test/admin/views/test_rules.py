@@ -1,7 +1,7 @@
 import json
 
 from auslib.global_state import dbo
-from auslib.test.admin.views.base import ViewTest, HTMLTestMixin, JSONTestMixin
+from auslib.test.admin.views.base import ViewTest, JSONTestMixin
 
 
 class TestRulesAPI_JSON(ViewTest, JSONTestMixin):
@@ -363,14 +363,3 @@ class TestRuleHistoryView(ViewTest, JSONTestMixin):
         url = '/api/rules/1/revisions'
         ret = self._post(url)  # no change_id posted
         self.assertEquals(ret.status_code, 400)
-
-
-# TODO: kill this when old ui goes away
-class TestRulesView_HTML(ViewTest, HTMLTestMixin):
-    def testGetRules(self):
-        ret = self._get('/rules.html')
-        self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue("<form id='rules_form'" in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-backgroundRate" name="1-backgroundRate" type="text" value="100">' in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="100">' in ret.data, msg=ret.data)
-

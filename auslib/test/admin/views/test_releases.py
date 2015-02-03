@@ -4,7 +4,7 @@ import simplejson as json
 from sqlalchemy import select
 
 from auslib.global_state import dbo
-from auslib.test.admin.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
+from auslib.test.admin.views.base import ViewTest, JSONTestMixin
 
 class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
     def testGetRelease(self):
@@ -659,40 +659,3 @@ class TestReleaseHistoryView(ViewTest, JSONTestMixin):
 
         ret = self._post(url)
         self.assertEquals(ret.status_code, 400)
-
-    def testGetRevisionsWithPagination(self):
-        # Make some changes to a release
-        data = json.dumps(dict(detailsUrl='blah', fakePartials=True, schema_version=1))
-        for i in range(0, 33, 2):  # any largish number
-            ret = self._post(
-                '/api/releases/d',
-                data=dict(
-                    data=data,
-                    product='d',
-                    version='%d.0' % i,
-                    data_version=1 + i,
-                )
-            )
-            self.assertStatusCode(ret, 200)
-
-        url = '/api/releases/d/revisions'
-        ret = self._get(url)
-        self.assertEquals(ret.status_code, 200, msg=ret.data)
-        self.assertTrue('There were no previous revisions' not in ret.data)
-
-        ret2 = self._get(url, qs=dict(page=2))
-        self.assertEquals(ret2.status_code, 200, msg=ret2.data)
-        self.assertTrue(ret.data != ret2.data)
-
-
-class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
-    def testGetReleases(self):
-        ret = self._get("/releases.html")
-        self.assertStatusCode(ret, 200)
-        self.assertTrue('<table id="Releases_table"' in ret.data, msg=ret.data)
-
-    # Test get of a release's full data column, queried by name
-    def testGetSingleRelease(self):
-        ret = self._get("/api/releases/d")
-        self.assertStatusCode(ret, 200)
-        self.assertTrue("<td> <a href='releases/d/data'>link</a></td>" in ret.data, msg=ret.data)
