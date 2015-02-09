@@ -71,8 +71,9 @@ if __name__ == '__main__':
     app.config['PAGE_TITLE'] = options.pageTitle
     def auth(environ, username, password):
         return username == password
-    # The deployed version of Balrog (and the Vagrant environment) both put the
-    # admin API endpoints behind "/api". We should do the same here for
-    # consistency.
+    # The Angular app always makes requests to "/api". The WSGI app that runs
+    # the API doesn't know about this prefix though, so we need to strip it
+    # away before the request reaches the app. In production (and the Vagrant
+    # environment) this is done by setting up the WSGI app with WSGIScriptAlias.
     app.wsgi_app = APIMiddleware(AuthBasicHandler(app.wsgi_app, "Balrog standalone auth", auth))
     app.run(port=options.port, host=options.host)
