@@ -40,6 +40,10 @@ def add_security_headers(response):
 Compress(app)
 
 # Endpoints required for the Balrog 2.0 UI.
+# In the Mozilla deployments of Balrog, both the the admin API (these endpoints)
+# and the static admin UI are hosted on the same domain. This API wsgi app is
+# hosted at "/api", which is stripped away by the web server before we see
+# these requests.
 app.add_url_rule("/csrf_token", view_func=CSRFView.as_view("csrf"))
 app.add_url_rule("/users", view_func=UsersView.as_view("users"))
 app.add_url_rule("/users/<username>/permissions", view_func=PermissionsView.as_view("user_permissions"))
@@ -50,7 +54,7 @@ app.add_url_rule("/rules", view_func=RulesAPIView.as_view("rules"))
 app.add_url_rule("/rules/<rule_id>", view_func=SingleRuleView.as_view("rule"))
 app.add_url_rule("/rules/<rule_id>/revisions", view_func=RuleHistoryAPIView.as_view("rules_revisions"))
 app.add_url_rule("/releases", view_func=ReleasesAPIView.as_view("releases"))
-app.add_url_rule("/releases/<release>", view_func=SingleReleaseView.as_view("releases_revision"))
+app.add_url_rule("/releases/<release>", view_func=SingleReleaseView.as_view("single_release"))
 app.add_url_rule("/releases/<release>/builds/<platform>/<locale>", view_func=SingleLocaleView.as_view("single_locale"))
 app.add_url_rule("/releases/<release>/revisions", view_func=ReleaseHistoryView.as_view("release_revisions"))
 app.add_url_rule("/history/diff/<type_>/<change_id>/<field>", view_func=DiffView.as_view("diff"))

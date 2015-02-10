@@ -15,7 +15,6 @@ class APIMiddleware(object):
 
     def __call__(self, environ, start_response):
         environ["PATH_INFO"] = environ["PATH_INFO"].lstrip("/api")
-        print environ
         return self.wrap_app(environ, start_response)
 
 

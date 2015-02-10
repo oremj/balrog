@@ -1022,14 +1022,6 @@ class Permissions(AUSTable):
         '/rules/:id': ['method', 'product'],
         '/rules/:id/rollback': ['product'],
         '/users/:id/permissions/:permission': ['method'],
-        # TODO: Remove these old endpoints when old ui dies.
-        '/releases/:name': ['method', 'product'],
-        '/releases/:name/rollback': ['product'],
-        '/releases/:name/builds/:platform/:locale': ['method', 'product'],
-        '/rules': ['product'],
-        '/rules/:id': ['method', 'product'],
-        '/rules/:id/rollback': ['product'],
-        '/users/:id/permissions/:permission': ['method'],
     }
 
     def __init__(self, metadata, dialect):
