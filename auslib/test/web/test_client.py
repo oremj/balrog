@@ -54,6 +54,14 @@ class ClientTest(unittest.TestCase):
                         "hashValue": "4",
                         "fileUrl": "http://a.com/z"
                     }
+                },
+                "xh": {
+                    "complete": {
+                        "filesize": "5",
+                        "from": "*",
+                        "hashValue": "6",
+                        "fileUrl": "http://a.com/x"
+                    }
                 }
             }
         }
@@ -167,15 +175,8 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(ret.mimetype, 'text/xml')
         self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
-    def testVersion3Get(self):
-        ret = self.client.get('/update/3/a/1.0/1/a/a/a/a/a/a/update.xml')
-        self.assertEqual(ret.status_code, 200)
-        self.assertEqual(ret.mimetype, 'text/xml')
-        # An empty update contains an <updates> tag with a newline, which is what we're expecting here
-        self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
-
-    def testVersion3GetWithUpdate(self):
-        ret = self.client.get('/update/3/b/1.0/1/p/l/a/a/a/a/update.xml')
+    def testVersion1Get(self):
+        ret = self.client.get("/update/1/b/1.0/1/p/l/a/update.xml")
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/xml')
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
@@ -211,6 +212,28 @@ class ClientTest(unittest.TestCase):
         # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
         self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
 
+    def testVersion3Get(self):
+        ret = self.client.get('/update/3/a/1.0/1/a/a/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # An empty update contains an <updates> tag with a newline, which is what we're expecting here
+        self.assertEqual(minidom.parseString(ret.data).getElementsByTagName('updates')[0].firstChild.nodeValue, '\n')
+
+    def testVersion3GetWithUpdate(self):
+        ret = self.client.get('/update/3/b/1.0/1/p/l/a/a/a/a/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # We need to load and re-xmlify these to make sure we don't get failures due to whitespace differences.
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="2">
+        <patch type="complete" URL="http://a.com/z" hashFunction="sha512" hashValue="4" size="3"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
+
     def testVersion4Get(self):
         ret = self.client.get('/update/4/b/1.0/1/p/l/a/a/a/a/1/update.xml')
         self.assertEqual(ret.status_code, 200)
@@ -243,6 +266,34 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.mimetype, 'text/plain')
         self.assertTrue('User-agent' in ret.data)
+
+    def testBadAvastURLsFromBug1125231(self):
+        # Some versions of Avast have a bug in them that prepends "x86 "
+        # to the locale. We need to make sure we handle this case correctly
+        # so that these people can keep up to date.
+        ret = self.client.get('/update/4/b/1.0/1/p/x86 l/a/a/a/a/1/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        # Compare the Avast-style URL to the non-messed up equivalent. They
+        # should get the same update XML.
+        ret2 = self.client.get('/update/4/b/1.0/1/p/l/a/a/a/a/1/update.xml')
+        self.assertEqual(ret2.status_code, 200)
+        self.assertEqual(ret2.mimetype, 'text/xml')
+        self.assertEqual(ret.data, ret2.data)
+
+    def testFixForBug1125231DoesntBreakXhLocale(self):
+        ret = self.client.get('/update/4/b/1.0/1/p/xh/a/a/a/a/1/update.xml')
+        self.assertEqual(ret.status_code, 200)
+        self.assertEqual(ret.mimetype, 'text/xml')
+        returned = minidom.parseString(ret.data)
+        expected = minidom.parseString("""<?xml version="1.0"?>
+<updates>
+    <update type="minor" version="1.0" extensionVersion="1.0" buildID="2">
+        <patch type="complete" URL="http://a.com/x" hashFunction="sha512" hashValue="6" size="5"/>
+    </update>
+</updates>
+""")
+        self.assertEqual(returned.toxml(), expected.toxml())
 
 
 class ClientTestWithErrorHandlers(unittest.TestCase):
