@@ -28,6 +28,7 @@ class ClientRequestView(MethodView):
         qs = request.environ.get("QUERY_STRING", "")
         if "force" in qs and "avast" in qs:
             qs = qs.replace("?avast=1", "&avast=1")
+            qs = qs.replace("%3Favast=1", "&avast=1")
         request.environ["QUERY_STRING"] = qs
         # Some versions of Avast have a bug in them that prepends "x86 "
         # to the locale. We need to make sure we handle this case correctly
