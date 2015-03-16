@@ -41,16 +41,6 @@ def generic(error):
 def robots():
     return send_from_directory(app.static_folder, "robots.txt")
 
-@app.before_request
-def fixAvastUrls():
-    # Some versions of Avast make requests and blindly append "?avast=1" to
-    # them, which breaks query string parsing if ?force=1 is already
-    # there. Because we're nice people we'll fix it up.
-    qs = request.environ.get("QUERY_STRING", "")
-    if "force" in qs and "avast" in qs:
-        qs = qs.replace("?avast=1", "&avast=1")
-    request.environ["QUERY_STRING"] = qs
-
 # The "main" routes. 99% of requests will come in through these.
 app.add_url_rule(
     "/update/1/<product>/<version>/<buildID>/<buildTarget>/<locale>/<channel>/update.xml",
