@@ -1,7 +1,7 @@
 import logging
 log = logging.getLogger(__name__)
 
-from flask import Flask, make_response, send_from_directory, request
+from flask import Flask, make_response, send_from_directory
 
 from raven.contrib.flask import Sentry
 
