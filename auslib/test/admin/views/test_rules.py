@@ -292,10 +292,10 @@ class TestRuleHistoryView(ViewTest, JSONTestMixin):
                 product='Firefox',
                 update_type='minor',
                 channel='nightly',
-                build_id='1234',
-                os_version='10.5',
-                header_arch='INTEL',
-                dist_version='19',
+                buildID='1234',
+                osVersion='10.5',
+                headerArchitecture='INTEL',
+                distVersion='19',
                 buildTarget='MAC',
             )
         )
@@ -370,11 +370,11 @@ class TestRuleHistoryView(ViewTest, JSONTestMixin):
                 product='',
                 update_type='minor',
                 channel='nightly',
-                build_id='1234',
-                os_version='10.5',
-                header_arch='INTEL',
-                dist_version='19',
-                build_target='MAC',
+                buildID='1234',
+                osVersion='10.5',
+                headerArchitecture='INTEL',
+                distVersion='19',
+                buildTarget='MAC',
             )
         )
         ret = self._post(

@@ -48,16 +48,16 @@ class RulesAPIView(AdminView):
                 priority=form.priority.data,
                 product = form.product.data,
                 version = form.version.data,
-                buildID = form.build_id.data,
+                buildID = form.buildID.data,
                 channel = form.channel.data,
                 locale = form.locale.data,
                 distribution = form.distribution.data,
-                buildTarget = form.build_target.data,
-                osVersion = form.os_version.data,
-                distVersion = form.dist_version.data,
+                buildTarget = form.buildTarget.data,
+                osVersion = form.osVersion.data,
+                distVersion = form.distVersion.data,
                 comment = form.comment.data,
                 update_type = form.update_type.data,
-                headerArchitecture = form.header_arch.data)
+                headerArchitecture = form.headerArchitecture.data)
         rule_id = dbo.rules.addRule(changed_by=changed_by, what=what,
             transaction=transaction)
         return Response(status=200, response=str(rule_id))
@@ -116,8 +116,8 @@ class SingleRuleView(AdminView):
             what['product'] = form.product.data
         if form.version.data:
             what['version'] = form.version.data
-        if form.build_id.data:
-            what['buildID'] = form.build_id.data
+        if form.buildID.data:
+            what['buildID'] = form.buildID.data
         if form.channel.data:
             what['channel'] = form.channel.data
         if form.locale.data:
@@ -125,20 +125,20 @@ class SingleRuleView(AdminView):
         if form.distribution.data:
             what['distribution'] = form.distribution.data
         if "buildTarget" in request.form:
-            if form.build_target.data:
-                what['buildTarget'] = form.build_target.data
+            if form.buildTarget.data:
+                what['buildTarget'] = form.buildTarget.data
             else:
                 what["buildTarget"] = None
-        if form.os_version.data:
-            what['osVersion'] = form.os_version.data
-        if form.dist_version.data:
-            what['distVersion'] = form.dist_version.data
+        if form.osVersion.data:
+            what['osVersion'] = form.osVersion.data
+        if form.distVersion.data:
+            what['distVersion'] = form.distVersion.data
         if form.comment.data:
             what['comment'] = form.comment.data
         if form.update_type.data:
             what['update_type'] = form.update_type.data
-        if form.header_arch.data:
-            what['headerArchitecture'] = form.header_arch.data
+        if form.headerArchitecture.data:
+            what['headerArchitecture'] = form.headerArchitecture.data
 
         dbo.rules.updateRule(changed_by=changed_by, rule_id=rule_id, what=what,
             old_data_version=form.data_version.data, transaction=transaction)
@@ -218,16 +218,16 @@ class RuleHistoryAPIView(HistoryAdminView):
             'product': 'product',
             'version': 'version',
             'background_rate': 'backgroundRate',
-            'build_id': 'buildID',
+            'buildID': 'buildID',
             'channel': 'channel',
             'locale': 'locale',
             'distribution': 'distribution',
-            'build_target': 'buildTarget',
-            'os_version': 'osVersion',
-            'dist_version': 'distVersion',
+            'buildTarget': 'buildTarget',
+            'osVersion': 'osVersion',
+            'distVersion': 'distVersion',
             'comment': 'comment',
             'update_type': 'update_type',
-            'header_arch': 'headerArchitecture',
+            'headerArchitecture': 'headerArchitecture',
             'data_version': 'data_version',
             # specific to revisions
             'change_id': 'change_id',
