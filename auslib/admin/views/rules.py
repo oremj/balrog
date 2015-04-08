@@ -115,8 +115,7 @@ class SingleRuleView(AdminView):
             if k == "data_version":
                 continue
             # We need to check for each column in both the JSON style post
-            # and the regular multipart form data. If the key is not present
-            # in the request *OR* its value is None, it will not exist in
+            # and the regular multipart form data. If the key is not present in
             # either of these data structures. We treat this cases as no-op
             # and shouldn't modify the data for that key.
             # If the key is present we should modify the data as requested.
