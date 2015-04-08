@@ -94,22 +94,6 @@ class TestSingleRuleView_JSON(ViewTest, JSONTestMixin):
         self.assertEquals(r[0]['version'], '3.5')
         self.assertEquals(r[0]['buildTarget'], 'd')
 
-    def TestPostChangeBuildTarget(self):
-        # Make some changes to a rule
-        ret = self._post('/rules/1', data=dict(backgroundRate=71, buildTarget='hhh', data_version=1))
-        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
-        load = json.loads(ret.data)
-        self.assertEquals(load['new_data_version'], 2)
-
-        # Assure the changes made it into the database
-        r = dbo.rules.t.select().where(dbo.rules.rule_id==1).execute().fetchall()
-        self.assertEquals(len(r), 1)
-        self.assertEquals(r[0]['backgroundRate'], 71)
-        self.assertEquals(r[0]['buildTarget'], 'hhh')
-        # And that we didn't modify other fields
-        self.assertEquals(r[0]['update_type'], 'minor')
-        self.assertEquals(r[0]['version'], '3.5')
-
     def testPostJSON(self):
         data = json.dumps(dict(
             backgroundRate=71, mapping="d", priority=73, data_version=1,
