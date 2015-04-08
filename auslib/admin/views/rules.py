@@ -106,9 +106,24 @@ class SingleRuleView(AdminView):
             return Response(status=400, response=json.dumps(form.errors))
 
         what = dict()
+        # We need to be able to support changing AND removing parts of a rule,
+        # and because of how Flask's request object and WTForm's defaults work
+        # this gets a little hary.
         for k, v in form.data.iteritems():
+            # data_version is a "special" column, in that it's not part of the
+            # primary data, and shouldn't be updatable by the user.
             if k == "data_version":
                 continue
+            # We need to check for each column in both the JSON style post
+            # and the regular multipart form data. If the key is not present
+            # in the request *OR* its value is None, it will not exist in
+            # either of these data structures. We treat this cases as no-op
+            # and shouldn't modify the data for that key.
+            # If the key is present we should modify the data as requested.
+            # If a value is an empty string, we should remove that restriction
+            # from the rule (aka, set as NULL in the db). The underlying Form
+            # will have already converted it to None, so we can treat it the
+            # same as a modification here.
             if (request.json and k in request.json) or k in request.form:
                 what[k] = v
 
