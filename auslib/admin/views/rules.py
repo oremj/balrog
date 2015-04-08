@@ -124,8 +124,11 @@ class SingleRuleView(AdminView):
             what['locale'] = form.locale.data
         if form.distribution.data:
             what['distribution'] = form.distribution.data
-        if form.build_target.data:
-            what['buildTarget'] = form.build_target.data
+        if "buildTarget" in request.form:
+            if form.build_target.data:
+                what['buildTarget'] = form.build_target.data
+            else:
+                what["buildTarget"] = None
         if form.os_version.data:
             what['osVersion'] = form.os_version.data
         if form.dist_version.data:
