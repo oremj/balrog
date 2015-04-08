@@ -106,39 +106,11 @@ class SingleRuleView(AdminView):
             return Response(status=400, response=json.dumps(form.errors))
 
         what = dict()
-        if form.backgroundRate.data is not None:
-            what['backgroundRate'] = form.backgroundRate.data
-        if form.mapping.data:
-            what['mapping'] = form.mapping.data
-        if form.priority.data is not None:
-            what['priority'] = form.priority.data
-        if form.product.data:
-            what['product'] = form.product.data
-        if form.version.data:
-            what['version'] = form.version.data
-        if form.buildID.data:
-            what['buildID'] = form.buildID.data
-        if form.channel.data:
-            what['channel'] = form.channel.data
-        if form.locale.data:
-            what['locale'] = form.locale.data
-        if form.distribution.data:
-            what['distribution'] = form.distribution.data
-        if "buildTarget" in request.form:
-            if form.buildTarget.data:
-                what['buildTarget'] = form.buildTarget.data
-            else:
-                what["buildTarget"] = None
-        if form.osVersion.data:
-            what['osVersion'] = form.osVersion.data
-        if form.distVersion.data:
-            what['distVersion'] = form.distVersion.data
-        if form.comment.data:
-            what['comment'] = form.comment.data
-        if form.update_type.data:
-            what['update_type'] = form.update_type.data
-        if form.headerArchitecture.data:
-            what['headerArchitecture'] = form.headerArchitecture.data
+        for k, v in form.data.iteritems():
+            if k == "data_version":
+                continue
+            if (request.json and k in request.json) or k in request.form:
+                what[k] = v
 
         dbo.rules.updateRule(changed_by=changed_by, rule_id=rule_id, what=what,
             old_data_version=form.data_version.data, transaction=transaction)
