@@ -219,16 +219,28 @@ class SingleReleaseView(AdminView):
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=form.errors)
 
-        try:
-            blob = createBlob(form.blob.data)
-            dbo.releases.addRelease(name=release, product=form.product.data,
-                version=form.version.data, blob=blob,
-                changed_by=changed_by, transaction=transaction)
-        except ValueError, e:
-            msg = "Couldn't update release: %s" % e
-            cef_event("Bad input", CEF_WARN, errors=msg)
-            return Response(status=400, response=msg)
-        return Response(status=201)
+        blob = createBlob(form.blob.data)
+        if dbo.releases.getReleases(name=release, limit=1):
+            try:
+                print form.data_version.data
+                dbo.releases.updateRelease(name=release, blob=blob, version=form.version.data,
+                    product=form.product.data, changed_by=changed_by,
+                    old_data_version=form.data_version.data, transaction=transaction)
+            except ValueError, e:
+                msg = "Couldn't update release: %s" % e
+                cef_event("Bad input", CEF_WARN, errors=msg)
+                return Response(status=400, response=msg)
+            return Response(status=200)
+        else:
+            try:
+                dbo.releases.addRelease(name=release, product=form.product.data,
+                    version=form.version.data, blob=blob,
+                    changed_by=changed_by, transaction=transaction)
+            except ValueError, e:
+                msg = "Couldn't update release: %s" % e
+                cef_event("Bad input", CEF_WARN, errors=msg)
+                return Response(status=400, response=msg)
+            return Response(status=201)
 
     @requirelogin
     @requirepermission('/releases/:name')

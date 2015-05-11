@@ -131,3 +131,4 @@ class NewReleaseForm(Form):
     version = StringField('Version', validators=[Required()])
     product = StringField('Product', validators=[Required()])
     blob = JSONStringField('Data', validators=[Required()], widget=FileInput())
+    data_version = IntegerField('data_version', widget=HiddenInput())
