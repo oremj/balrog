@@ -10,7 +10,7 @@ from auslib.admin.views.base import (
     requirelogin, requirepermission, AdminView, HistoryAdminView
 )
 from auslib.admin.views.csrf import get_csrf_headers
-from auslib.admin.views.forms import ReleaseForm, NewReleaseForm, DbEditableForm
+from auslib.admin.views.forms import PartialReleaseForm, CompleteReleaseForm, DbEditableForm
 
 __all__ = ["SingleReleaseView", "SingleLocaleView"]
 
@@ -22,9 +22,9 @@ def createRelease(release, product, version, changed_by, transaction, releaseDat
 
 def changeRelease(release, changed_by, transaction, existsCallback, commitCallback, log):
     """Generic function to change an aspect of a release. It relies on a
-       ReleaseForm existing and does some upfront work and checks before
+       PartialReleaseForm existing and does some upfront work and checks before
        doing anything. It will, for the named release and any found in the
-       'copyTo' field of the ReleaseForm:
+       'copyTo' field of the PartialReleaseForm:
         - Create the release if it doesn't already exist.
         - return a 400 Response if the release exists and old_data_version doesn't.
         - return a 400 Response if the product name in the form doesn't match the existing one.
@@ -36,7 +36,7 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
 
       @type  release: string
       @param release: The primary release to update. Additional releases found
-                      in the 'copyTo' field of the ReleaseForm will also be
+                      in the 'copyTo' field of the PartialReleaseForm will also be
                       updated.
       @type  changed_by: string
       @param changed_by: The username making the change.
@@ -48,22 +48,22 @@ def changeRelease(release, changed_by, transaction, existsCallback, commitCallba
                              consider this a "new" change or not. It must
                              receive 3 positional arguments:
                               - the name of the release
-                              - the product name from the ReleaseForm
-                              - the version from the ReleaseForm
+                              - the product name from the PartialReleaseForm
+                              - the version from the PartialReleaseForm
       @type  commitCallback: callable
       @param commitCallback: The callable to call after all prerequisite checks
                              and updates are done. It must receive 6 positional
                              arguments:
                               - the name of the release
-                              - the product name from the ReleaseForm
-                              - the version from the ReleaseForm
-                              - the data from the ReleaseForm
+                              - the product name from the PartialReleaseForm
+                              - the version from the PartialReleaseForm
+                              - the data from the PartialReleaseForm
                               - the most recent version of the data for the
                                 release from the database
-                              - the old_data_version from the ReleaseForm
+                              - the old_data_version from the PartialReleaseForm
     """
     new = True
-    form = ReleaseForm()
+    form = PartialReleaseForm()
     if not form.validate():
         cef_event("Bad input", CEF_WARN, errors=form.errors)
         return Response(status=400, response=json.dumps(form.errors))
@@ -214,7 +214,7 @@ class SingleReleaseView(AdminView):
     @requirelogin
     @requirepermission('/releases/:name')
     def _put(self, release, changed_by, transaction):
-        form = NewReleaseForm()
+        form = CompleteReleaseForm()
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=form.errors)
@@ -404,7 +404,7 @@ class ReleasesAPIView(AdminView):
     @requirelogin
     @requirepermission('/releases')
     def _post(self, changed_by, transaction):
-        form = NewReleaseForm()
+        form = CompleteReleaseForm()
         if not form.validate():
             cef_event("Bad input", CEF_WARN, errors=form.errors)
             return Response(status=400, response=json.dumps(form.errors))
