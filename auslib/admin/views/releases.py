@@ -222,7 +222,6 @@ class SingleReleaseView(AdminView):
         blob = createBlob(form.blob.data)
         if dbo.releases.getReleases(name=release, limit=1):
             try:
-                print form.data_version.data
                 dbo.releases.updateRelease(name=release, blob=blob, version=form.version.data,
                     product=form.product.data, changed_by=changed_by,
                     old_data_version=form.data_version.data, transaction=transaction)
