@@ -221,15 +221,17 @@ class SingleReleaseView(AdminView):
 
         blob = createBlob(form.blob.data)
         if dbo.releases.getReleases(name=release, limit=1):
+            data_version = form.data_version.data
             try:
                 dbo.releases.updateRelease(name=release, blob=blob, version=form.version.data,
                     product=form.product.data, changed_by=changed_by,
-                    old_data_version=form.data_version.data, transaction=transaction)
+                    old_data_version=data_version, transaction=transaction)
             except ValueError, e:
                 msg = "Couldn't update release: %s" % e
                 cef_event("Bad input", CEF_WARN, errors=msg)
                 return Response(status=400, response=msg)
-            return Response(status=200)
+            data_version += 1
+            return Response(json.dumps(dict(new_data_version=data_version)), status=200)
         else:
             try:
                 dbo.releases.addRelease(name=release, product=form.product.data,
