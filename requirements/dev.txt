@@ -1,4 +1,4 @@
-nose==1.1.2
+nose
 mock
 Paste
 coverage
@@ -6,3 +6,4 @@ certifi
 requests==0.10.8
 pyflakes
 ordereddict==1.1
+six

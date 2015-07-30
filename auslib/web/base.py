@@ -1,7 +1,7 @@
 import logging
 log = logging.getLogger(__name__)
 
-from flask import Flask, make_response, send_from_directory
+from flask import Flask, make_response, send_from_directory, request
 
 from auslib.AUS import AUS
 
@@ -9,6 +9,7 @@ app = Flask(__name__)
 AUS = AUS()
 
 from auslib.web.views.client import ClientRequestView
+from auslib.web.views.healthcheck import HealthCheckView
 
 
 @app.errorhandler(404)
@@ -24,6 +25,9 @@ def generic(error):
     a 200 response with no updates is returned, because that's what the client
     expects. See bugs 885173 and 1069454 for additional background."""
 
+    if request.path == "/healthcheck":
+        raise error
+
     log.debug('Hit exception, sending an empty response', exc_info=True)
     response = make_response('<?xml version="1.0"?>\n<updates>\n</updates>')
     response.mimetype = 'text/xml'
@@ -32,6 +36,11 @@ def generic(error):
 @app.route('/robots.txt')
 def robots():
     return send_from_directory(app.static_folder, "robots.txt")
+
+app.add_url_rule(
+    "/healthcheck",
+    view_func=HealthCheckView.as_view("healthcheck"),
+)
 
 # The "main" routes. 99% of requests will come in through these.
 app.add_url_rule(
