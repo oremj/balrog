@@ -68,7 +68,8 @@ def createBlob(data):
         3: ReleaseBlobV3,
         4: ReleaseBlobV4,
         1000: GMPBlobV1,
-        2000: SettingsBlob
+        2000: SettingsBlob,
+        3000: WhitelistBlobV1,
     }
 
     if isinstance(data, basestring):
