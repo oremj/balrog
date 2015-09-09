@@ -66,6 +66,12 @@ class AUS:
         rule = rules[0]
         self.log.debug("Matching rule: %s" % rule)
 
+        # TODO: look for whitelist field and process it.
+        # If NULL, continue onwards
+        # If not NULL:
+        #   If shouldServeUpdate returns True, continue onwards
+        #   Otherwise, return None, None
+
         # There's a few cases where we have a matching rule but don't want
         # to serve an update:
         # 1) No mapping.

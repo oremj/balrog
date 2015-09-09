@@ -651,6 +651,7 @@ class Rules(AUSTable):
                            Column('distVersion', String(100)),
                            Column('headerArchitecture', String(10)),
                            Column('comment', String(500))
+                           # TODO: add new column for whitelist/imei
                            )
         AUSTable.__init__(self, dialect)
 

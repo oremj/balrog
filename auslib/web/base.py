@@ -60,6 +60,7 @@ app.add_url_rule(
     view_func=ClientRequestView.as_view('clientrequest4'),
     defaults={'queryVersion': 4},
 )
+# TODO: new route to support imeis
 
 # Routes to deal with edge cases.
 # bug 1133250 - support for old-style nightly ESR versions
