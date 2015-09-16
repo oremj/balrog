@@ -342,6 +342,8 @@ class ClientTest(unittest.TestCase):
 """)
         self.assertEqual(returned.toxml(), expected.toxml())
 
+    # TODO: add a few tests with a whitelist blob enabled
+
 
 class ClientTestWithErrorHandlers(unittest.TestCase):
     """Most of the tests are run without the error handler because it gives more
