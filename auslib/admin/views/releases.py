@@ -346,7 +346,7 @@ class ReleaseHistoryView(HistoryAdminView):
 
     @requirelogin
     def _post(self, release, transaction, changed_by):
-        change_id = request.form.get('change_id')
+        change_id = request.json.get('change_id')
         if not change_id:
             cef_event("Bad input", CEF_WARN, errors="no change id", release=release)
             return Response(status=400, response='no change_id')
