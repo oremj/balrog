@@ -6,9 +6,10 @@ import simplejson as json
 import sys
 import time
 
-from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
-    create_engine, select, BigInteger
+from sqlalchemy import Column, Integer, Text, String, create_engine, select, \
+    BigInteger
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
 from sqlalchemy.sql.expression import null
 
 import migrate.versioning.schema
@@ -161,25 +162,26 @@ class AUSTable(object):
        @type onUpdate: callable
     """
 
-    def __init__(self, dialect, history=True, versioned=True, onInsert=None,
-                 onUpdate=None, onDelete=None):
+    def __init__(self, declarative_base, dialect, history=True, versioned=True,
+                 onInsert=None, onUpdate=None, onDelete=None):
+        self.declarative_base = declarative_base
         self.t = self.table
         # Enable versioning, if required
         if versioned:
-            self.t.append_column(Column('data_version', Integer, nullable=False))
+            self.t.__table__.append_column(Column('data_version', Integer, nullable=False))
         self.versioned = versioned
         self.onInsert = onInsert
         self.onUpdate = onUpdate
         self.onDelete = onDelete
         # Mirror the columns as attributes for easy access
         self.primary_key = []
-        for col in self.table.get_children():
+        for col in self.t.__table__.get_children():
             setattr(self, col.name, col)
             if col.primary_key:
                 self.primary_key.append(col)
         # Set-up a history table to do logging in, if required
         if history:
-            self.history = History(dialect, self.t.metadata, self)
+            self.history = History(declarative_base, dialect, self)
         else:
             self.history = None
         self.log = logging.getLogger(self.__class__.__name__)
@@ -187,7 +189,7 @@ class AUSTable(object):
     # Can't do this in the constructor, because the engine is always
     # unset when we're instantiated
     def getEngine(self):
-        return self.t.metadata.bind
+        return self.declarative_base.metadata.bind
 
     def _returnRowOrRaise(self, where, columns=None, transaction=None):
         """Return the row matching the where clause supplied. If no rows match or multiple rows match,
@@ -448,12 +450,9 @@ class History(AUSTable):
        inputs, and are documented below. History tables are never versioned,
        and cannot have history of their own."""
 
-    def __init__(self, dialect, metadata, baseTable):
+    def __init__(self, declarative_base, dialect, baseTable):
         self.baseTable = baseTable
-        self.table = Table('%s_history' % baseTable.t.name, metadata,
-                           Column('change_id', Integer, primary_key=True, autoincrement=True),
-                           Column('changed_by', String(100), nullable=False),
-                           )
+
         # Timestamps are stored as an integer, but actually contain
         # precision down to the millisecond, achieved through
         # multiplication.
@@ -463,18 +462,28 @@ class History(AUSTable):
         # a plain Integer column for SQLite. In MySQL, an Integer is
         # Integer(11), which is too small for our needs.
         if dialect == 'sqlite':
-            self.table.append_column(Column('timestamp', Integer, nullable=False))
+            timestampType = Integer
         else:
-            self.table.append_column(Column('timestamp', BigInteger, nullable=False))
+            timestampType = BigInteger
+
+        class HistoryTable(baseTable.t):
+            __tablename__ = '%s_history' % baseTable.t.__table__.name
+            change_id  = Column(Integer, primary_key=True, autoincrement=True)
+            changed_by = Column(String(100), nullable=False)
+            timestamp  = Column(timestampType, nullable=False)
+            __mapper_args__ = {
+                "concrete": True,
+            }
+
+        self.table = HistoryTable
+
         self.base_primary_key = [pk.name for pk in baseTable.primary_key]
-        for col in baseTable.t.get_children():
-            newcol = col.copy()
+        for col in baseTable.t.__table__.get_children():
             if col.primary_key:
-                newcol.primary_key = False
+                getattr(self.table, col.name).primary_key = False
             else:
-                newcol.nullable = True
-            self.table.append_column(newcol)
-        AUSTable.__init__(self, dialect, history=False, versioned=False)
+                getattr(self.table, col.name).nullable = True
+        AUSTable.__init__(self, declarative_base, dialect, history=False, versioned=False)
 
     def getTimestamp(self):
         t = int(time.time() * 1000)
@@ -634,27 +643,29 @@ class History(AUSTable):
 
 class Rules(AUSTable):
 
-    def __init__(self, metadata, dialect):
-        self.table = Table('rules', metadata,
-                           Column('rule_id', Integer, primary_key=True, autoincrement=True),
-                           Column('priority', Integer),
-                           Column('mapping', String(100)),
-                           Column('backgroundRate', Integer),
-                           Column('update_type', String(15), nullable=False),
-                           Column('product', String(15)),
-                           Column('version', String(10)),
-                           Column('channel', String(75)),
-                           Column('buildTarget', String(75)),
-                           Column('buildID', String(20)),
-                           Column('locale', String(200)),
-                           Column('osVersion', String(1000)),
-                           Column('distribution', String(100)),
-                           Column('distVersion', String(100)),
-                           Column('headerArchitecture', String(10)),
-                           Column('comment', String(500)),
-                           Column('whitelist', String(100)),
-                           )
-        AUSTable.__init__(self, dialect)
+    def __init__(self, declarative_base, dialect):
+        class RulesTable(ConcreteBase, declarative_base):
+            __tablename__      = "rules"
+            rule_id            = Column(Integer, primary_key=True, autoincrement=True)
+            priority           = Column(Integer)
+            mapping            = Column(String(100))
+            backgroundRate     = Column(Integer)
+            update_type        = Column(String(15), nullable=False)
+            product            = Column(String(15))
+            version            = Column(String(10))
+            channel            = Column(String(75))
+            buildTarget        = Column(String(75))
+            buildID            = Column(String(20))
+            locale             = Column(String(200))
+            osVersion          = Column(String(1000))
+            distribution       = Column(String(100))
+            distVersion        = Column(String(100))
+            headerArchitecture = Column(String(10))
+            comment            = Column(String(500))
+            whitelist          = Column(String(100))
+
+        self.table = RulesTable
+        AUSTable.__init__(self, declarative_base, dialect)
 
     def _matchesRegex(self, foo, bar):
         # Expand wildcards and use ^/$ to make sure we don't succeed on partial
@@ -817,21 +828,24 @@ class Rules(AUSTable):
 
 class Releases(AUSTable):
 
-    def __init__(self, metadata, dialect):
+    def __init__(self, declarative_base, dialect):
         self.domainWhitelist = []
 
-        self.table = Table('releases', metadata,
-                           Column('name', String(100), primary_key=True),
-                           Column('product', String(15), nullable=False),
-                           Column('version', String(25), nullable=False),
-                           )
         if dialect == 'mysql':
             from sqlalchemy.dialects.mysql import LONGTEXT
             dataType = LONGTEXT
         else:
             dataType = Text
-        self.table.append_column(Column('data', dataType, nullable=False))
-        AUSTable.__init__(self, dialect)
+
+        class ReleasesTable(ConcreteBase, declarative_base):
+            __tablename__ = "releases"
+            name    = Column(String(100), primary_key=True)
+            product = Column(String(15), nullable=False)
+            version = Column(String(25), nullable=False)
+            data    = Column(dataType, nullable=False)
+
+        self.table = ReleasesTable
+        AUSTable.__init__(self, declarative_base, dialect)
 
     def setDomainWhitelist(self, domainWhitelist):
         self.domainWhitelist = domainWhitelist
@@ -1064,13 +1078,15 @@ class Permissions(AUSTable):
         '/users/:id/permissions/:permission': ['method'],
     }
 
-    def __init__(self, metadata, dialect):
-        self.table = Table('permissions', metadata,
-                           Column('permission', String(50), primary_key=True),
-                           Column('username', String(100), primary_key=True),
-                           Column('options', Text)
-                           )
-        AUSTable.__init__(self, dialect)
+    def __init__(self, declarative_base, dialect):
+        class PermissionsTable(ConcreteBase, declarative_base):
+            __tablename__ = "permissions"
+            permission    = Column(String(50), primary_key=True)
+            username      = Column(String(100), primary_key=True)
+            options       = Column(Text)
+
+        self.table = PermissionsTable
+        AUSTable.__init__(self, declarative_base, dialect)
 
     def assertPermissionExists(self, permission):
         if permission not in self.allPermissions.keys():
@@ -1250,17 +1266,17 @@ class AUSDatabase(object):
            to the database when it needs to, however."""
         if self.engine:
             raise AlreadySetupError()
+        self.declarative_base = declarative_base()
         self.dburi = dburi
-        self.metadata = MetaData()
         listeners = []
         if mysql_traditional_mode and "mysql" in dburi:
             listeners.append(SetSqlMode())
         self.engine = create_engine(self.dburi, pool_recycle=60, listeners=listeners)
         dialect = self.engine.name
-        self.rulesTable = Rules(self.metadata, dialect)
-        self.releasesTable = Releases(self.metadata, dialect)
-        self.permissionsTable = Permissions(self.metadata, dialect)
-        self.metadata.bind = self.engine
+        self.rulesTable = Rules(self.declarative_base, dialect)
+        self.releasesTable = Releases(self.declarative_base, dialect)
+        self.permissionsTable = Permissions(self.declarative_base, dialect)
+        self.declarative_base.metadata.bind = self.engine
 
     def setupChangeMonitors(self, systemAccounts):
         self.releases.onInsert, self.releases.onDelete, self.releases.onUpdate = getHumanModificationMonitors(systemAccounts)
@@ -1299,7 +1315,7 @@ class AUSDatabase(object):
 
     def reset(self):
         self.engine = None
-        self.metadata.bind = None
+        self.declarative_base = None
 
     def begin(self):
         return AUSTransaction(self.engine)
