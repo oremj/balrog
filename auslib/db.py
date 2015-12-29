@@ -479,10 +479,12 @@ class History(AUSTable):
 
         self.base_primary_key = [pk.name for pk in baseTable.primary_key]
         for col in baseTable.t.__table__.get_children():
+            newcol = col.copy()
             if col.primary_key:
-                getattr(self.table, col.name).primary_key = False
+                newcol.primary_key = False
             else:
-                getattr(self.table, col.name).nullable = True
+                newcol.nullable = True
+            self.table.__table__.append_column(newcol)
         AUSTable.__init__(self, declarative_base, dialect, history=False, versioned=False)
 
     def getTimestamp(self):
