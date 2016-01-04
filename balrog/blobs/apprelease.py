@@ -3,10 +3,10 @@ import re
 import logging
 log = logging.getLogger(__name__)
 
-from auslib.global_state import dbo
-from auslib.AUS import isForbiddenUrl, getFallbackChannel
-from auslib.blobs.base import Blob
+from .base import Blob
+# TODO: can we reasonable rely on BadDataError here?
 from auslib.errors import BadDataError
+# TODO: where should MozillaVersion live?
 from auslib.util.versions import MozillaVersion
 
 
@@ -72,14 +72,8 @@ class ReleaseBlobBase(Blob):
         # "*" is a special case for the "from" field that means "any release".
         # Because we know it doesn't exist in the database it's wasteful to
         # even attempt to look it up.
-        if patch["from"] != "*":
-            try:
-                return dbo.releases.getReleaseBlob(name=patch["from"])
-            except KeyError:
-                # Release doesn't exist
-                return None
-        else:
-            return None
+        # TODO: update callers to do the db call themselves
+        return patch.get("from")
 
     def _getSpecificPatchXML(self, patchKey, patchType, patch, updateQuery, whitelistedDomains, specialForceHosts):
         fromRelease = self._getFromRelease(patch)
@@ -91,8 +85,9 @@ class ReleaseBlobBase(Blob):
         # the update entirely? Right now, another patch type could still
         # return an update. Eg, the partial could contain a forbidden domain
         # but the complete could still return an update from an accepted one.
-        if isForbiddenUrl(url, whitelistedDomains):
-            return None
+        # TODO: this should be done elsewhere
+        #if isForbiddenUrl(url, whitelistedDomains):
+        #    return None
 
         return '        <patch type="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s"/>' % \
             (patchType, url, self["hashFunction"], patch["hashValue"], patch["filesize"])
@@ -191,7 +186,8 @@ class SeparatedFileUrlsMixin(object):
                 url = self['fileUrls'][updateQuery['channel']]
             except KeyError:
                 try:
-                    url = self['fileUrls'][getFallbackChannel(updateQuery['channel'])]
+                    # TODO: need to calculate fallback channel another way
+                    #url = self['fileUrls'][getFallbackChannel(updateQuery['channel'])]
                 except KeyError:
                     self.log.debug("Couldn't find fileUrl for")
                     raise
@@ -315,8 +311,9 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixi
                 continue
 
             url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
-            if isForbiddenUrl(url, whitelistedDomains):
-                break
+            # TODO: this should be done elsewhere
+            #if isForbiddenUrl(url, whitelistedDomains):
+            #    break
 
             snippet = [
                 "version=1",
@@ -535,8 +532,9 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
                 continue
 
             url = self._getUrl(updateQuery, patchKey, patch, specialForceHosts)
-            if isForbiddenUrl(url, whitelistedDomains):
-                break
+            # TODO: this should be done elsewhere
+            #if isForbiddenUrl(url, whitelistedDomains):
+            #    break
 
             snippet = [
                 "version=2",
@@ -711,7 +709,8 @@ class UnifiedFileUrlsMixin(object):
             # 3) In the catch-all "channel" ("*").
             channels = [
                 updateQuery['channel'],
-                getFallbackChannel(updateQuery['channel']),
+                # TODO: need to calculate fallback channel another way
+                #getFallbackChannel(updateQuery['channel']),
                 "*",
             ]
             url = None

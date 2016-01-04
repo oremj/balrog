@@ -438,48 +438,6 @@ class AUSTable(object):
 
 
 class History(AUSTable):
-    """Represents a history table that may be attached to another AUSTable.
-       History tables mirror the structure of their `baseTable', with the exception
-       that nullable and primary_key attributes are always overwritten to be
-       True and False respectively. Additionally, History tables have a unique
-       change_id for each row, and record the username making a change, and the
-       timestamp of each change. The methods forInsert, forDelete, and forUpdate
-       will generate appropriate INSERTs to the History table given appropriate
-       inputs, and are documented below. History tables are never versioned,
-       and cannot have history of their own."""
-
-    def __init__(self, dialect, metadata, baseTable):
-        self.baseTable = baseTable
-        self.table = Table('%s_history' % baseTable.t.name, metadata,
-                           Column('change_id', Integer, primary_key=True, autoincrement=True),
-                           Column('changed_by', String(100), nullable=False),
-                           )
-        # Timestamps are stored as an integer, but actually contain
-        # precision down to the millisecond, achieved through
-        # multiplication.
-        # SQLAlchemy's SQLite dialect doesn't support fully support BigInteger.
-        # The Column will work, but it ends up being a NullType Column which
-        # breaks our upgrade unit tests. Because of this, we make sure to use
-        # a plain Integer column for SQLite. In MySQL, an Integer is
-        # Integer(11), which is too small for our needs.
-        if dialect == 'sqlite':
-            self.table.append_column(Column('timestamp', Integer, nullable=False))
-        else:
-            self.table.append_column(Column('timestamp', BigInteger, nullable=False))
-        self.base_primary_key = [pk.name for pk in baseTable.primary_key]
-        for col in baseTable.t.get_children():
-            newcol = col.copy()
-            if col.primary_key:
-                newcol.primary_key = False
-            else:
-                newcol.nullable = True
-            self.table.append_column(newcol)
-        AUSTable.__init__(self, dialect, history=False, versioned=False)
-
-    def getTimestamp(self):
-        t = int(time.time() * 1000)
-        return t
-
     def forInsert(self, insertedKeys, columns, changed_by):
         """Inserts cause two rows in the History table to be created. The first
            one records the primary key data and NULLs for other row data. This
@@ -1045,52 +1003,14 @@ class Releases(AUSTable):
 
 
 class Permissions(AUSTable):
-    """allPermissions defines the structure and possible options for all
-       available permissions. Most permissions are identified by an URL,
-       potentially with variables in it. All URL based permissions can be
-       augmented by using the "product" option. When specified, only requests
-       involving the named product will be permitted. Additionally, any URL
-       that supports more than one of: PUT, POST, or DELETE can by augmented
-       by using the option "method". When specified, the permission with this
-       option is only valid for requests through that HTTP method."""
-    allPermissions = {
-        'admin': [],
-        '/releases/:name': ['method', 'product'],
-        '/releases/:name/rollback': ['product'],
-        '/releases/:name/builds/:platform/:locale': ['method', 'product'],
-        '/rules': ['product'],
-        '/rules/:id': ['method', 'product'],
-        '/rules/:id/rollback': ['product'],
-        '/users/:id/permissions/:permission': ['method'],
-    }
-
-    def __init__(self, metadata, dialect):
-        self.table = Table('permissions', metadata,
-                           Column('permission', String(50), primary_key=True),
-                           Column('username', String(100), primary_key=True),
-                           Column('options', Text)
-                           )
-        AUSTable.__init__(self, dialect)
-
-    def assertPermissionExists(self, permission):
-        if permission not in self.allPermissions.keys():
-            raise ValueError('Unknown permission "%s"' % permission)
-
-    def assertOptionsExist(self, permission, options):
-        for opt in options:
-            if opt not in self.allPermissions[permission]:
-                raise ValueError('Unknown option "%s" for permission "%s"' % (opt, permission))
-
-    def getAllUsers(self, transaction=None):
-        res = self.select(columns=[self.username], distinct=True, transaction=transaction)
-        return [r['username'] for r in res]
-
+    # TODO: update callers to do this themselves
     def getAllPermissions(self, transaction=None):
         ret = defaultdict(dict)
         for r in self.select(transaction=transaction):
             ret[r["username"]][r["permission"]] = r["options"]
         return ret
 
+    # TODO: callers can do this themselves
     def countAllUsers(self, transaction=None):
         res = self.select(columns=[self.username], distinct=True, transaction=transaction)
         return len(res)

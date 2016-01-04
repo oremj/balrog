@@ -1,5 +1,6 @@
 import re
-from auslib.blobs.base import Blob
+
+from .base import Blob
 
 
 INDENT = 4 * ' '

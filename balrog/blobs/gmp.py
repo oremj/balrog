@@ -1,7 +1,7 @@
 import re
 
-from auslib.AUS import isForbiddenUrl
-from auslib.blobs.base import Blob
+from .base import Blob
+# TODO: where will BadDataError come from?
 from auslib.errors import BadDataError
 
 
@@ -66,6 +66,7 @@ class GMPBlobV1(Blob):
             platformData = self.getPlatformData(vendor, buildTarget)
 
             url = platformData["fileUrl"]
+            # TODO: update forbidden domain checking
             if isForbiddenUrl(url, whitelistedDomains):
                 continue
             vendorXML.append('        <addon id="%s" URL="%s" hashFunction="%s" hashValue="%s" size="%s" version="%s"/>' %

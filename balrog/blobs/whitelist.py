@@ -1,4 +1,4 @@
-from auslib.blobs.base import Blob
+from .base import Blob
 
 import logging
 log = logging.getLogger(__name__)
