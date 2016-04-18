@@ -18,6 +18,9 @@ COPY ui/ /app/ui/
 COPY uwsgi/ /app/uwsgi/
 COPY scripts/ /app/scripts/
 COPY setup.py version.json /app/
+# This script is technically only needed for CI, but it's tiny, and not
+# worth forking the Dockerfile over.
+COPY run-tests.sh /app/
 
 ENTRYPOINT ["/app/uwsgi/run.sh"]
 CMD ["public"]
