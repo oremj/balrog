@@ -574,10 +574,12 @@ class TestSingleColumn_JSON(ViewTest, JSONTestMixin):
 
 
 class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
+    maxDiff = 10000
+
     def setUp(self):
         super(TestRuleScheduledChanges, self).setUp()
         dbo.rules.scheduled_changes.t.insert().execute(
-            sc_id=1, when=1000, scheduled_by="bill", data_version=1, id=1, priority=100, version="3.5", buildTarget="d",
+            sc_id=1, when=1000, scheduled_by="bill", data_version=1, rule_id=1, priority=100, version="3.5", buildTarget="d",
             backgroundRate=100, mapping="b", update_type="minor", table_data_version=1,
         )
         dbo.rules.scheduled_changes.t.insert().execute(
@@ -591,21 +593,22 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
             "count": 2,
             "scheduled_changes": [
                 {
-                    "sc_id": 1, "when": 1000, "scheduled_by": "bill", "data_version": 1, "priority": 100, "version": "3.5",
-                    "buildTarget": "d", "backgroundRate": 100, "mapping": "b", "update_type": "minor", "table_data_version": 1,
-                    "alias": None, "product": None, "channel": None, "buildID": None, "locale": None, "osVersion": None,
-                    "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None,
+                    "sc_id": 1, "when": 1000, "scheduled_by": "bill", "data_version": 1, "rule_id": 1, "priority": 100,
+                    "version": "3.5", "buildTarget": "d", "backgroundRate": 100, "mapping": "b", "update_type": "minor",
+                    "table_data_version": 1, "alias": None, "product": None, "channel": None, "buildID": None, "locale": None,
+                    "osVersion": None, "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None,
+                    "whitelist": None, "telemetry_product": None, "telemetry_channel": None, "telemetry_uptake": None,
                 },
                 {
-                    "sc_id": 2, "when": 1500, "scheduled_by": "bill", "data_version": 1, "priority": 50,
-                    "backgroundRate": 100, "mapping": "ab", "update_type": "minor", "version": None, "buildTarget": None,
-                    "alias": None, "product": None, "channel": None, "buildID": None, "locale": None, "osVersion": None,
+                    "sc_id": 2, "when": 1500, "scheduled_by": "bill", "data_version": 1, "rule_id": None, "priority": 50,
+                    "backgroundRate": 100, "product": "baz", "mapping": "ab", "update_type": "minor", "version": None,
+                    "buildTarget": None, "alias": None, "channel": None, "buildID": None, "locale": None, "osVersion": None,
                     "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None,
-                    "table_data_version": None,
+                    "table_data_version": None, "telemetry_product": None, "telemetry_channel": None, "telemetry_uptake": None,
                 },
             ],
         }
-        self.assertEquals(ret, expected)
+        self.assertEquals(json.loads(ret.data), expected)
 
     def testAddScheduledChange(self):
         pass
