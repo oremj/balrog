@@ -571,3 +571,59 @@ class TestSingleColumn_JSON(ViewTest, JSONTestMixin):
     def testGetRuleColumn404(self):
         ret = self.client.get("/rules/columns/blah")
         self.assertEquals(ret.status_code, 404)
+
+
+class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
+    def setUp(self):
+        super(TestRuleScheduledChanges, self).setUp()
+        dbo.rules.scheduled_changes.t.insert().execute(
+            sc_id=1, when=1000, scheduled_by="bill", data_version=1, id=1, priority=100, version="3.5", buildTarget="d",
+            backgroundRate=100, mapping="b", update_type="minor", table_data_version=1,
+        )
+        dbo.rules.scheduled_changes.t.insert().execute(
+            sc_id=2, when=1500, scheduled_by="bill", data_version=1, priority=50, backgroundRate=100, product="baz",
+            mapping="ab", update_type="minor",
+        )
+
+    def testGetScheduledChanges(self):
+        ret = self._get("/scheduled_changes/rules")
+        expected = {
+            "count": 2,
+            "scheduled_changes": [
+                {
+                    "sc_id": 1, "when": 1000, "scheduled_by": "bill", "data_version": 1, "priority": 100, "version": "3.5",
+                    "buildTarget": "d", "backgroundRate": 100, "mapping": "b", "update_type": "minor", "table_data_version": 1,
+                    "alias": None, "product": None, "channel": None, "buildID": None, "locale": None, "osVersion": None,
+                    "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None,
+                },
+                {
+                    "sc_id": 2, "when": 1500, "scheduled_by": "bill", "data_version": 1, "priority": 50,
+                    "backgroundRate": 100, "mapping": "ab", "update_type": "minor", "version": None, "buildTarget": None,
+                    "alias": None, "product": None, "channel": None, "buildID": None, "locale": None, "osVersion": None,
+                    "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None,
+                    "table_data_version": None,
+                },
+            ],
+        }
+        self.assertEquals(ret, expected)
+
+    def testAddScheduledChange(self):
+        pass
+
+    def testAddScheduledChangeExistingRule(self):
+        pass
+
+    def testAddScheduledChangeNewRule(self):
+        pass
+
+    def testAddScheduledChangeNoPermissions(self):
+        pass
+
+    def testEnactScheduledChangeExistingRule(self):
+        pass
+
+    def testEnactScheduledChangeNewRule(self):
+        pass
+
+    def testEnactScheduledChangeNoPermissions(self):
+        pass
