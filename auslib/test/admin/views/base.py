@@ -36,6 +36,7 @@ class ViewTest(unittest.TestCase):
         dbo.permissions.t.insert().execute(permission='/releases/:name', username='bob', options=json.dumps(dict(product=['fake'])), data_version=1)
         dbo.permissions.t.insert().execute(permission='/releases/:name/read_only', username='bob', options=json.dumps(dict(method='PUT')), data_version=1)
         dbo.permissions.t.insert().execute(permission='/rules/:id', username='bob', options=json.dumps(dict(product=['fake'])), data_version=1)
+        dbo.permissions.t.insert().execute(permission='/scheduled_changes/rules', username='mary', options=json.dumps(dict(product=['foo'])), data_version=1)
         dbo.releases.t.insert().execute(
             name='a', product='a', data=json.dumps(dict(name='a', hashFunction="sha512", schema_version=1)), data_version=1)
         dbo.releases.t.insert().execute(

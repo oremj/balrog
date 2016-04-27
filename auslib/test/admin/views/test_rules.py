@@ -612,7 +612,7 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
 
     def testAddScheduledChangeExistingRule(self):
         data = {
-            "telemetry_product": "foo", "telemetry_channel": "bar", "telemetry_uptake": 42, "scheduled_by": "bill", "rule_id": 5,
+            "telemetry_product": "foo", "telemetry_channel": "bar", "telemetry_uptake": 42, "rule_id": 5,
             "priority": 80, "buildTarget": "d", "version": "3.3", "backgroundRate": 100, "mapping": "c", "update_type": "minor",
             "data_version": 1
         }
@@ -634,7 +634,7 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
 
     def testAddScheduledChangeNewRule(self):
         data = {
-            "when": 1234567, "scheduled_by": "bill", "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
+            "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
             "update_type": "minor", "mapping": "a"
         }
         ret = self._post("/scheduled_changes/rules", data=data)
@@ -646,15 +646,28 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
         db_data = dict(r[0])
         expected = {
             "when": 1234567, "scheduled_by": "bill", "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
-            "update_type": "minor", "mapping": "a", "sc_id": 3, "data_version": 1, "table_data_version": None, "telemetry_product": None, "telemetry_channel": None,
-            "telemetry_uptake": None, "rule_id": None, "buildTarget": None,
+            "update_type": "minor", "mapping": "a", "sc_id": 3, "data_version": 1, "table_data_version": None, "telemetry_product": None,
+            "telemetry_channel": None, "telemetry_uptake": None, "rule_id": None, "buildTarget": None,
             "version": None, "alias": None, "buildID": None, "locale": None, "osVersion": None, "distribution": None,
             "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None
         }
         self.assertEquals(db_data, expected)
 
-    def testAddScheduledChangeNoPermissions(self):
-        pass
+    def testAddScheduledChangeNoPermissionsToSchedule(self):
+        data = {
+            "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
+            "update_type": "minor", "mapping": "a"
+        }
+        ret = self._post("/scheduled_changes/rules", data=data, username="bob")
+        self.assertEquals(ret.status_code, 401, ret.data)
+
+    def testAddScheduledChangeNoPermissionsToMakeChange(self):
+        data = {
+            "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "foo", "channel": "blah",
+            "update_type": "minor", "mapping": "a"
+        }
+        ret = self._post("/scheduled_changes/rules", data=data, username="mary")
+        self.assertEquals(ret.status_code, 401, ret.data)
 
     def testAddScheduledChangeMultipleConditions(self):
         pass
