@@ -49,3 +49,17 @@ class ScheduledChangesView(AdminView):
             return Response(status=400, response=str(e))
 
         return jsonify({"sc_id": sc_id})
+
+
+
+class ScheduledChangeView(AdminView):
+    """/scheduled_changes/:namespace/:sc_id"""
+
+    def __init__(self, namespace, table, forms, enact_permissions):
+        self.namespace = namespace
+        self.path = "/scheduled_changes/%s/:sc_id" % namespace
+        self.table = table
+        self.sc_table = table.scheduled_changes
+        self.new_form, self.edit_form = forms
+        self.new_permission, self.edit_permission = enact_permissions
+        super(ScheduledChangeView, self).__init__()

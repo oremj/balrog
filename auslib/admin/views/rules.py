@@ -11,7 +11,8 @@ from auslib.admin.views.base import (
 from auslib.admin.views.csrf import get_csrf_headers
 from auslib.admin.views.forms import EditRuleForm, RuleForm, DbEditableForm, \
     ScheduledChangeNewRuleForm, ScheduledChangeExistingRuleForm
-from auslib.admin.views.scheduled_changes import ScheduledChangesView
+from auslib.admin.views.scheduled_changes import ScheduledChangesView, \
+    ScheduledChangeView
 
 
 class RulesAPIView(AdminView):

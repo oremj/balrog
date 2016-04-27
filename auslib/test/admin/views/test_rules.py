@@ -685,6 +685,26 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
         self.assertEquals(ret.status_code, 400)
 
     def testUpdateScheduledChange(self):
+        data = {
+            "when": 2000, "data_version": 1, "rule_id": 1, "priority": 100, "version": "3.5", "buildTarget": "d",
+            "backgroundRate": 100, "mapping": "c", "update_type": "minor", "old_data_version": 1
+        }
+        ret = self._post("/scheduled_changes/rules/1", data=data)
+        self.assertEquals(ret.status_code, 201, ret.data)
+
+        r = dbo.rules.scheduled_changes.t.select().where(dbo.rules.scheduled_changes.sc_id == 1).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        db_data = dict(r[0])
+        expected = {
+            "sc_id": 1, "when": 1000, "scheduled_by": "bill", "data_version": 1, "rule_id": 1, "priority": 100,
+            "version": "3.5", "buildTarget": "d", "backgroundRate": 100, "mapping": "c", "update_type": "minor",
+            "table_data_version": 1, "alias": None, "product": None, "channel": None, "buildID": None, "locale": None,
+            "osVersion": None, "distribution": None, "distVersion": None, "headerArchitecture": None, "comment": None,
+            "whitelist": None, "telemetry_product": None, "telemetry_channel": None, "telemetry_uptake": None,
+        }
+        self.assertEquals(db_data, expected)
+
+    def testUpdateScheduledChangeCantRemoveProductWithoutPermission(self):
         pass
 
     def testEnactScheduledChangeExistingRule(self):
@@ -694,4 +714,7 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
         pass
 
     def testEnactScheduledChangeNoPermissions(self):
+        pass
+
+    def testUpdateRuleWithMergeError(self):
         pass
