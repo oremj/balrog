@@ -635,7 +635,7 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
     def testAddScheduledChangeNewRule(self):
         data = {
             "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
-            "update_type": "minor", "mapping": "a"
+            "update_type": "minor", "mapping": "a",
         }
         ret = self._post("/scheduled_changes/rules", data=data)
         self.assertEquals(ret.status_code, 200, ret.data)
@@ -656,7 +656,7 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
     def testAddScheduledChangeNoPermissionsToSchedule(self):
         data = {
             "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
-            "update_type": "minor", "mapping": "a"
+            "update_type": "minor", "mapping": "a",
         }
         ret = self._post("/scheduled_changes/rules", data=data, username="bob")
         self.assertEquals(ret.status_code, 401, ret.data)
@@ -664,13 +664,25 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
     def testAddScheduledChangeNoPermissionsToMakeChange(self):
         data = {
             "when": 1234567, "priority": 120, "backgroundRate": 100, "product": "foo", "channel": "blah",
-            "update_type": "minor", "mapping": "a"
+            "update_type": "minor", "mapping": "a",
         }
         ret = self._post("/scheduled_changes/rules", data=data, username="mary")
         self.assertEquals(ret.status_code, 401, ret.data)
 
     def testAddScheduledChangeMultipleConditions(self):
-        pass
+        data = {
+            "when": 23893254, "telemetry_product": "foo", "telemetry_channel": "foo", "telemetry_uptake": 5,
+            "priority": 120, "backgroundRate": 100, "update_type": "minor",
+        }
+        ret = self._post("scheduled_changes/rules", data=data)
+        self.assertEquals(ret.status_code, 400)
+
+    def testAddScheduledChangeMissingRequiredTelemetryFields(self):
+        data = {
+            "telemetry_product": "foo", "priority": 120, "backgroundRate": 100, "update_type": "minor",
+        }
+        ret = self._post("scheduled_changes/rules", data=data)
+        self.assertEquals(ret.status_code, 400)
 
     def testUpdateScheduledChange(self):
         pass

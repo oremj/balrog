@@ -42,6 +42,10 @@ class ScheduledChangesView(AdminView):
             self.log.warning("Unauthorized access attempt: %s", msg)
             return Response(status=401, response=msg)
 
-        sc_id = self.sc_table.insert(changed_by, transaction, **form.data)
+        try:
+            sc_id = self.sc_table.insert(changed_by, transaction, **form.data)
+        except ValueError as e:
+            self.log.warning("Bad input: %s", e)
+            return Response(status=400, response=str(e))
 
         return jsonify({"sc_id": sc_id})
