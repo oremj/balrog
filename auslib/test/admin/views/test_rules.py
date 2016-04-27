@@ -610,16 +610,56 @@ class TestRuleScheduledChanges(ViewTest, JSONTestMixin):
         }
         self.assertEquals(json.loads(ret.data), expected)
 
-    def testAddScheduledChange(self):
-        pass
-
     def testAddScheduledChangeExistingRule(self):
-        pass
+        data = {
+            "telemetry_product": "foo", "telemetry_channel": "bar", "telemetry_uptake": 42, "scheduled_by": "bill", "rule_id": 5,
+            "priority": 80, "buildTarget": "d", "version": "3.3", "backgroundRate": 100, "mapping": "c", "update_type": "minor",
+            "data_version": 1
+        }
+        ret = self._post("/scheduled_changes/rules", data=data)
+        self.assertEquals(ret.status_code, 200, ret.data)
+        self.assertEquals(json.loads(ret.data), {"sc_id": 3})
+
+        r = dbo.rules.scheduled_changes.t.select().where(dbo.rules.scheduled_changes.sc_id == 3).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        db_data = dict(r[0])
+        expected = {
+            "telemetry_product": "foo", "telemetry_channel": "bar", "telemetry_uptake": 42, "scheduled_by": "bill", "rule_id": 5,
+            "priority": 80, "buildTarget": "d", "version": "3.3", "backgroundRate": 100, "mapping": "c", "update_type": "minor",
+            "table_data_version": 1, "data_version": 1, "sc_id": 3, "when": None, "alias": None, "product": None, "channel": None, "buildID": None,
+            "locale": None, "osVersion": None, "distribution": None, "distVersion": None, "headerArchitecture": None,
+            "comment": None, "whitelist": None,
+        }
+        self.assertEquals(db_data, expected)
 
     def testAddScheduledChangeNewRule(self):
-        pass
+        data = {
+            "when": 1234567, "scheduled_by": "bill", "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
+            "update_type": "minor", "mapping": "a"
+        }
+        ret = self._post("/scheduled_changes/rules", data=data)
+        self.assertEquals(ret.status_code, 200, ret.data)
+        self.assertEquals(json.loads(ret.data), {"sc_id": 3})
+
+        r = dbo.rules.scheduled_changes.t.select().where(dbo.rules.scheduled_changes.sc_id == 3).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        db_data = dict(r[0])
+        expected = {
+            "when": 1234567, "scheduled_by": "bill", "priority": 120, "backgroundRate": 100, "product": "blah", "channel": "blah",
+            "update_type": "minor", "mapping": "a", "sc_id": 3, "data_version": 1, "table_data_version": None, "telemetry_product": None, "telemetry_channel": None,
+            "telemetry_uptake": None, "rule_id": None, "buildTarget": None,
+            "version": None, "alias": None, "buildID": None, "locale": None, "osVersion": None, "distribution": None,
+            "distVersion": None, "headerArchitecture": None, "comment": None, "whitelist": None
+        }
+        self.assertEquals(db_data, expected)
 
     def testAddScheduledChangeNoPermissions(self):
+        pass
+
+    def testAddScheduledChangeMultipleConditions(self):
+        pass
+
+    def testUpdateScheduledChange(self):
         pass
 
     def testEnactScheduledChangeExistingRule(self):
