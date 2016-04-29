@@ -50,9 +50,17 @@ class ClientRequestView(MethodView):
         query = self.getQueryFromURL(url)
         self.log.debug("Got query: %s", query)
         release, update_type = AUS.evaluateRules(query)
-        # passing {},None returns empty xml
         if release:
-            xml = release.createXML(query, update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
+            if release.getResponseProducts():
+                xml = release.getXMLHeader()
+                for p in release.getResponseProducts():
+                    response_query = query.copy()
+                    response_query["product"]
+                    response_release, response_update_type = AUS.evaluateRules(response_query)
+                    xml += response_release.createXML(respone_query, response_update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
+                xml += release.getXMLFooter()
+            else:
+                xml = release.createXML(query, update_type, app.config["WHITELISTED_DOMAINS"], app.config["SPECIAL_FORCE_HOSTS"])
         else:
             xml = ['<?xml version="1.0"?>']
             xml.append('<updates>')

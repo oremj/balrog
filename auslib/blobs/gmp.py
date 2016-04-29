@@ -37,10 +37,15 @@ class GMPBlobV1(Blob):
         # of the client to decide whether or not any action needs to be taken.
         return True
 
-    # Because specialForceHosts is only relevant to our own internal servers,
-    # and these type of updates are always served externally, we don't process
-    # them in GMP blobs.
-    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+    def getXMLHeader(self):
+        xml = ['<?xml version="1.0"?>']
+        xml.append('<updates>')
+        return re.sub('&(?!amp;)', '&amp;', '\n'.join(xml))
+
+    def getXMLFooter(self):
+        return '</updates>'
+
+    def getInnerXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         buildTarget = updateQuery["buildTarget"]
 
         vendorXML = []
@@ -55,12 +60,10 @@ class GMPBlobV1(Blob):
                              (vendor, url, self["hashFunction"], platformData["hashValue"],
                               platformData["filesize"], vendorInfo["version"]))
 
-        xml = ['<?xml version="1.0"?>']
-        xml.append('<updates>')
-        if vendorXML:
-            xml.append('    <addons>')
-            xml.extend(vendorXML)
-            xml.append('    </addons>')
-        xml.append('</updates>')
-        # ensure valid xml by using the right entity for ampersand
-        return re.sub('&(?!amp;)', '&amp;', '\n'.join(xml))
+        return re.sub('&(?!amp;)', '&amp;', '\n'.join(vendorXML))
+
+    # Because specialForceHosts is only relevant to our own internal servers,
+    # and these type of updates are always served externally, we don't process
+    # them in GMP blobs.
+    def createXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
+        return self.getXMLHeader() + self.getInnerXML(updateQuery, update_type, whitelistedDomains, specialForceHosts) + self.getXMLFooter()
