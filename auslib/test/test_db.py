@@ -800,6 +800,32 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
         self.assertEquals(row.base_bar, "456")
         self.assertEquals(row.base_data_version, None)
 
+    def testInsertSequentialChanges(self):
+        what = {"fooid": 3, "foo": "c", "bar": "888", "data_version": 1, "when": 800}
+        self.sc_table.insert(changed_by="bob", **what)
+        row = self.sc_table.t.select().where(self.sc_table.sc_id == 7).execute().fetchall()[0]
+        self.assertEquals(row.scheduled_by, "bob")
+        self.assertEquals(row.when, 800)
+        self.assertEquals(row.data_version, 1)
+        self.assertEquals(row.base_fooid, 3)
+        self.assertEquals(row.base_foo, "c")
+        self.assertEquals(row.base_bar, "888")
+        self.assertEquals(row.base_data_version, 1)
+
+        what = {"fooid": 3, "foo": "c", "bar": "888", "data_version": 1, "when": 800}
+        self.sc_table.insert(changed_by="bob", **what)
+        row = self.sc_table.t.select().where(self.sc_table.sc_id == 7).execute().fetchall()[0]
+        self.assertEquals(row.scheduled_by, "bob")
+        self.assertEquals(row.when, 800)
+        self.assertEquals(row.data_version, 1)
+        self.assertEquals(row.base_fooid, 3)
+        self.assertEquals(row.base_foo, "c")
+        self.assertEquals(row.base_bar, "888")
+        self.assertEquals(row.base_data_version, 1)
+
+        # TODO: should this be supported at all?
+        self.fail()
+
     def testInsertWithNonNullableColumn(self):
         what = {"bar": "abc", "when": 34567}
         # TODO: we should really be checking directly for IntegrityError, but AUSTransaction eats it.
@@ -990,6 +1016,34 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
         self.assertEquals(history_row.bar, "barbar")
         self.assertEquals(history_row.changed_by, "bob")
         self.assertEquals(history_row.data_version, 2)
+        self.assertEquals(sc_row.complete, True)
+
+    def testEnactSequentialChanges(self):
+        """Test to ensure that sequential changes to rules can be made successfully."""
+        self.table.scheduled_changes.enactChange(5, "nancy")
+        row = self.table.t.select().where(self.table.fooid == 4).execute().fetchall()[0]
+        history_row = self.table.history.t.select().where(self.table.history.fooid == 4).where(self.table.history.data_version == 2).execute().fetchall()[0]
+        sc_row = self.sc_table.t.select().where(self.sc_table.sc_id == 5).execute().fetchall()[0]
+        self.assertEquals(row.foo, "d")
+        self.assertEquals(row.bar, "124")
+        self.assertEquals(row.data_version, 2)
+        self.assertEquals(history_row.foo, "d")
+        self.assertEquals(history_row.bar, "124")
+        self.assertEquals(history_row.change_by, "bob")
+        self.assertEquals(history_row.data_version, 2)
+        self.assertEquals(sc_row.complete, True)
+
+        self.table.scheduled_changes.enactChange(6, "nancy")
+        row = self.table.t.select().where(self.table.fooid == 4).execute().fetchall()[0]
+        history_row = self.table.history.t.select().where(self.table.history.fooid == 4).where(self.table.history.data_version == 3).execute().fetchall()[0]
+        sc_row = self.sc_table.t.select().where(self.sc_table.sc_id == 6).execute().fetchall()[0]
+        self.assertEquals(row.foo, "d")
+        self.assertEquals(row.bar, "125")
+        self.assertEquals(row.data_version, 3)
+        self.assertEquals(history_row.foo, "d")
+        self.assertEquals(history_row.bar, "125")
+        self.assertEquals(history_row.change_by, "bob")
+        self.assertEquals(history_row.data_version, 3)
         self.assertEquals(sc_row.complete, True)
 
     def testEnactChangeNoPermissions(self):
