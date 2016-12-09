@@ -17,6 +17,10 @@ from auslib.admin.views.scheduled_changes import ScheduledChangesView, \
     SignoffsView
 
 
+def getRules():
+    pass
+
+
 class RulesAPIView(AdminView):
     """/rules"""
 

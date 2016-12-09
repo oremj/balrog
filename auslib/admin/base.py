@@ -67,13 +67,13 @@ Compress(app)
 # and the static admin UI are hosted on the same domain. This API wsgi app is
 # hosted at "/api", which is stripped away by the web server before we see
 # these requests.
-app.add_url_rule("/csrf_token", view_func=CSRFView.as_view("csrf"))
+#app.add_url_rule("/csrf_token", view_func=CSRFView.as_view("csrf"))
 app.add_url_rule("/users", view_func=UsersView.as_view("users"))
 app.add_url_rule("/users/<username>/permissions", view_func=PermissionsView.as_view("user_permissions"))
 app.add_url_rule("/users/<username>/permissions/<permission>", view_func=SpecificPermissionView.as_view("specific_permission"))
 app.add_url_rule("/users/<username>/roles", view_func=UserRolesView.as_view("user_roles"))
 app.add_url_rule("/users/<username>/roles/<role>", view_func=UserRoleView.as_view("user_role"))
-app.add_url_rule("/rules", view_func=RulesAPIView.as_view("rules"))
+#app.add_url_rule("/rules", view_func=RulesAPIView.as_view("rules"))
 # Normal operations (get/update/delete) on rules can be done by id or alias...
 app.add_url_rule("/rules/<id_or_alias>", view_func=SingleRuleView.as_view("rule"))
 app.add_url_rule("/rules/columns/<column>", view_func=SingleRuleColumnView.as_view("rule_columns"))
@@ -92,3 +92,64 @@ app.add_url_rule("/scheduled_changes/rules/<int:sc_id>", view_func=RuleScheduled
 app.add_url_rule("/scheduled_changes/rules/<int:sc_id>/enact", view_func=EnactRuleScheduledChangeView.as_view("enact_scheduled_change_rules"))
 app.add_url_rule("/scheduled_changes/rules/<int:sc_id>/signoffs", view_func=RuleScheduledChangeSignoffsView.as_view("scheduled_change_rules_signoffs"))
 app.add_url_rule("/scheduled_changes/rules/<int:sc_id>/revisions", view_func=RuleScheduledChangeHistoryView.as_view("scheduled_change_rules_history"))
+
+
+import connexion
+import werkzeug
+import pathlib
+class Api:
+    """
+    TODO: add description
+    TODO: annotate class
+    """
+
+    def __init__(self, app):
+        """
+        TODO: add description
+        TODO: annotate function
+        """
+        self.__app = app
+
+        app.json_encoder = connexion.decorators.produces.JSONEncoder
+
+    def register(self,
+                 swagger_file,
+                 base_url=None,
+                 arguments=None,
+                 auth_all_paths=False,
+                 swagger_json=True,
+                 swagger_ui=True,
+                 swagger_path=None,
+                 swagger_url="docs",
+                 validate_responses=True,
+                 strict_validation=True,
+                 resolver=connexion.resolver.Resolver(),
+                 ):
+        app = self.__app
+        if hasattr(resolver, '__call__'):
+            resolver = connexion.resolver.Resolver(resolver)
+
+        if base_url is None:
+            base_url = app.config.get('SWAGGER_BASE_URL')
+
+        self.swagger_url = swagger_url
+        self.__api = connexion.api.Api(
+            swagger_yaml_path=pathlib.Path(swagger_file),
+            base_url=base_url,
+            arguments=arguments,
+            swagger_json=swagger_json,
+            swagger_ui=swagger_ui,
+            swagger_path=swagger_path,
+            swagger_url=swagger_url,
+            resolver=resolver,
+            validate_responses=validate_responses,
+            strict_validation=strict_validation,
+            auth_all_paths=auth_all_paths,
+            debug=app.debug,
+        )
+        app.register_blueprint(self.__api.blueprint)
+        return self.__api
+
+app.__api = Api(app)
+from os import path
+app.__api.register("/app/auslib/admin/swagger/api.yaml")

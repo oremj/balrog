@@ -1,0 +1,44 @@
+# this is an example of the Uber API
+# as a demonstration of an API spec in YAML
+swagger: '2.0'
+info:
+  title: Balrog Admin API
+  description: Ship your stuff
+  version: "1.0.0"
+# array of all schemes that your API supports
+produces:
+  - application/json
+paths:
+  /rules:
+    get:
+      operationId: "auslib.admin.views.rules.getRules"
+      summary: ALL the rules
+      responses:
+        200:
+          description: ALL the Rules
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+              rules:
+                type: array
+                items:
+                  $ref: "#/definitions/Rule"
+                  
+  /csrf_token:
+    get:
+      operationId: "auslib.admin.views.csrf.get_csrf_headers2"
+      summary: Get a CSRF Token
+      responses:
+        200:
+          description: A valid CSRF Token
+          headers:
+            X-CSRF-Token:
+              description: csrf
+              type: string
+              
+definitions:
+  Rule:
+    type: object
+    additionalProperties: true

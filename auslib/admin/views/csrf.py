@@ -13,6 +13,10 @@ def get_csrf_headers():
     return {'X-CSRF-Token': form.csrf_token._value()}
 
 
+def get_csrf_headers2():
+    return Response(headers=get_csrf_headers())
+
+
 class CSRFView(AdminView):
     """/csrf_token"""
 
