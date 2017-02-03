@@ -20,6 +20,10 @@ session.mount("https://", retry_adapter)
 active_releases = set()
 mar_urls = defaultdict(set)
 
+# TODO: would be nice to be able to filter by channel. we'd have to
+#       do this first by filtering rules, and then also enhance some of the
+#       getAllFileUrls() methods to support it
+
 for rule in session.get("{}/api/rules".format(base_url)).json()["rules"]:
     active_releases.add(rule["mapping"])
     active_releases.add(rule["fallbackMapping"])

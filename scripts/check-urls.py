@@ -4,7 +4,6 @@ import aiohttp
 from collections import defaultdict
 
 async def check_url(url):
-    print('checking', url)
     resp = await aiohttp.head(url)
     resp.close()
     return url, resp.status == 200
@@ -15,11 +14,8 @@ async def main(release_urls):
     in_process = []
     n = 16
 
-    i = 0
     for release, urls in release_urls.items():
-        if i > 2:
-            break
-        i += 1
+        print("Checking {} URLs from {}".format(len(urls), release))
         while urls:
             url = urls.pop()
             in_process.append(asyncio.ensure_future(check_url(url)))
@@ -38,7 +34,9 @@ async def main(release_urls):
         if not result:
             failures[release].add(url)
 
-    print(failures)
+    for release, urls in failures.items():
+        print("Failed URLs for {}".format(release))
+        print("\n".join(urls))
 
 if __name__ == '__main__':
     import sys, json
