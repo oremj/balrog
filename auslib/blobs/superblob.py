@@ -43,3 +43,6 @@ class SuperBlob(Blob):
 
     def getInnerFooterXML(self, updateQuery, update_type, whitelistedDomains, specialForceHosts):
         return '    </addons>'
+
+    def getAllFileUrls(self):
+        return []

@@ -97,3 +97,9 @@ class SystemAddonsBlob(Blob):
                         return True
 
         return False
+
+    def getAllFileUrls(self):
+        for addon in self.get("addons", {}).values():
+            for platform in addon["platforms"].values():
+                if "fileUrl" in platform:
+                    yield platform["fileUrl"]

@@ -78,3 +78,7 @@ class TestSchema1Blob(unittest.TestCase):
         expected_footer_addon = '    </addons>'
         self.assertEqual(footerXML_gmp, expected_footer_gmp)
         self.assertEqual(footerXML_addon, expected_footer_addon)
+
+    def testGetAllFileUrls(self):
+        got = [u for u in self.superblob_gmp.getAllFileUrls()]
+        self.assertEquals(got, [])

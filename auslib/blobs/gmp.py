@@ -70,3 +70,9 @@ class GMPBlobV1(Blob):
                     if isForbiddenUrl(platform["fileUrl"], product, whitelistedDomains):
                         return True
         return False
+
+    def getAllFileUrls(self):
+        for vendor in self.get("vendors", {}).values():
+            for platform in vendor["platforms"].values():
+                if "fileUrl" in platform:
+                    yield platform["fileUrl"]

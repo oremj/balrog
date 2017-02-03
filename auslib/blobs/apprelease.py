@@ -418,6 +418,24 @@ class ReleaseBlobV1(ReleaseBlobBase, SingleUpdateXMLMixin, SeparatedFileUrlsMixi
                                   'extensionVersion="%s"' % updateQuery["version"])
             # and we don't use ReleaseBlobV1 to serve anything to 4.0 or later
         return xml
+                            
+    def getAllFileUrls(self):
+        for platform in self.get("platforms", {}):
+            for locale in self["platforms"][platform].get("locales", {}):
+                for patchKey in ("partial", "complete"):
+                    patch = self["platforms"][platform]["locales"][locale].get(patchKey)
+                    if patch:
+                        if "fileUrl" in patch:
+                            yield patch.get("fileUrl")
+                        for url in self.get("fileUrls").values():
+                            ftpFilename = self._getFtpFilename(patchKey, patch["from"])
+                            bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
+                            url = url.replace('%LOCALE%', locale)
+                            url = url.replace('%OS_FTP%', self["platforms"][platform]["OS_FTP"])
+                            url = url.replace('%FILENAME%', ftpFilename)
+                            url = url.replace('%PRODUCT%', bouncerProduct)
+                            url = url.replace('%OS_BOUNCER%', self["platforms"][platform]["OS_BOUNCER"])
+                            yield url
 
 
 class NewStyleVersionsMixin(object):
@@ -564,6 +582,24 @@ class ReleaseBlobV2(ReleaseBlobBase, NewStyleVersionsMixin, SingleUpdateXMLMixin
                     )
         return referencedReleases
 
+    def getAllFileUrls(self):
+        for platform in self.get("platforms", {}):
+            for locale in self["platforms"][platform].get("locales", {}):
+                for patchKey in ("partial", "complete"):
+                    patch = self["platforms"][platform]["locales"][locale].get(patchKey)
+                    if patch:
+                        if "fileUrl" in patch:
+                            yield patch.get("fileUrl")
+                        for url in self.get("fileUrls").values():
+                            ftpFilename = self._getFtpFilename(patchKey, patch["from"])
+                            bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
+                            url = url.replace('%LOCALE%', locale)
+                            url = url.replace('%OS_FTP%', self["platforms"][platform]["OS_FTP"])
+                            url = url.replace('%FILENAME%', ftpFilename)
+                            url = url.replace('%PRODUCT%', bouncerProduct)
+                            url = url.replace('%OS_BOUNCER%', self["platforms"][platform]["OS_BOUNCER"])
+                            yield url
+
 
 class MultipleUpdatesXMLMixin(object):
 
@@ -626,6 +662,24 @@ class ReleaseBlobV3(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                         partial['from']
                     )
         return referencedReleases
+
+    def getAllFileUrls(self):
+        # UNTESTED
+        for platform in self.get("platforms", {}):
+            for locale in self["platforms"][platform].get("locales", {}):
+                for patchKey in ("partials", "completes"):
+                    for patch in self["platforms"][platform]["locales"][locale].get(patchKey):
+                        if "fileUrl" in patch:
+                            yield patch.get("fileUrl")
+                        for url in self.get("fileUrls").values():
+                            ftpFilename = self._getFtpFilename(patchKey, patch["from"])
+                            bouncerProduct = self._getBouncerProduct(patchKey, patch["from"])
+                            url = url.replace('%LOCALE%', locale)
+                            url = url.replace('%OS_FTP%', self["platforms"][platform]["OS_FTP"])
+                            url = url.replace('%FILENAME%', ftpFilename)
+                            url = url.replace('%PRODUCT%', bouncerProduct)
+                            url = url.replace('%OS_BOUNCER%', self["platforms"][platform]["OS_BOUNCER"])
+                            yield url
 
 
 class UnifiedFileUrlsMixin(object):
@@ -756,6 +810,21 @@ class ReleaseBlobV4(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
 
         return referencedReleases
 
+    def getAllFileUrls(self):
+        for platform in self.get("platforms", {}):
+            for locale in self["platforms"][platform].get("locales", {}):
+                for patchKey in ("partials", "completes"):
+                    for patch in self["platforms"][platform]["locales"][locale].get(patchKey, {}):
+                        if "fileUrl" in patch:
+                            yield patch.get("fileUrl")
+                        for channelInfo in self.get("fileUrls", {}).values():
+                            for p in channelInfo.values():
+                                for url in p.values():
+                                    url = url.replace('%LOCALE%', locale)
+                                    url = url.replace('%OS_FTP%', self["platforms"][platform]["OS_FTP"])
+                                    url = url.replace('%OS_BOUNCER%', self["platforms"][platform]["OS_BOUNCER"])
+                                    yield url
+
 
 class ReleaseBlobV5(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, UnifiedFileUrlsMixin):
     """ Compatible with Gecko 19.0 and above, ie Firefox/Thunderbird 19.0 and above.
@@ -798,6 +867,9 @@ class ReleaseBlobV5(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
                 referencedReleases.add(partial)
 
         return referencedReleases
+
+    def getAllFileUrls(self):
+        raise NotImplementedError()
 
 
 class ReleaseBlobV6(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, UnifiedFileUrlsMixin):
@@ -843,6 +915,9 @@ class ReleaseBlobV6(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
 
         return referencedReleases
 
+    def getAllFileUrls(self):
+        raise NotImplementedError()
+
 
 class ReleaseBlobV7(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMixin, UnifiedFileUrlsMixin):
     """  Compatible with Gecko 50.0 and above, ie Firefox/Thunderbird 50.0 and above.
@@ -887,6 +962,9 @@ class ReleaseBlobV7(ReleaseBlobBase, NewStyleVersionsMixin, MultipleUpdatesXMLMi
 
         return referencedReleases
 
+    def getAllFileUrls(self):
+        raise NotImplementedError()
+
 
 class DesupportBlob(Blob):
     """ This blob is used to inform users that their OS is no longer supported. This is available
@@ -929,3 +1007,7 @@ class DesupportBlob(Blob):
         # Although DesupportBlob contains a domain (detailsUrl), that attribute
         # is not used to deliver binaries, so it is exempt from whitelist checks.
         return False
+
+    def getAllFileUrls(self):
+        # TODO: we should really check all of the locales and build targets. but we don't know them here.
+        return []

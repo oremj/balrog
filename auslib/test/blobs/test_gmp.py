@@ -254,3 +254,9 @@ class TestSchema1Blob(unittest.TestCase):
 """)
         self.assertFalse(blob.containsForbiddenDomain('gg',
                                                       self.whitelistedDomains))
+
+    def testGetAllFileUrls(self):
+        expected = set(["http://a.com/blah", "http://boring.com/blah", "http://boring.com/foo",
+                        "http://evil.com/fire", "http://boring.com/bar"])
+        got = set([u for u in self.blob.getAllFileUrls()])
+        self.assertEquals(got, expected)

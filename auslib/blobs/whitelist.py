@@ -27,3 +27,7 @@ class WhitelistBlobV1(Blob):
     def containsForbiddenDomain(self, product, whitelistedDomains):
         # Since WhitelistBlobs have no URLs
         return False
+
+    def getAllFileUrls(self):
+        # We have none!
+        return []
