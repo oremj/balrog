@@ -12,6 +12,7 @@ async def check_url(url):
 async def main(release_urls):
     failures = defaultdict(set)
     in_process = []
+    # TODO: this ||ization might not work right? when bhearsum ran this, there appeared to be 100s of connections in TIME_WAIT at once
     n = 16
 
     for release, urls in release_urls.items():
@@ -35,6 +36,7 @@ async def main(release_urls):
             failures[release].add(url)
 
     for release, urls in failures.items():
+        # TODO: the release here often ends up wrong. maybe the loops above override the variable before the failures are seen?
         print("Failed URLs for {}".format(release))
         print("\n".join(urls))
 
