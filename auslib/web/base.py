@@ -75,7 +75,7 @@ def robots():
 
 @app.route('/contribute.json')
 def contributejson():
-    return send_from_directory(app.static_folder, "contribute.json")
+    return send_from_directory(app.static_folder, "contribute.json", mimetype="application/json")
 
 
 @app.route('/update/1/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/update.xml')
