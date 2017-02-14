@@ -1,0 +1,18 @@
+FROM node:0.10
+
+MAINTAINER bhearsum@mozilla.com
+
+WORKDIR /app
+
+COPY app/ /app/app/
+COPY config/ /app/config/
+COPY spec/ /app/spec/
+COPY tasks/ /app/tasks/
+COPY vendor/ /app/vendor/
+COPY docker-entrypoint.sh Gruntfile.js package.json /app/
+
+# Using /bin/bash as the entrypoint works around some volume mount issues on Windows
+# where volume-mounted files do not have execute bits set.
+# https://github.com/docker/compose/issues/2301#issuecomment-154450785 has additional background.
+ENTRYPOINT ["/bin/bash", "/app/docker-entrypoint.sh"]
+CMD ["run"]

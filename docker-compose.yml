@@ -61,7 +61,8 @@ balrogagent:
     - LOG_LEVEL=DEBUG
 
 balrogui:
-  image: node:0.10
+  build: ui
+  dockerfile: Dockerfile.dev
   ports:
     - "8080:8080"
   links:
@@ -74,6 +75,7 @@ balrogui:
   entrypoint:
     - /bin/bash
     - /app/docker-entrypoint.sh
+  command: run
 
 balrogdb:
   image: mysql:5.7

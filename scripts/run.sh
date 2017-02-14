@@ -1,21 +1,8 @@
 #!/bin/bash
 
-build_front_end() {
-    cd /app/ui
-    npm install
-    npm run build
-    cd -
-}
-
 run_back_end_tests() {
   cd /app
   tox $@
-}
-
-run_front_end_tests() {
-  build_front_end
-  cd /app/ui/
-  npm test
 }
 
 if [ $1 == "public" ]; then
@@ -58,27 +45,8 @@ elif [ $1 == "extract-active-data" ]; then
     fi
     exec python scripts/manage-db.py -d ${DBURI} extract ${OUTPUT_FILE}
 elif [ $1 == "test" ]; then
-    shift
-    if [[ $1 == "backend" ]]; then
-        shift
-        run_back_end_tests $@
-    elif [[ $1 == "frontend" ]]; then
-        run_front_end_tests
-    else
-        run_back_end_tests $@
-        backend_rc=$?
-        run_front_end_tests
-        frontend_rc=$?
-        echo
-
-        if [[ $backend_rc == 0 && $frontend_rc == 0 ]]; then
-            echo "All tests pass!!!"
-            exit 0
-        else
-            echo "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL. Some tests failed, see above for details."
-            exit 1
-        fi
-    fi
+    cd /app
+    tox $@
 else
    echo "unknown mode: $1"
    exit 1

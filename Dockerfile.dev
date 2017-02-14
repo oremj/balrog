@@ -8,13 +8,11 @@ FROM python:2.7-slim
 MAINTAINER bhearsum@mozilla.com
 
 # Some versions of the python:2.7 Docker image remove libpcre3, which uwsgi needs for routing support to be enabled.
-# Node and npm are to build the frontend. nodejs-legacy is needed by this version of npm.
 # mysql-client is needed to import sample data
 # libmysqlclient-dev is required to use SQLAlchemy with MySQL, which we do in production.
 # libfontconfig1 is required by phantomjs
 RUN apt-get -q update \
-    && apt-get -q --yes install libpcre3 libpcre3-dev nodejs nodejs-legacy npm libmysqlclient-dev mysql-client \
-                                libfontconfig1 \
+    && apt-get -q --yes install libpcre3 libpcre3-dev libmysqlclient-dev mysql-client libfontconfig1 \
     && apt-get clean
 
 WORKDIR /app
@@ -27,7 +25,6 @@ RUN pip install -r requirements-tox.txt
 
 COPY aus-data-snapshots/ /app/aus-data-snapshots/
 COPY auslib/ /app/auslib/
-COPY ui/ /app/ui/
 COPY scripts/ /app/scripts/
 COPY uwsgi/ /app/uwsgi/
 COPY .coveragerc MANIFEST.in requirements-test.txt setup.py tox.ini version.json version.txt /app/
