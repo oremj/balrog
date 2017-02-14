@@ -1,10 +1,5 @@
 #!/bin/bash
 
-run_back_end_tests() {
-  cd /app
-  tox $@
-}
-
 if [ $1 == "public" ]; then
    exec uwsgi --ini /app/uwsgi/public.ini --python-autoreload 1
 elif [ $1 == "admin" ]; then
@@ -45,6 +40,7 @@ elif [ $1 == "extract-active-data" ]; then
     fi
     exec python scripts/manage-db.py -d ${DBURI} extract ${OUTPUT_FILE}
 elif [ $1 == "test" ]; then
+    shift
     cd /app
     tox $@
 else
