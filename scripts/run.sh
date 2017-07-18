@@ -91,7 +91,7 @@ elif [ $1 == "test" ]; then
     then
       #password_url="taskcluster/secrets/v1/secret/repo:github.com/testbhearsum/balrog:coveralls"
       #repo_token=$(curl ${password_url} | python -c 'import json, sys; a = json.load(sys.stdin); print a["secret"]["repo_token"]')
-      repo_token=UJStvn078UYKcygiLtW8rMokaTCGceNPd
+      repo_token=X1dKq7GwZoQKeicaY2vvZUit82tuGa0lM
       export COVERALLS_REPO_TOKEN=$repo_token
       export CIRCLECI=1
       export CI_PULL_REQUEST=$GITHUB_PULL_REQUEST
