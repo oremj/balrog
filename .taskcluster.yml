@@ -16,7 +16,7 @@ tasks:
       command:
         - "/bin/bash"
         - "-c"
-        - "git clone $GITHUB_HEAD_REPO_URL && cd balrog && git checkout $GITHUB_HEAD_BRANCH && export GITHUB_HEAD_REPO_URL && bash run-tests.sh backend"
+        - "git clone $GITHUB_HEAD_REPO_URL && cd balrog && git checkout $GITHUB_HEAD_BRANCH && bash run-tests.sh backend GITHUB_HEAD_REPO_URL=$GITHUB_HEAD_REPO_URL"
       features:
         dind: true
     extra:
