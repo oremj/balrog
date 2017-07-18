@@ -16,7 +16,7 @@ tasks:
       command:
         - "/bin/bash"
         - "-c"
-        - "git clone $GITHUB_HEAD_REPO_URL && cd balrog && git checkout $GITHUB_HEAD_BRANCH && bash run-tests.sh backend -- auslib/test/util"
+        - "git clone $GITHUB_HEAD_REPO_URL && cd balrog && git checkout $GITHUB_HEAD_BRANCH && bash run-tests.sh backend"
       features:
         dind: true
     extra:
@@ -91,7 +91,7 @@ tasks:
   - provisionerId: "{{ taskcluster.docker.provisionerId }}"
     workerType: "{{ taskcluster.docker.workerType }}"
     scopes:
-      - secrets:get:repo:github.com/testbhearsum/balrog:dockerhub
+      - secrets:get:repo:github.com/mozilla/balrog:dockerhub
     payload:
       maxRunTime: 3600
       image: "taskcluster/image_builder:0.1.3"
@@ -147,7 +147,7 @@ tasks:
   - provisionerId: "{{ taskcluster.docker.provisionerId }}"
     workerType: "{{ taskcluster.docker.workerType }}"
     scopes:
-      - secrets:get:repo:github.com/testbhearsum/balrog:dockerhub
+      - secrets:get:repo:github.com/mozilla/balrog:dockerhub
     payload:
       maxRunTime: 3600
       image: "taskcluster/image_builder:0.1.3"
@@ -175,7 +175,7 @@ tasks:
   - provisionerId: "{{ taskcluster.docker.provisionerId }}"
     workerType: "{{ taskcluster.docker.workerType }}"
     scopes:
-      - secrets:get:repo:github.com/testbhearsum/balrog:dockerhub
+      - secrets:get:repo:github.com/mozilla/balrog:dockerhub
     payload:
       maxRunTime: 3600
       image: "taskcluster/image_builder:0.1.3"
@@ -201,7 +201,7 @@ tasks:
   - provisionerId: "{{ taskcluster.docker.provisionerId }}"
     workerType: "{{ taskcluster.docker.workerType }}"
     scopes:
-      - secrets:get:repo:github.com/testbhearsum/balrog:dockerhub
+      - secrets:get:repo:github.com/mozilla/balrog:dockerhub
     payload:
       maxRunTime: 3600
       image: "taskcluster/image_builder:0.1.3"
