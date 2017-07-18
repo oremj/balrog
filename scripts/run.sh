@@ -95,6 +95,7 @@ elif [ $1 == "test" ]; then
       export COVERALLS_REPO_TOKEN=$repo_token
       export CIRCLECI=1
       export CI_PULL_REQUEST=$GITHUB_PULL_REQUEST
+      cd /app
       coveralls
     fi
     exit $rc
