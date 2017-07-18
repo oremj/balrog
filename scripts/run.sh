@@ -61,14 +61,17 @@ elif [ $1 == "extract-active-data" ]; then
 elif [ $1 == "test" ]; then
     shift
     rc=0
+    coveralls=0
     if [[ $1 == "backend" ]]; then
         shift
+        coveralls=1
         run_back_end_tests $@
         rc=$?
     elif [[ $1 == "frontend" ]]; then
         run_front_end_tests
         rc=$?
     else
+        coveralls=1
         run_back_end_tests $@
         backend_rc=$?
         run_front_end_tests
@@ -84,7 +87,7 @@ elif [ $1 == "test" ]; then
         fi
     fi
     # Only send coverage data for the authoritative Balrog repo.
-    if [[ $GITHUB_BASE_REPO_URL == "https://github.com/testbhearsum/balrog.git" ]];
+    if [[ $coveralls == 1 && $GITHUB_BASE_REPO_URL == "https://github.com/testbhearsum/balrog.git" ]];
     then
       echo 'doing stuff'
       #password_url="taskcluster/secrets/v1/secret/repo:github.com/testbhearsum/balrog:coveralls"
