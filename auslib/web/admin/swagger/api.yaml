@@ -235,6 +235,14 @@ parameters:
     minimum: 0
     required: true
 
+  sc_id_param:
+    name: sc_id
+    in: path
+    description: Field value to uniquely identfiy the scheduled change
+    type: integer
+    minimum: 0
+    required: true
+
   change_id_param:
     name: change_id
     in: path
@@ -1664,7 +1672,6 @@ paths:
         description: "Returns the entire rule identified by the id or alias given in JSON format."
       parameters:
         - $ref: '#/parameters/rule_id_or_alias_param'
-
       responses:
         '200':
           description: Successfully fetched a rule
@@ -1678,6 +1685,7 @@ paths:
               minimum: 1
         '404':
           $ref: '#/responses/resourceNotFound'
+
     post:
       summary: Updates the rule
       description: >
@@ -1897,7 +1905,7 @@ paths:
       produces:
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: Returns scheduled changes for rules.
       parameters:
         - $ref: '#/parameters/allSCParam'
@@ -1967,7 +1975,7 @@ paths:
         - text/html
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: "create scheduled change for rule."
       parameters:
         - name: change_type
@@ -2015,7 +2023,7 @@ paths:
       produces:
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: Returns scheduled changes for permissions.
       parameters:
         - $ref: '#/parameters/allSCParam'
@@ -2062,7 +2070,7 @@ paths:
         - text/html
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: "create scheduled change for permissions."
       parameters:
         - name: sc_permission_body
@@ -2100,7 +2108,7 @@ paths:
       produces:
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: Returns scheduled changes for releases.
       parameters:
         - $ref: '#/parameters/allSCParam'
@@ -2168,7 +2176,7 @@ paths:
         - text/html
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: "create scheduled change for releases."
       parameters:
         - name: sc_permission_body
@@ -2208,7 +2216,7 @@ paths:
       produces:
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: Returns scheduled changes for required signoffs of products.
       parameters:
         - $ref: '#/parameters/allSCParam'
@@ -2261,7 +2269,7 @@ paths:
         - text/html
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: "create scheduled change for required signoffs of product."
       parameters:
         - name: sc_rs_product_body
@@ -2304,7 +2312,7 @@ paths:
       produces:
         - application/json
       externalDocs:
-        url: "http://mozilla-balrog.readthedocs.io/en/latest/database.html#scheduled-changes"
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object"
         description: Returns scheduled changes for required signoffs of permissions.
       parameters:
         - $ref: '#/parameters/allSCParam'
@@ -2383,6 +2391,112 @@ paths:
             $ref: '#/definitions/SCIdModel'
         '400':
           $ref: '#/responses/invalidFormData'
+
+
+  /scheduled_changes/rules/{sc_id}/enact:
+    post:
+      summary: Execute the scheduled change for the rule.
+      description: >
+        Execute the scheduled change for the rule identified by the sc_id. [Docs](http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact)
+      tags:
+        - Scheduled Changes
+      operationId: auslib.web.admin.views.mapper.enact_scheduled_change_rules_post
+      consumes: []
+      produces:
+        - text/html
+        - application/json
+      externalDocs:
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact"
+        description: "Execute the scheduled change for the rule."
+      parameters:
+        - $ref: '#/parameters/sc_id_param'
+      responses:
+        '200':
+          description: Successfully enacted the scheduled change
+
+  /scheduled_changes/permissions/{sc_id}/enact:
+    post:
+      summary: Execute the scheduled change for the permission.
+      description: >
+        Execute the scheduled change for the permission identified by the sc_id. [Docs](http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact)
+      tags:
+        - Scheduled Changes
+      operationId: auslib.web.admin.views.mapper.enact_scheduled_change_permissions_post
+      consumes: []
+      produces:
+        - text/html
+        - application/json
+      externalDocs:
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact"
+        description: "Execute the scheduled change for the permission."
+      parameters:
+        - $ref: '#/parameters/sc_id_param'
+      responses:
+        '200':
+          description: Successfully enacted the scheduled change
+
+  /scheduled_changes/releases/{sc_id}/enact:
+    post:
+      summary: Execute the scheduled change for the release.
+      description: >
+        Execute the scheduled change for the release identified by the sc_id. [Docs](http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact)
+      tags:
+        - Scheduled Changes
+      operationId: auslib.web.admin.views.mapper.enact_scheduled_change_releases_post
+      consumes: []
+      produces:
+        - text/html
+        - application/json
+      externalDocs:
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact"
+        description: "Execute the scheduled change for the release."
+      parameters:
+        - $ref: '#/parameters/sc_id_param'
+      responses:
+        '200':
+          description: Successfully enacted the scheduled change
+
+  /scheduled_changes/required_signoffs/product/{sc_id}/enact:
+    post:
+      summary: Execute the scheduled change for the required signoffs for product.
+      description: >
+        Execute the scheduled change for the required signoffs for product identified by the sc_id. [Docs](http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact)
+      tags:
+        - Scheduled Changes
+      operationId: auslib.web.admin.views.mapper.enact_scheduled_change_product_rs_post
+      consumes: []
+      produces:
+        - text/html
+        - application/json
+      externalDocs:
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact"
+        description: "Execute the scheduled change for the required signoffs for product."
+      parameters:
+        - $ref: '#/parameters/sc_id_param'
+      responses:
+        '200':
+          description: Successfully enacted the scheduled change
+
+  /scheduled_changes/required_signoffs/permissions/{sc_id}/enact:
+    post:
+      summary: Execute the scheduled change for the required signoffs for permission.
+      description: >
+        Execute the scheduled change for the required signoffs for permission identified by the sc_id. [Docs](http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact)
+      tags:
+        - Scheduled Changes
+      operationId: auslib.web.admin.views.mapper.enact_scheduled_change_permissions_rs_post
+      consumes: []
+      produces:
+        - text/html
+        - application/json
+      externalDocs:
+        url: "http://mozilla-balrog.readthedocs.io/en/latest/admin_api.html#scheduled-changes-object-sc-id-enact"
+        description: "Execute the scheduled change for the required signoffs for permission."
+      parameters:
+        - $ref: '#/parameters/sc_id_param'
+      responses:
+        '200':
+          description: Successfully enacted the scheduled change
 
 definitions:
   4xxClientErrorResponseModel:
