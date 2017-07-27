@@ -10,7 +10,7 @@ from os import path
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, select, String
 from sqlalchemy.engine.reflection import Inspector
 
-import migrate.versioning.api
+#import migrate.versioning.api
 
 from auslib.global_state import cache, dbo
 from auslib.db import AUSDatabase, AUSTable, AlreadySetupError, \
@@ -4205,11 +4205,12 @@ class TestDBModel(unittest.TestCase, NamedFileDatabaseMixin):
     def testAllTablesExist(self):
         self.assertEquals(set(self.db.metadata.tables.keys()), self.db_tables)
 
-    def testModelIsSameAsRepository(self):
-        db2 = self._get_migrated_db()
-        diff = migrate.versioning.api.compare_model_to_db(db2.engine, self.db.migrate_repo, self.db.metadata)
-        if diff:
-            self.fail(str(diff))
+# Commented out temporarily while we do a two part upgrade for https://bugzilla.mozilla.org/show_bug.cgi?id=1367054
+#    def testModelIsSameAsRepository(self):
+#        db2 = self._get_migrated_db()
+#        diff = migrate.versioning.api.compare_model_to_db(db2.engine, self.db.migrate_repo, self.db.metadata)
+#        if diff:
+#            self.fail(str(diff))
 
     def testColumnAttributesAreSameAsDb(self):
         table_instances = []
