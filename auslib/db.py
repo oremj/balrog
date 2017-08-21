@@ -1609,6 +1609,24 @@ class Rules(AUSTable):
             return True
         return False
 
+    def select(self, where=None, transaction=None, columns=None, **kwargs):
+        orig_columns = columns
+        ret = []
+        if columns and ("rule_id" not in columns and self.rule_id not in columns):
+            columns.append("rule_id")
+
+        for rule in super(Rules, self).select(where, transaction, columns=columns, **kwargs):
+            scheduled = self.scheduled_changes.select(
+                where=[self.scheduled_changes.base_rule_id == rule["rule_id"], self.scheduled_changes.complete == False], # noqa
+                columns=[self.scheduled_changes.sc_id],
+                transaction=transaction
+            )
+            rule["scheduled_changes"] = [sc["sc_id"] for sc in scheduled]
+            if orig_columns and "rule_id" not in orig_columns:
+                del rule["rule_id"]
+            ret.append(rule)
+        return ret
+
     def insert(self, changed_by, transaction=None, dryrun=False, signoffs=None, **columns):
         if not self.db.hasPermission(changed_by, "rule", "create", columns.get("product"), transaction):
             raise PermissionDeniedError("%s is not allowed to create new rules for product %s" % (changed_by, columns.get("product")))

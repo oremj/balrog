@@ -1858,7 +1858,7 @@ class RulesTestMixin(object):
         # if the schema changes).
         for rule in rules:
             for key in rule.keys():
-                if rule[key] is None:
+                if rule[key] is None or rule[key] == []:
                     del rule[key]
         return rules
 
@@ -1892,6 +1892,12 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
                                       product="foo", channel="foo*", data_version=1)
         self.paths.t.insert().execute(rule_id=10, priority=100, buildTarget="g", mapping="g", fallbackMapping='fallback', backgroundRate=100,
                                       update_type="z", product="foo", channel="foo", data_version=1)
+        self.paths.scheduled_changes.t.insert().execute(sc_id=1, scheduled_by="bill", complete=1, change_type="insert", data_version=2,
+                                                        base_priority=100, base_version="3.5", base_buildTarget="d", base_backgroundRate=100,
+                                                        base_mapping="c", base_update_type="z", base_product="a", base_channel="a")
+        self.paths.scheduled_changes.t.insert().execute(sc_id=2, scheduled_by="bill", complete=0, change_type="update", data_version=1,
+                                                        base_priority=100, base_version="3.5", base_buildTarget="d", base_backgroundRate=100,
+                                                        base_mapping="g", base_update_type="z", base_product="a", base_channel="a")
 
         self.db.permissions.t.insert().execute(permission="admin", username="bill", data_version=1)
         self.db.permissions.user_roles.t.insert(username="bill", role="bar", data_version=1)
@@ -2185,14 +2191,40 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         expected = []
         self.assertEquals(rules, expected)
 
+    def testSelect(self):
+        rules = self._stripNullColumns(self.paths.select())
+        expected = [
+            {"rule_id": 1, "priority": 100, "version": "3.5", "buildTarget": "d", "backgroundRate": 100, "mapping": "c", "update_type": "z",
+             "product": "a", "channel": "a", "data_version": 1, "scheduled_changes": [2]},
+            {"rule_id": 2, "priority": 100, "version": "3.3", "buildTarget": "d", "backgroundRate": 100, "mapping": "b", "update_type": "z",
+             "product": "a", "channel": "a", "data_version": 1},
+            {"rule_id": 3, "priority": 100, "version": "3.3", "buildTarget": "a", "backgroundRate": 100, "mapping": "a", "update_type": "z",
+             "product": "a", "data_version": 1},
+            {"rule_id": 4, "alias": "gandalf", "priority": 80, "version": "3.3", "buildTarget": "d", "backgroundRate": 100, "mapping": "a",
+             "update_type": "z", "channel": "a", "data_version": 1},
+            {"rule_id": 5, "priority": 80, "version": "3.3", "buildTarget": "d", "backgroundRate": 0, "mapping": "c", "update_type": "z",
+             "data_version": 1},
+            {"rule_id": 6, "alias": "radagast", "priority": 100, "buildTarget": "d", "backgroundRate": 100, "mapping": "a", "update_type": "z",
+             "osVersion": "foo 1", "product": "a", "channel": "a", "data_version": 1},
+            {"rule_id": 7, "priority": 100, "buildTarget": "d", "backgroundRate": 100, "mapping": "a", "update_type": "z",
+             "osVersion": "foo 2,blah 6,bar && baz", "product": "a", "channel": "a", "data_version": 1},
+            {"rule_id": 8, "priority": 100, "buildTarget": "e", "backgroundRate": 100, "mapping": "d", "locale": "foo,bar-baz", "update_type": "z",
+             "product": "a", "channel": "a", "data_version": 1},
+            {"rule_id": 9, "priority": 100, "buildTarget": "f", "backgroundRate": 100, "mapping": "f", "instructionSet": "S", "update_type": "z",
+             "product": "foo", "channel": "foo*", "data_version": 1},
+            {"rule_id": 10, "priority": 100, "buildTarget": "g", "backgroundRate": 100, "mapping": "g", "fallbackMapping": "fallback", "update_type": "z",
+             "product": "foo", "channel": "foo", "data_version": 1},
+        ]
+        self.assertEquals(rules, expected)
+
     def testGetRuleById(self):
         rule = self._stripNullColumns([self.paths.getRule(1)])
         expected = [dict(rule_id=1, priority=100, backgroundRate=100, version='3.5', buildTarget='d', mapping='c', update_type='z',
-                         product="a", channel="a", data_version=1)]
+                         product="a", channel="a", scheduled_changes=[2], data_version=1)]
         self.assertEquals(rule, expected)
 
     def testGetRuleByAlias(self):
-        rule = self._stripNullColumns([self.paths.getRule(4)])
+        rule = self._stripNullColumns([self.paths.getRule("gandalf")])
         expected = [dict(rule_id=4, alias="gandalf", priority=80, backgroundRate=100, buildTarget='d', mapping='a', update_type='z',
                          channel="a", data_version=1)]
         self.assertEquals(rule, expected)
