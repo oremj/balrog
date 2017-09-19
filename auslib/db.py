@@ -19,6 +19,7 @@ import migrate.versioning.api
 
 import dictdiffer
 import dictdiffer.merge
+import dictdiffer.resolve
 
 from auslib.global_state import cache
 from auslib.blobs.base import createBlob
@@ -2045,6 +2046,27 @@ class Releases(AUSTable):
                 potential_required_signoffs = self.getPotentialRequiredSignoffs([current_release, new_release], transaction=transaction)
                 verify_signoffs(potential_required_signoffs, signoffs)
 
+        class MyResolver(dictdiffer.resolve.Resolver):
+            def __init__(self):
+                self.unresolved_conflicts = []
+
+            def resolve_conflicts(self, first_patches, second_patches, conflicts):
+                print first_patches
+                print second_patches
+                print conflicts
+                for conflict in conflicts:
+                    print conflicts
+                    conflict_path = self._find_conflicting_path(conflict)
+                    print conflict_path
+                    if self._auto_resolve(conflict):
+                        continue
+
+                    # If we couldn't autoresolve, we need to try to merge completes and partials sections.
+                    self.unresolved_conflicts.append(conflict)
+
+                if self.unresolved_conflicts:
+                    raise dictdiffer.resolve.UnresolvedConflictsException(self.unresolved_conflicts)
+
         for release in current_releases:
             name = current_release["name"]
             new_data_version = old_data_version + 1
@@ -2065,6 +2087,7 @@ class Releases(AUSTable):
                     tip_release = self.getReleases(name=name, transaction=transaction)[0]
                     tip_blob = tip_release.get('data')
                     m = dictdiffer.merge.Merger(ancestor_blob, tip_blob, blob, {})
+                    m.resolver = MyResolver()
                     try:
                         m.run()
                         # Merger merges the patches into a single unified patch,
