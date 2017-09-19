@@ -2055,7 +2055,7 @@ class Releases(AUSTable):
                 print second_patches
                 print conflicts
                 for conflict in conflicts:
-                    print conflicts
+                    print conflict
                     conflict_path = self._find_conflicting_path(conflict)
                     print conflict_path
                     if self._auto_resolve(conflict):
