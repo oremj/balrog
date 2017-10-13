@@ -36,6 +36,9 @@ python scripts/get-prod-db-dump.py
 echo "Overriding current database with production dump..."
 cat $LOCAL_DUMP | mysql -h "$host" -u "$username" --password="$password" "$database"
 
+echo "Growing releases_history to a more production-like size"
+TODO
+
 echo "Upgrading database to the latest version..."
 python scripts/manage-db.py -d $DBURI upgrade
 
