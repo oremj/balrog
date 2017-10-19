@@ -37,7 +37,20 @@ echo "Overriding current database with production dump..."
 cat $LOCAL_DUMP | mysql -h "$host" -u "$username" --password="$password" "$database"
 
 echo "Growing releases_history to a more production-like size"
-TODO
+# It's difficult to generate entirely new rows for releases_history, but we
+# can duplicate existing ones. We must be careful not to re-use existing
+# data_version values in order to keep the data production-like.
+query="INSERT INTO releases_history (changed_by, name, product, version, data, timestamp, read_only, data_version)
+           SELECT changed_by, name, product, version, data, timestamp, read_only,
+                  data_version+(
+                      SELECT MAX(data_version) FROM releases_history WHERE name=releases_history.name
+                  )
+           FROM releases_history
+           WHERE data_version IS NOT NULL name='Firefox-mozilla-central-nightly-latest'
+;"
+while [ `echo 'SELECT COUNT(name) FROM releases_history' | mysql -N -h "$host" -u "$username" --password="$password" "$database"` -lt 15000 ]; do
+    echo "$query" | mysql -h "$host" -u "$username" --password="$password" "$database"
+done
 
 echo "Upgrading database to the latest version..."
 python scripts/manage-db.py -d $DBURI upgrade
