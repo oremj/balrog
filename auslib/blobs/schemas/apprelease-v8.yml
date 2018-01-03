@@ -149,6 +149,12 @@
                         appVersion:
                           type: string
                           description: The version of the application represented by this Blob. If set, the locale level version overrides this one.
+                        actions:
+                          type: string
+                          description: A space separated list of actions to be passed to the client. Balrog has no special knowledge of these, merely passes them along to the client. Mozilla bugs 459972 and 549969 have additional background on this. Overrides the top level value if present.
+                        openURL:
+                          type: string
+                          description: An URL to open after the update is applied, if "openURL" is specified as an action. Overrides the top level value if present.
                         displayVersion:
                           type: string
                           description: The displayVersion to return with the update. Generally, the client will show this in the UI. If set, the displayVersion at the locale level takes priority. If set, the locale level version overrides this one.

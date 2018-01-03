@@ -2790,6 +2790,8 @@ class TestSchema8Blob(unittest.TestCase):
             "OS_BOUNCER": "p",
             "locales": {
                 "l": {
+                    "openURL": "http://example2.org/url/%LOCALE%",
+                    "actions": "showURL",
                     "partials": [
                         {
                             "filesize": 8,
@@ -2830,7 +2832,7 @@ class TestSchema8Blob(unittest.TestCase):
         returned = [x.strip() for x in returned]
         expected_header = '<update type="minor" displayVersion="31.0" appVersion="31.0" platformVersion="None" ' \
             'buildID="50" detailsURL="http://example.org/details/l" showPrompt="false" showNeverForVersion="true" ' \
-            'actions="silent" openURL="http://example.org/url/l" notificationURL="http://example.org/notification/l" ' \
+            'actions="showURL" openURL="http://example2.org/url/l" notificationURL="http://example.org/notification/l" ' \
             'alertURL="http://example.org/alert/l" promptWaitTime="12345" ' \
             'binTransMerkleRoot="merkle_root" binTransCertificate="cert" binTransSCTList="sct_list">'
         expected = ["""

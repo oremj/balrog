@@ -474,15 +474,19 @@ class NewStyleVersionsMixin(object):
         if localeData.get("isOSUpdate"):
             updateLine += ' isOSUpdate="true"'
         for attr in self.optional_:
-            if attr in self:
+            value = None
+            if attr in self["platforms"][buildTarget]["locales"][locale]:
+                value = self["platforms"][buildTarget]["locales"][locale][attr]
+            elif attr in self:
+                value = self[attr]
+            if value is not None:
                 if self.interpolable_ and attr in self.interpolable_:
-                    updateLineToAdd = self[attr].replace("%LOCALE%", locale)
+                    updateLineToAdd = value.replace("%LOCALE%", locale)
                     updateLineToAdd = updateLineToAdd.replace("%locale%", locale)
                     updateLine += ' %s="%s"' % (attr, updateLineToAdd)
                 else:
                     # Responses require lower cased version of True/False for
                     # boolean properties. Strings are sent as stored.
-                    value = self[attr]
                     if isinstance(value, bool):
                         value = str(value).lower()
                     updateLine += ' %s="%s"' % (attr, value)
@@ -889,6 +893,7 @@ class ReleaseBlobV8(ProofXMLMixin, ReleaseBlobBase, NewStyleVersionsMixin, Multi
 
     Changes from ReleaseBlobV6:
         * Adds support for ProofXMLMixin (placed as first parameter for inheritance preference)
+        * Adds support for overriding openURL & actions at the locale level
 
     For further information:
         * https://bugzilla.mozilla.org/show_bug.cgi?id=1384296
