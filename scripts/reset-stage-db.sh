@@ -35,7 +35,7 @@ echo "Download prod dump..."
 python scripts/get-prod-db-dump.py
 
 echo "Overriding current database with production dump..."
-cat $LOCAL_DUMP | mysql -h "$host" -u "$username" --password="$password" "$database"
+xz -d -c $LOCAL_DUMP | mysql -h "$host" -u "$username" --password="$password" "$database"
 
 echo "Growing releases_history to a more production-like size"
 # It's difficult to generate entirely new rows for releases_history, but we
