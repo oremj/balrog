@@ -163,5 +163,8 @@ with open(frontend_config, "w+") as f:
     f.write("""
 angular.module('config', [])
 
-.constant('Auth0Config', {});
+.constant('Auth0Config', {})
+.constant('GCSConfig', {{
+    'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/bhearsum_balrogtest_releases_history/o'
+}});
 """.format(auth0_config))

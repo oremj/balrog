@@ -14,16 +14,10 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
 
   function loadPage(newPage) {
     Releases.getHistory($scope.release_name, $scope.pageSize, newPage)
-    .success(function(response) {
-      // it's the same release, but this works
-      $scope.releases = response.revisions;
-      $scope.releases_count = response.count;
-    })
-    .error(function() {
-      console.error(arguments);
-      $scope.failed = true;
-    })
-    .finally(function() {
+    .then(function(response, err) {
+      // TODO: handle err
+      $scope.releases = response;
+      $scope.releases_count = response.length;
       $scope.loading = false;
     });
   }

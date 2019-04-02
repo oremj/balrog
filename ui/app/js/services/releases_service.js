@@ -1,4 +1,4 @@
-angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, Helpers) {
+angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, Helpers, GCSConfig) {
   var service = {
     getNames: function() {
       var deferred = $q.defer();
@@ -19,9 +19,30 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
       return $http.get('/api/releases/columns/product');
     },
     getHistory: function(name, limit, page) {
-      url = '/api/releases/' + encodeURIComponent(name) + '/revisions';
-      url += '?limit=' + limit + '&page=' + page;
-      return $http.get(url);
+      // TODO: handle pagination
+      var deferred = $q.defer();
+      var url = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + name;
+      $http.get(url, headers={})
+      .success(function(response) {
+        var releases = [];
+        response.items.forEach(function(r) {
+          var parts = r.name.replace(name + "/" + name + "-", "").replace(".json", "").split("-");
+          var release = {
+            "name": name,
+            "data_version": parts[0],
+            "timestamp": parts[1],
+            "changed_by": parts[2],
+            "data_url": r.mediaLink,
+          };
+          releases.push(release);
+        });
+        deferred.resolve(releases);
+      })
+      .error(function() {
+        console.error(arguments);
+        deferred.reject(arguments);
+      });
+      return deferred.promise;
     },
     getRelease: function(name) {
       return $http.get('/api/releases/' + encodeURIComponent(name));
