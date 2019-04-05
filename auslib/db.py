@@ -2013,6 +2013,10 @@ class Releases(AUSTable):
                     try:
                         what['data'] = createBlob(merge_dicts(ancestor_blob, tip_blob, blob))
                         self.log.warning("Successfully merged release %s at data_version %s with the latest version.", name, old_data_version)
+                        # Extra logging information to help debug https://bugzilla.mozilla.org/show_bug.cgi?id=1501167
+                        # This is a very large message, so we limit it as much as possible to reduce spam.
+                        if "Firefox" in name and "build" in name and "nightly" not in name:
+                            self.log.warning("Merge input data", extra={"ancestor": ancestor_blob, "tip": tip_blob, "blob": blob})
                     except ValueError:
                         self.log.exception("Couldn't merge release %s at data_version %s with the latest version.", name, old_data_version)
                         # ancestor_change is checked for None a few lines up
