@@ -30,7 +30,6 @@ COPY uwsgi/ /app/uwsgi/
 COPY .coveragerc MANIFEST.in requirements-test.txt setup.py tox.ini version.json version.txt /app/
 # we need .git to gather information for coverage reports
 COPY .git/ /app/.git/
-COPY google.json /app/google.json
 
 # Using /bin/bash as the entrypoint works around some volume mount issues on Windows
 # where volume-mounted files do not have execute bits set.

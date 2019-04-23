@@ -18,6 +18,7 @@ services:
       - "7070"
     volumes:
       - .:/app
+      - ./${GOOGLE_APPLICATION_CREDENTIALS}:/app/${GOOGLE_APPLICATION_CREDENTIALS}
     links:
       - balrogdb
     environment:
@@ -37,7 +38,6 @@ services:
       - AUTH0_AUDIENCE=balrog-localdev
       - AUTH0_RESPONSE_TYPE=token id_token
       - AUTH0_SCOPE=full-user-credentials openid profile email
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/google.json
       # Grab mail information from the local environment
       - SMTP_HOST
       - SMTP_PORT
@@ -48,6 +48,7 @@ services:
       - NOTIFY_FROM_ADDR
       - STAGING
       - LOCAL_ADMIN
+      - GOOGLE_APPLICATION_CREDENTIALS
     healthcheck:
         test: nc -z -v balrogadmin 7070
         interval: 5s
