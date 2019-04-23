@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from flask_wtf.csrf import CSRFProtect
 
@@ -26,6 +27,7 @@ if os.environ.get("STAGING"):
         }
     )
 
+
 # Logging needs to be set-up before importing the application to make sure that
 # logging done from other modules uses our Logger.
 logging_kwargs = {"level": os.environ.get("LOG_LEVEL", logging.INFO)}
@@ -35,6 +37,11 @@ configure_logging(**logging_kwargs)
 
 from auslib.global_state import cache, dbo  # noqa
 from auslib.web.admin.base import app as application  # noqa
+
+if not os.environ.get("LOCALDEV") and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+    log = logging.getLogger(__file__)
+    log.critical("GOOGLE_APPLICATION_CREDENTIALS must be provided")
+    sys.exit(1)
 
 cache.make_copies = True
 # We explicitly don't want a blob_version cache here because it will cause
