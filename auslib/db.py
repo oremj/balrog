@@ -15,8 +15,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.interfaces import PoolListener
 from sqlalchemy.sql.expression import null
 
+from google.cloud import storage
+
 import migrate.versioning.api
 import migrate.versioning.schema
+
 from auslib.blobs.base import createBlob, merge_dicts
 from auslib.global_state import cache
 from auslib.util.rulematching import (
@@ -669,20 +672,25 @@ class GCSHistory():
         pass
 
     def forInsert(self, insertedKeys, columns, changed_by, trans):
-        # TODO: need to add extra metadata (data_version, timestamp, changed_by, other stuff?)
-        # TODO: need to define data format more. maybe put everything in a folder?
-        from google.cloud import storage
         client = storage.Client()
         bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
-        bname = "{}-abc2".format(columns.get('name', 'unknown-release'))
+        bname = "{}/{}-{}-{}.json".format(columns.get("name"), columns.get("data_version"), getMillisecondTimestamp(), changed_by)
         blob = bucket.blob(bname)
         blob.upload_from_string(columns['data'].getJSON())
 
     def forDelete(self, rowData, changed_by, trans):
-        pass
+        client = storage.Client()
+        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
+        bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
+        blob = bucket.blob(bname)
+        blob.upload_from_string(rowData['data'].getJSON())
 
     def forUpdate(self, rowData, changed_by, trans):
-        pass
+        client = storage.Client()
+        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
+        bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
+        blob = bucket.blob(bname)
+        blob.upload_from_string(rowData['data'].getJSON())
 
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
         pass
