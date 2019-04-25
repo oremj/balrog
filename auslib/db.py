@@ -15,8 +15,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.interfaces import PoolListener
 from sqlalchemy.sql.expression import null
 
-from google.cloud import storage
-
 import migrate.versioning.api
 import migrate.versioning.schema
 
@@ -290,7 +288,7 @@ class AUSTable(object):
 
     # TODO: historyClass=True is a horrible hack to work around the fact that we can't forward declare HistoryTable
     def __init__(
-        self, db, dialect, historyClass=True, versioned=True, scheduled_changes=False, scheduled_changes_kwargs={}, onInsert=None, onUpdate=None, onDelete=None
+        self, db, dialect, historyClass=True, historyKwargs={}, versioned=True, scheduled_changes=False, scheduled_changes_kwargs={}, onInsert=None, onUpdate=None, onDelete=None
     ):
         self.db = db
         self.t = self.table
@@ -311,7 +309,7 @@ class AUSTable(object):
         if historyClass:
             if historyClass is True:
                 historyClass = HistoryTable
-            self.history = historyClass(db, dialect, self.t.metadata, self)
+            self.history = historyClass(db, dialect, self.t.metadata, self, **historyKwargs)
         else:
             self.history = None
         # Set-up a scheduled changes table if required
@@ -668,29 +666,23 @@ class AUSTable(object):
 
 
 class GCSHistory():
-    def __init__(self, db, dialect, metadata, baseTable):
-        pass
+    def __init__(self, db, dialect, metadata, baseTable, bucket):
+        self.bucket = bucket
 
     def forInsert(self, insertedKeys, columns, changed_by, trans):
-        client = storage.Client()
-        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
         bname = "{}/{}-{}-{}.json".format(columns.get("name"), columns.get("data_version"), getMillisecondTimestamp(), changed_by)
-        blob = bucket.blob(bname)
-        blob.upload_from_string(columns['data'].getJSON())
+        blob = self.bucket.blob(bname)
+        blob.upload_from_string(columns['data'].getJSON(), content_type="application/json")
 
     def forDelete(self, rowData, changed_by, trans):
-        client = storage.Client()
-        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
         bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
-        blob = bucket.blob(bname)
-        blob.upload_from_string(rowData['data'].getJSON())
+        blob = self.bucket.blob(bname)
+        blob.upload_from_string(rowData['data'].getJSON(), content_type="application/json")
 
     def forUpdate(self, rowData, changed_by, trans):
-        client = storage.Client()
-        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
         bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
-        blob = bucket.blob(bname)
-        blob.upload_from_string(rowData['data'].getJSON())
+        blob = self.bucket.blob(bname)
+        blob.upload_from_string(rowData['data'].getJSON(), content_type="application/json")
 
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
         pass
@@ -1783,7 +1775,7 @@ class Rules(AUSTable):
 
 
 class Releases(AUSTable):
-    def __init__(self, db, metadata, dialect):
+    def __init__(self, db, metadata, dialect, history_bucket):
         self.domainWhitelist = []
 
         self.table = Table(
@@ -1800,7 +1792,7 @@ class Releases(AUSTable):
         else:
             dataType = Text
         self.table.append_column(Column("data", BlobColumn(dataType), nullable=False))
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=GCSHistory)
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=GCSHistory, historyKwargs={"bucket": history_bucket})
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {}
@@ -2623,15 +2615,15 @@ class AUSDatabase(object):
     engine = None
     migrate_repo = path.join(path.dirname(__file__), "migrate")
 
-    def __init__(self, dburi=None, mysql_traditional_mode=False):
+    def __init__(self, dburi=None, mysql_traditional_mode=False, releases_history_bucket=None):
         """Create a new AUSDatabase. Before this object is useful, dburi must be
            set, either through the constructor or setDburi()"""
         if dburi:
-            self.setDburi(dburi, mysql_traditional_mode)
+            self.setDburi(dburi, mysql_traditional_mode, releases_history_bucket)
         self.log = logging.getLogger(self.__class__.__name__)
         self.systemAccounts = []
 
-    def setDburi(self, dburi, mysql_traditional_mode=False):
+    def setDburi(self, dburi, mysql_traditional_mode=False, releases_history_bucket=None):
         """Setup the database connection. Note that SQLAlchemy only opens a connection
            to the database when it needs to, however."""
         if self.engine:
@@ -2644,7 +2636,7 @@ class AUSDatabase(object):
         self.engine = create_engine(self.dburi, pool_recycle=60, listeners=listeners)
         dialect = self.engine.name
         self.rulesTable = Rules(self, self.metadata, dialect)
-        self.releasesTable = Releases(self, self.metadata, dialect)
+        self.releasesTable = Releases(self, self.metadata, dialect, releases_history_bucket)
         self.permissionsTable = Permissions(self, self.metadata, dialect)
         self.dockerflowTable = Dockerflow(self, self.metadata, dialect)
         self.productRequiredSignoffsTable = ProductRequiredSignoffsTable(self, self.metadata, dialect)

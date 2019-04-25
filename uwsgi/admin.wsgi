@@ -4,6 +4,8 @@ import sys
 
 from flask_wtf.csrf import CSRFProtect
 
+from google.cloud import storage
+
 from auslib.log import configure_logging
 
 SYSTEM_ACCOUNTS = ["balrogagent", "balrog-ffxbld", "balrog-tbirdbld", "seabld"]
@@ -58,7 +60,9 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 # has at least one permission.
 cache.make_cache("users", 1, 300)
 
-dbo.setDb(os.environ["DBURI"])
+storage_client = storage.Client()
+releases_history_bucket = storage_client.get_bucket("bhearsum_balrogtest_releases_history")
+dbo.setDb(os.environ["DBURI"], releases_history_bucket)
 if os.environ.get("NOTIFY_TO_ADDR"):
     use_tls = False
     if os.environ.get("SMTP_TLS"):
@@ -174,6 +178,6 @@ angular.module('config', [])
 
 .constant('Auth0Config', {})
 .constant('GCSConfig', {{
-    'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/bhearsum_balrogtest_releases_history/o'
+    'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/{}/o'
 }});
-""".format(auth0_config))
+""".format(auth0_config, "bhearsum_balrogtest_releases_history"))
