@@ -18,19 +18,20 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
     getProducts: function(){
       return $http.get('/api/releases/columns/product');
     },
-    getHistory: function(name, limit, page) {
-      // TODO: handle pagination
+    getHistory: function(name) {
+      // TODO: handle pagination if needed for performance. should test this after we import Firefox-mozilla-central-nightly-latest data
       var deferred = $q.defer();
-      var url = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + name;
+      var url = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + '&delimeter=/';
+      console.log(url);
       $http.get(url, headers={})
       .success(function(response) {
         var releases = [];
         response.items.forEach(function(r) {
-          var parts = r.name.replace(name + "/" + name + "-", "").replace(".json", "").split("-");
+          var parts = r.name.replace(name + "/", "").replace(".json", "").split("-");
           var release = {
             "name": name,
             "data_version": parts[0],
-            "timestamp": parts[1],
+            "timestamp": parseInt(parts[1]),
             "changed_by": parts[2],
             "data_url": r.mediaLink,
           };

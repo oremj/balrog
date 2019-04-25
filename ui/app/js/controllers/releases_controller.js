@@ -14,7 +14,7 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
   $scope.auth0 = Auth0;
 
   function loadPage(newPage) {
-    Releases.getHistory($scope.release_name, $scope.pageSize, newPage)
+    Releases.getHistory($scope.release_name)
     .then(function(response, err) {
       // TODO: handle err
       $scope.releases = response;
