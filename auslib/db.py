@@ -409,18 +409,8 @@ class AUSTable(object):
         query, unconsumed_columns = self._insertStatement(**data)
         ret = trans.execute(query)
         if self.history:
-            from google.cloud import storage
-            client = storage.Client()
-            bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
-            bname = "{}-abc".format(columns.get('name', 'unknown-release'))
-            blob = bucket.blob(bname)
-            print(dir(columns.get('data')))
-            print(type(columns.get('data')))
-            blob.upload_from_string(columns['data'].getJSON())
-            #blob.upload_from_string(columns.get('data', 'unknown data'))
-            print("uploaded to gcs")
-            #for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
-            #    trans.execute(q)
+            for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
+                trans.execute(q)
         if self.onInsert:
             pk_columns = self.t.primary_key.columns.keys()
             pk_values = ret.inserted_primary_key
