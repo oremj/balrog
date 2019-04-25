@@ -671,7 +671,7 @@ class ScheduledChangesTableMixin(object):
                     Column("foo", String(15), nullable=False),
                     Column("bar", String(15)),
                 )
-                super(TestTable, self).__init__(db, "sqlite", scheduled_changes=True, history=True, versioned=True)
+                super(TestTable, self).__init__(db, "sqlite", scheduled_changes=True, versioned=True)
 
             def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
                 for row in affected_rows:
@@ -893,7 +893,7 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
                 self.table = Table(
                     "test_table2", metadata, Column("foo_name", String(15), primary_key=True), Column("foo", String(15)), Column("bar", String(15))
                 )
-                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, history=True, versioned=True)
+                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, versioned=True)
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
                 return None
@@ -925,7 +925,7 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
                     Column("bar", String(15), primary_key=True, nullable=False),
                     Column("baz", String(15)),
                 )
-                super(TestTable, self).__init__(db, "sqlite", scheduled_changes=True, history=False, versioned=True)
+                super(TestTable, self).__init__(db, "sqlite", scheduled_changes=True, historyClass=None, versioned=True)
 
         table = TestTable(self.db, self.metadata)
         self.metadata.create_all()
@@ -947,7 +947,7 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
                 self.table = Table(
                     "test_table2", metadata, Column("fooid", Integer, primary_key=True), Column("foo", String(15), primary_key=True), Column("bar", String(15))
                 )
-                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, history=True, versioned=True)
+                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, versioned=True)
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
                 return None
@@ -1009,7 +1009,7 @@ class TestScheduledChangesTable(unittest.TestCase, ScheduledChangesTableMixin, M
                 self.table = Table(
                     "test_table2", metadata, Column("fooid", Integer, primary_key=True), Column("foo", String(15), primary_key=True), Column("bar", String(15))
                 )
-                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, history=True, versioned=True)
+                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, versioned=True)
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
                 return None
@@ -1394,7 +1394,7 @@ class TestScheduledChangesWithConfigurableConditions(unittest.TestCase, MemoryDa
                     Column("bar", String(15)),
                 )
                 super(TestTable, self).__init__(
-                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, history=True, versioned=True
+                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, versioned=True
                 )
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
@@ -1459,7 +1459,7 @@ class TestScheduledChangesWithConfigurableConditions(unittest.TestCase, MemoryDa
                     Column("bar", String(15)),
                 )
                 super(TestTable2, self).__init__(
-                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": []}, history=True, versioned=True
+                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": []}, versioned=True
                 )
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
@@ -1478,7 +1478,7 @@ class TestScheduledChangesWithConfigurableConditions(unittest.TestCase, MemoryDa
                     Column("bar", String(15)),
                 )
                 super(TestTable3, self).__init__(
-                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time", "blech"]}, history=True, versioned=True
+                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time", "blech"]}, versioned=True
                 )
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
