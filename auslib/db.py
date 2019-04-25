@@ -664,6 +664,30 @@ class AUSTable(object):
         return self.history.select(transaction=transaction, limit=limit, order_by=self.history.timestamp.desc())
 
 
+class GCSHistory():
+    def __init__(self, db, dialect, metadata, baseTable):
+        pass
+
+    def forInsert(self, insertedKeys, columns, changed_by, trans):
+        # TODO: need to add extra metadata (data_version, timestamp, changed_by, other stuff?)
+        # TODO: need to define data format more. maybe put everything in a folder?
+        from google.cloud import storage
+        client = storage.Client()
+        bucket = client.get_bucket("bhearsum_balrogtest_releases_history")
+        bname = "{}-abc2".format(columns.get('name', 'unknown-release'))
+        blob = bucket.blob(bname)
+        blob.upload_from_string(columns['data'].getJSON())
+
+    def forDelete(self, rowData, changed_by, trans):
+        pass
+
+    def forUpdate(self, rowData, changed_by, trans):
+        pass
+
+    def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
+        pass
+
+
 class HistoryTable(AUSTable):
     """Represents a history table that may be attached to another AUSTable.
        History tables mirror the structure of their `baseTable', with the exception
@@ -1768,7 +1792,7 @@ class Releases(AUSTable):
         else:
             dataType = Text
         self.table.append_column(Column("data", BlobColumn(dataType), nullable=False))
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]})
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=GCSHistory)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {}
