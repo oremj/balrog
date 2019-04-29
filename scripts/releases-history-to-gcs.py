@@ -38,11 +38,12 @@ async def process_release(r, session, balrog_api, bucket):
         except aiohttp.ClientResponseError:
             current_blob_hash = None
         if old_version_hash != current_blob_hash:
-            print("{}: Uploading data version {}".format(r, rev["data_version"]))
+            #print("{}: Uploading data version {}".format(r, rev["data_version"]))
             blob = bucket.new_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
             await blob.upload(old_version, session)
         else:
-            print("{}: Skipping data version {} because its md5 matches".format(r, rev["data_version"]))
+            pass
+            #print("{}: Skipping data version {} because its md5 matches".format(r, rev["data_version"]))
 
         processed += 1
 
@@ -73,8 +74,18 @@ async def main(loop, balrog_api, bucket_name):
 
             release_futures.append(process_release(r, session, balrog_api, bucket))
 
-        for (r, processed) in await asyncio.gather(*release_futures):
-            uploads[r] = processed
+        done, pending = await asyncio.wait(release_futures, timeout=30)
+        for d in done:
+            res = d.result()
+            uploads[res[0]] = res[1]
+
+        while pending:
+            print("{} releases left to process...".format(len(pending)))
+            done, pending = await asyncio.wait(pending, timeout=30)
+            for d in done:
+                res = d.result()
+                uploads[res[0]] = res[1]
+
 
     for r in releases:
         if r not in uploads:
