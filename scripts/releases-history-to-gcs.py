@@ -14,8 +14,8 @@ from gcloud.aio.storage import Storage
 skip_patterns = ("-nightly-",)
 
 
-async def get_revisions(r, session, balrog_api):
-    async with session.get("{}/releases/{}/revisions".format(balrog_api, r)) as resp:
+async def get_revisions(r, session, balrog_api, sem):
+    async with sem, session.get("{}/releases/{}/revisions".format(balrog_api, r)) as resp:
         return (await resp.json())["revisions"]
 
 
@@ -25,12 +25,13 @@ async def get_releases(session, balrog_api):
             yield (r["name"], r["data_version"])
 
 
-async def process_release(r, session, balrog_api, bucket):
+async def process_release(r, session, balrog_api, bucket, sem):
     processed = 0
 
     # TODO: may need limiting or a semaphore when talking to balrog?
-    for rev in await get_revisions(r, session, balrog_api):
-        old_version = await (await session.get("{}/history/view/release/{}/data".format(balrog_api, rev["change_id"]))).text()
+    for rev in await get_revisions(r, session, balrog_api, sem):
+        async with sem:
+            old_version = await (await session.get("{}/history/view/release/{}/data".format(balrog_api, rev["change_id"]))).text()
         old_version_hash = hashlib.md5(old_version.encode("ascii")).digest()
         try:
             current_blob = await bucket.get_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
@@ -50,6 +51,8 @@ async def process_release(r, session, balrog_api, bucket):
     return r, processed
 
 async def main(loop, balrog_api, bucket_name):
+    # limit the number of connections to balrog at any one time
+    sem = asyncio.Semaphore(20)
     uploads = defaultdict(int)
     releases = {}
 
@@ -72,7 +75,7 @@ async def main(loop, balrog_api, bucket_name):
             if n == 10:
                 break
 
-            release_futures.append(process_release(r, session, balrog_api, bucket))
+            release_futures.append(process_release(r, session, balrog_api, bucket, sem))
 
         done, pending = await asyncio.wait(release_futures, timeout=30)
         for d in done:
