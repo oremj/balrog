@@ -28,6 +28,7 @@ async def get_releases(session, balrog_api):
 async def process_release(r, session, balrog_api, bucket):
     processed = 0
 
+    # TODO: may need limiting or a semaphore when talking to balrog?
     for rev in await get_revisions(r, session, balrog_api):
         old_version = await (await session.get("{}/history/view/release/{}/data".format(balrog_api, rev["change_id"]))).text()
         old_version_hash = hashlib.md5(old_version.encode("ascii")).digest()
@@ -36,11 +37,11 @@ async def process_release(r, session, balrog_api, bucket):
         if current_blob:
             current_blob_hash = base64.b64decode(current_blob.md5Hash)
         if old_version_hash != current_blob_hash:
-            print("  Uploading data version {}".format(rev["data_version"]))
+            print("{}: Uploading data version {}".format(r, rev["data_version"]))
             blob = bucket.blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
             #await blob.upload_from_string(old_version, content_type="application/json")
         else:
-            print("  Skipping data version {} because its md5 matches".format(rev["data_version"]))
+            print("{}: Skipping data version {} because its md5 matches".format(r, rev["data_version"]))
 
         processed += 1
 
@@ -63,9 +64,8 @@ async def main(loop, balrog_api, bucket_name):
 
         release_futures = []
         for r in releases:
-            print("Processing {}, {}% complete".format(r, int(n / len(releases) * 100)))
             if any(pat in r for pat in skip_patterns):
-                print("  Skipping because it matches a skip pattern")
+                print("Skipping {} because it matches a skip pattern".format(r))
             n += 1
             if n == 10:
                 break
