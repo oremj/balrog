@@ -32,14 +32,15 @@ async def process_release(r, session, balrog_api, bucket):
     for rev in await get_revisions(r, session, balrog_api):
         old_version = await (await session.get("{}/history/view/release/{}/data".format(balrog_api, rev["change_id"]))).text()
         old_version_hash = hashlib.md5(old_version.encode("ascii")).digest()
-        current_blob = await bucket.get_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
-        current_blob_hash = None
-        if current_blob:
+        try:
+            current_blob = await bucket.get_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
             current_blob_hash = base64.b64decode(current_blob.md5Hash)
+        except aiohttp.ClientResponseError:
+            current_blob_hash = None
         if old_version_hash != current_blob_hash:
             print("{}: Uploading data version {}".format(r, rev["data_version"]))
-            blob = bucket.blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
-            #await blob.upload_from_string(old_version, content_type="application/json")
+            blob = bucket.new_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
+            await blob.upload(old_version, session)
         else:
             print("{}: Skipping data version {} because its md5 matches".format(r, rev["data_version"]))
 
