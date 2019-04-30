@@ -40,6 +40,8 @@ configure_logging(**logging_kwargs)
 from auslib.global_state import cache, dbo  # noqa
 from auslib.web.admin.base import app as application  # noqa
 
+# TODO: make sure the app actually works locally without GOOGLE_APPLICATION_CREDENTIALS
+# probably by disabling writes to releases history
 if not os.environ.get("LOCALDEV") and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
     log = logging.getLogger(__file__)
     log.critical("GOOGLE_APPLICATION_CREDENTIALS must be provided")
@@ -61,7 +63,7 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 cache.make_cache("users", 1, 300)
 
 storage_client = storage.Client()
-releases_history_bucket = storage_client.get_bucket("bhearsum_balrogtest_releases_history")
+releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
 dbo.setDb(os.environ["DBURI"], releases_history_bucket)
 if os.environ.get("NOTIFY_TO_ADDR"):
     use_tls = False
@@ -180,4 +182,4 @@ angular.module('config', [])
 .constant('GCSConfig', {{
     'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/{}/o'
 }});
-""".format(auth0_config, "bhearsum_balrogtest_releases_history"))
+""".format(auth0_config, os.environ["RELEASES_HISTORY_BUCKET"]))
