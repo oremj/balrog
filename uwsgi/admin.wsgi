@@ -20,7 +20,7 @@ DOMAIN_WHITELIST = {
     "redirector.gvt1.com": ("Widevine",),
     "ftp.mozilla.org": ("SystemAddons",),
 }
-if os.environ.get("STAGING"):
+if os.environ.get("STAGING") or os.environ.get("LOCALDEV"):
     SYSTEM_ACCOUNTS.extend(["balrog-stage-ffxbld", "balrog-stage-tbirdbld"])
     DOMAIN_WHITELIST.update(
         {
