@@ -38,6 +38,8 @@ services:
       - AUTH0_AUDIENCE=balrog-localdev
       - AUTH0_RESPONSE_TYPE=token id_token
       - AUTH0_SCOPE=full-user-credentials openid profile email
+      # production bucket. we only allow reads from it in localdev
+      - RELEASES_HISTORY_BUCKET=bhearsum_balrogtest_releases_history
       # Grab mail information from the local environment
       - SMTP_HOST
       - SMTP_PORT

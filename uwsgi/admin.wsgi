@@ -62,8 +62,11 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 # has at least one permission.
 cache.make_cache("users", 1, 300)
 
-storage_client = storage.Client()
-releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
+if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+    storage_client = storage.Client()
+    releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
+else:
+    releases_history_bucket = None
 dbo.setDb(os.environ["DBURI"], releases_history_bucket)
 if os.environ.get("NOTIFY_TO_ADDR"):
     use_tls = False

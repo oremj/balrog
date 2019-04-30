@@ -1792,7 +1792,12 @@ class Releases(AUSTable):
         else:
             dataType = Text
         self.table.append_column(Column("data", BlobColumn(dataType), nullable=False))
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=GCSHistory, historyKwargs={"bucket": history_bucket})
+        historyClass = None
+        historyKwargs = {}
+        if history_bucket:
+            historyClass = GCSHistory
+            historyKwargs["bucket"] = history_bucket
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=historyClass, historyKwargs=historyKwargs)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {}
