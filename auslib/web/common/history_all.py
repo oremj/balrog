@@ -15,7 +15,7 @@ from auslib.web.admin.views.required_signoffs import (
 )
 from auslib.web.admin.views.rules import RuleScheduledChangeHistoryView
 from auslib.web.common.history import HistoryHelper, get_input_dict
-from auslib.web.common.releases import get_releases, process_release_revisions
+from auslib.web.common.releases import get_releases
 from auslib.web.common.rules import get_rules
 
 log = logging.getLogger(__name__)
@@ -65,15 +65,6 @@ def rules_history():
     rules = _get_histories(history_table, get_rules)
     history = {"rules": rules, "sc_rules": RuleScheduledChangeHistoryView().get_all()}
     histories = {"Rules": json.loads(history["rules"].data), "Rules scheduled change": json.loads(history["sc_rules"].data)}
-    return histories
-
-
-def releases_history():
-    """GET /releases/history"""
-    history_table = dbo.releases.history
-    releases = _get_histories(history_table, get_releases, process_release_revisions)
-    releases_history = {"releases": releases, "sc_releases": ReleaseScheduledChangeHistoryView().get_all()}
-    histories = {"Releases": json.loads(releases_history["releases"].data), "Releases scheduled change": json.loads(releases_history["sc_releases"].data)}
     return histories
 
 

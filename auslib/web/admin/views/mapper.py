@@ -183,11 +183,6 @@ def release_single_locale_view_put(release, platform, locale):
     return SingleLocaleView().put(release, platform, locale)
 
 
-def release_history_view_post(release):
-    """POST /releases/:release/revisions"""
-    return ReleaseHistoryView().post(release)
-
-
 def required_signoffs_product_revisions_get():
     """GET /required_signoffs/product/revisions"""
     return ProductRequiredSignoffsHistoryAPIView().get()

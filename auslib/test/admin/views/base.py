@@ -114,9 +114,9 @@ class ViewTest(unittest.TestCase):
         )
         dbo.releases.t.insert().execute(name="a", product="a", data=createBlob(dict(name="a", hashFunction="sha512", schema_version=1)), data_version=1)
         dbo.releases.t.insert().execute(name="ab", product="a", data=createBlob(dict(name="ab", hashFunction="sha512", schema_version=1)), data_version=1)
-        dbo.releases.history.data["ab-1"] = createBlob(dict(name="ab", hashFunction="sha512", schema_version=1))
+        dbo.releases.history.data["ab"]["ab-1"] = createBlob(dict(name="ab", hashFunction="sha512", schema_version=1))
         dbo.releases.t.insert().execute(name="b", product="b", data=createBlob(dict(name="b", hashFunction="sha512", schema_version=1)), data_version=1)
-        dbo.releases.history.data["b-1"] = createBlob(dict(name="b", hashFunction="sha512", schema_version=1))
+        dbo.releases.history.data["b"]["b-1"] = createBlob(dict(name="b", hashFunction="sha512", schema_version=1))
         dbo.releases.t.insert().execute(name="c", product="c", data=createBlob(dict(name="c", hashFunction="sha512", schema_version=1)), data_version=1)
         dbo.releases.t.insert().execute(
             name="d",
@@ -145,7 +145,7 @@ class ViewTest(unittest.TestCase):
 """
             ),
         )
-        dbo.releases.history.data["d-1"] = createBlob("""
+        dbo.releases.history.data["d"]["d-1"] = createBlob("""
 {
     "name": "d",
     "schema_version": 1,
