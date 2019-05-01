@@ -19,8 +19,4 @@ class FakeGCSHistory:
 
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
         name = "{}-{}".format(column_values["name"], data_version)
-        return {
-            "name": column_values["name"],
-            "data_version": data_version,
-            "data": self.data[column_values["name"]][name],
-        }
+        return {"name": column_values["name"], "data_version": data_version, "data": self.data[column_values["name"]][name]}

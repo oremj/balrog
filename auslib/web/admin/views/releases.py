@@ -3,7 +3,6 @@ import difflib
 import connexion
 import simplejson as json
 from flask import Response, abort, jsonify
-from sqlalchemy.sql.expression import null
 
 from auslib.blobs.base import BlobValidationError, createBlob
 from auslib.db import OutdatedDataError, ReadOnlyError

@@ -1460,9 +1460,7 @@ class TestScheduledChangesWithConfigurableConditions(unittest.TestCase, MemoryDa
                     Column("foo", String(15), nullable=False),
                     Column("bar", String(15)),
                 )
-                super(TestTable2, self).__init__(
-                    db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": []}, versioned=True
-                )
+                super(TestTable2, self).__init__(db, "sqlite", scheduled_changes=True, scheduled_changes_kwargs={"conditions": []}, versioned=True)
 
             def getPotentialRequiredSignoffs(self, *args, **kwargs):
                 return None

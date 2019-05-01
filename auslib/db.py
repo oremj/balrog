@@ -287,7 +287,17 @@ class AUSTable(object):
     """
 
     def __init__(
-        self, db, dialect, historyClass=None, historyKwargs={}, versioned=True, scheduled_changes=False, scheduled_changes_kwargs={}, onInsert=None, onUpdate=None, onDelete=None
+        self,
+        db,
+        dialect,
+        historyClass=None,
+        historyKwargs={},
+        versioned=True,
+        scheduled_changes=False,
+        scheduled_changes_kwargs={},
+        onInsert=None,
+        onUpdate=None,
+        onDelete=None,
     ):
         self.db = db
         self.t = self.table
@@ -696,7 +706,6 @@ class GCSHistory:
             "data_version": data_version,
             self.data_column: json.loads(blobs[0].download_as_string()),
         }
-        
 
 
 class HistoryTable(AUSTable):
@@ -1406,7 +1415,9 @@ class RequiredSignoffsTable(AUSTable):
         self.table.append_column(Column("role", String(50), primary_key=True))
         self.table.append_column(Column("signoffs_required", Integer, nullable=False))
 
-        super(RequiredSignoffsTable, self).__init__(db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=HistoryTable)
+        super(RequiredSignoffsTable, self).__init__(
+            db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=HistoryTable
+        )
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {"rs": []}
@@ -1811,7 +1822,9 @@ class Releases(AUSTable):
         else:
             # Can't have history without a bucket
             historyClass = None
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=historyClass, historyKwargs=historyKwargs)
+        AUSTable.__init__(
+            self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=historyClass, historyKwargs=historyKwargs
+        )
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {}

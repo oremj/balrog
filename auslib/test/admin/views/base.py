@@ -60,7 +60,7 @@ class ViewTest(unittest.TestCase):
 }
 """
             )
-        dbo.setDb("sqlite:///:memory:", releases_history_bucket='fake', releases_history_class=FakeGCSHistory)
+        dbo.setDb("sqlite:///:memory:", releases_history_bucket="fake", releases_history_class=FakeGCSHistory)
 
         self.orig_releases_history = dbo.releases.history
         # TODO: need a better mock, or maybe a Fake that stores history in memory?
@@ -145,7 +145,8 @@ class ViewTest(unittest.TestCase):
 """
             ),
         )
-        dbo.releases.history.data["d"]["d-1"] = createBlob("""
+        dbo.releases.history.data["d"]["d-1"] = createBlob(
+            """
 {
     "name": "d",
     "schema_version": 1,
@@ -164,7 +165,8 @@ class ViewTest(unittest.TestCase):
         }
     }
 }
-""")
+"""
+        )
         dbo.rules.t.insert().execute(
             rule_id=1,
             priority=100,

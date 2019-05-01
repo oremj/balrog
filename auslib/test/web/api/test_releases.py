@@ -1,5 +1,3 @@
-import mock
-
 from auslib.test.web.api.base import CommonTestBase
 
 
@@ -47,6 +45,7 @@ class TestPublicReleasesAPI(CommonTestBase):
         self.assertIn("p", got["platforms"])
         platform = got["platforms"]["p"]
         self.assertIn("l", platform["locales"])
+
     def test_get_release_locale(self):
         ret = self.public_client.get("/api/v1/releases/Firefox.55.0a1/builds/p/l")
         self.assertEqual(ret.status_code, 200)
