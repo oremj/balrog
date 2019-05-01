@@ -1786,7 +1786,7 @@ class Rules(AUSTable):
 
 
 class Releases(AUSTable):
-    def __init__(self, db, metadata, dialect, history_bucket):
+    def __init__(self, db, metadata, dialect, history_bucket, historyClass):
         self.domainWhitelist = []
 
         self.table = Table(
@@ -1803,13 +1803,14 @@ class Releases(AUSTable):
         else:
             dataType = Text
         self.table.append_column(Column("data", BlobColumn(dataType), nullable=False))
-        historyClass = None
         historyKwargs = {}
         if history_bucket:
-            historyClass = GCSHistory
             historyKwargs["bucket"] = history_bucket
             historyKwargs["identifier_column"] = "name"
             historyKwargs["data_column"] = "data"
+        else:
+            # Can't have history without a bucket
+            historyClass = None
         AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=historyClass, historyKwargs=historyKwargs)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
@@ -2633,15 +2634,15 @@ class AUSDatabase(object):
     engine = None
     migrate_repo = path.join(path.dirname(__file__), "migrate")
 
-    def __init__(self, dburi=None, mysql_traditional_mode=False, releases_history_bucket=None):
+    def __init__(self, dburi=None, mysql_traditional_mode=False, releases_history_bucket=None, releases_history_class=GCSHistory):
         """Create a new AUSDatabase. Before this object is useful, dburi must be
            set, either through the constructor or setDburi()"""
         if dburi:
-            self.setDburi(dburi, mysql_traditional_mode, releases_history_bucket)
+            self.setDburi(dburi, mysql_traditional_mode, releases_history_bucket, releases_history_class)
         self.log = logging.getLogger(self.__class__.__name__)
         self.systemAccounts = []
 
-    def setDburi(self, dburi, mysql_traditional_mode=False, releases_history_bucket=None):
+    def setDburi(self, dburi, mysql_traditional_mode=False, releases_history_bucket=None, releases_history_class=GCSHistory):
         """Setup the database connection. Note that SQLAlchemy only opens a connection
            to the database when it needs to, however."""
         if self.engine:
@@ -2654,7 +2655,7 @@ class AUSDatabase(object):
         self.engine = create_engine(self.dburi, pool_recycle=60, listeners=listeners)
         dialect = self.engine.name
         self.rulesTable = Rules(self, self.metadata, dialect)
-        self.releasesTable = Releases(self, self.metadata, dialect, releases_history_bucket)
+        self.releasesTable = Releases(self, self.metadata, dialect, releases_history_bucket, releases_history_class)
         self.permissionsTable = Permissions(self, self.metadata, dialect)
         self.dockerflowTable = Dockerflow(self, self.metadata, dialect)
         self.productRequiredSignoffsTable = ProductRequiredSignoffsTable(self, self.metadata, dialect)

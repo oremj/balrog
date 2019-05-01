@@ -190,7 +190,7 @@ if __name__ == "__main__":
         else:
             dbPath = "sqlite:///:memory:"
         AUS = AUS_Class()
-        dbo.setDb(dbPath)
+        dbo.setDb(dbPath, None, None)
         dbo.create()
         dbo.setDomainWhitelist(WHITELISTED_DOMAINS)
         populateDB(td)

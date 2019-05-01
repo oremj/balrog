@@ -14,10 +14,10 @@ class DbWrapper(object):
     def __init__(self):
         self.db = None
 
-    def setDb(self, dburi, releases_history_bucket=None):
+    def setDb(self, dburi, releases_history_bucket, releases_history_class):
         from auslib.db import AUSDatabase
 
-        self.db = AUSDatabase(dburi, releases_history_bucket=releases_history_bucket)
+        self.db = AUSDatabase(dburi, releases_history_bucket=releases_history_bucket, releases_history_class=releases_history_class)
 
     def __getattr__(self, name):
         if not self.db:
