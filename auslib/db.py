@@ -665,27 +665,41 @@ class AUSTable(object):
         return self.history.select(transaction=transaction, limit=limit, order_by=self.history.timestamp.desc())
 
 
-class GCSHistory():
-    def __init__(self, db, dialect, metadata, baseTable, bucket):
+class GCSHistory:
+    def __init__(self, db, dialect, metadata, baseTable, bucket, identifier_column, data_column):
         self.bucket = bucket
+        self.identifier_column = identifier_column
+        self.data_column = data_column
 
+    # TODO: may need to do extra or different inserts for deletes and inserts?
+    # TODO: maybe timestamp should go before data version, since data version is None for deletes?
     def forInsert(self, insertedKeys, columns, changed_by, trans):
-        bname = "{}/{}-{}-{}.json".format(columns.get("name"), columns.get("data_version"), getMillisecondTimestamp(), changed_by)
+        bname = "{}/{}-{}-{}.json".format(columns.get(self.identifier_column), columns.get("data_version"), getMillisecondTimestamp(), changed_by)
         blob = self.bucket.blob(bname)
-        blob.upload_from_string(columns['data'].getJSON(), content_type="application/json")
+        blob.upload_from_string(json.dumps(columns[self.data_column]), content_type="application/json")
 
     def forDelete(self, rowData, changed_by, trans):
-        bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
+        bname = "{}/{}-{}-{}.json".format(rowData.get(self.identifier_column), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
         blob = self.bucket.blob(bname)
-        blob.upload_from_string(rowData['data'].getJSON(), content_type="application/json")
+        blob.upload_from_string("", content_type="application/json")
 
     def forUpdate(self, rowData, changed_by, trans):
-        bname = "{}/{}-{}-{}.json".format(rowData.get("name"), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
+        bname = "{}/{}-{}-{}.json".format(rowData.get(self.identifier_column), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
         blob = self.bucket.blob(bname)
-        blob.upload_from_string(rowData['data'].getJSON(), content_type="application/json")
+        blob.upload_from_string(json.dumps(rowData[self.data_column]), content_type="application/json")
 
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
-        pass
+        if self.identifier_column not in column_values or not data_version:
+            raise Exception("cannot proceed!")
+        blobs = [b for b in self.bucket.list_blobs(prefix="{}/{}".format(column_values[self.identifier_column], data_version))]
+        if len(blobs) != 1:
+            raise Exception("wrong number of blobs!")
+        return {
+            self.identifier_column: column_values[self.identifier_column],
+            "data_version": data_version,
+            self.data_column: json.loads(blobs[0].download_as_string()),
+        }
+        
 
 
 class HistoryTable(AUSTable):
@@ -1797,6 +1811,8 @@ class Releases(AUSTable):
         if history_bucket:
             historyClass = GCSHistory
             historyKwargs["bucket"] = history_bucket
+            historyKwargs["identifier_column"] = "name"
+            historyKwargs["data_column"] = "data"
         AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=historyClass, historyKwargs=historyKwargs)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
