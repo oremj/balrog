@@ -202,12 +202,12 @@ class TestReleasesAPI_JSON(ViewTest):
         ret = select([dbo.releases.data]).where(dbo.releases.name == "dd").execute().fetchone()[0]
         self.assertEqual(ret, result_blob)
 
-        history_rows = dbo.releases.history.t.select().where(dbo.releases.history.name == "dd").execute().fetchall()
-        self.assertEqual(len(history_rows), 4)
-        self.assertEqual(history_rows[0]["data"], None)
-        self.assertEqual(history_rows[1]["data"], json.loads(ancestor_blob))
-        self.assertEqual(history_rows[2]["data"], json.loads(blob1))
-        self.assertEqual(history_rows[3]["data"], result_blob)
+        history_entries = dbo.releases.history.data["dd"]
+
+        self.assertEqual(len(history_entries), 3)
+        self.assertEqual(history_entries["dd-1"], json.loads(ancestor_blob))
+        self.assertEqual(history_entries["dd-2"], json.loads(blob1))
+        self.assertEqual(history_entries["dd-3"], result_blob)
 
     def testReleasePutUpdateConflictingOutdatedData(self):
         ancestor_blob = """

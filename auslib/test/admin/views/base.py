@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import mock
 import os
@@ -15,6 +16,31 @@ from auslib.web.admin.base import app
 def setUpModule():
     # Silence SQLAlchemy-Migrate's debugging logger
     logging.getLogger("migrate").setLevel(logging.CRITICAL)
+
+
+class FakeGCSHistory:
+    def __init__(self, *args, **kwargs):
+        self.data = defaultdict(dict)
+
+    def forInsert(self, insertedKeys, columns, changed_by, transaction):
+        name = "{}-{}".format(columns.get("name"), columns.get("data_version"))
+        self.data[columns.get("name")][name] = columns.get("data")
+
+    def forDelete(self, rowData, changed_by, transaction):
+        name = "{}-{}".format(rowData.get("name"), rowData.get("data_version"))
+        self.data[rowData.get("name")][name] = ""
+
+    def forUpdate(self, rowData, changed_by, transaction):
+        name = "{}-{}".format(rowData.get("name"), rowData.get("data_version"))
+        self.data[rowData.get("name")][name] = rowData.get("data")
+
+    def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
+        name = "{}-{}".format(column_values["name"], data_version)
+        return {
+            "name": column_values["name"],
+            "data_version": data_version,
+            "data": self.data[column_values["name"]][name],
+        }
 
 
 @pytest.mark.usefixtures("current_db_schema")
@@ -67,7 +93,7 @@ class ViewTest(unittest.TestCase):
         # only the merge tests benefit from having history
         # the rest are fine if we just let history be None
         # maybe we should mock this only in the tests we care about?
-        dbo.releases.history = mock.Mock()
+        dbo.releases.history = FakeGCSHistory()
 
         dbo.setDomainWhitelist({"good.com": ("a", "b", "c", "d")})
         self.metadata.create_all(dbo.engine)
@@ -114,7 +140,9 @@ class ViewTest(unittest.TestCase):
         )
         dbo.releases.t.insert().execute(name="a", product="a", data=createBlob(dict(name="a", hashFunction="sha512", schema_version=1)), data_version=1)
         dbo.releases.t.insert().execute(name="ab", product="a", data=createBlob(dict(name="ab", hashFunction="sha512", schema_version=1)), data_version=1)
+        dbo.releases.history.data["ab-1"] = createBlob(dict(name="ab", hashFunction="sha512", schema_version=1))
         dbo.releases.t.insert().execute(name="b", product="b", data=createBlob(dict(name="b", hashFunction="sha512", schema_version=1)), data_version=1)
+        dbo.releases.history.data["b-1"] = createBlob(dict(name="b", hashFunction="sha512", schema_version=1))
         dbo.releases.t.insert().execute(name="c", product="c", data=createBlob(dict(name="c", hashFunction="sha512", schema_version=1)), data_version=1)
         dbo.releases.t.insert().execute(
             name="d",
@@ -143,6 +171,26 @@ class ViewTest(unittest.TestCase):
 """
             ),
         )
+        dbo.releases.history.data["d-1"] = createBlob("""
+{
+    "name": "d",
+    "schema_version": 1,
+    "hashFunction": "sha512",
+    "platforms": {
+        "p": {
+            "locales": {
+                "d": {
+                    "complete": {
+                        "filesize": 1234,
+                        "from": "*",
+                        "hashValue": "abc"
+                    }
+                }
+            }
+        }
+    }
+}
+""")
         dbo.rules.t.insert().execute(
             rule_id=1,
             priority=100,
