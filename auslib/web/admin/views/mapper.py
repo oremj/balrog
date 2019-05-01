@@ -13,9 +13,6 @@ from auslib.web.admin.views.permissions import (
 )
 from auslib.web.admin.views.releases import (
     EnactReleaseScheduledChangeView,
-    ReleaseDiffView,
-    ReleaseFieldView,
-    ReleaseHistoryView,
     ReleaseReadOnlyView,
     ReleasesAPIView,
     ReleaseScheduledChangeHistoryView,
@@ -136,19 +133,9 @@ def user_specific_permission_delete(username, permission):
     return SpecificPermissionView().delete(username, permission)
 
 
-def release_diff_history_get(change_id, field):
-    """GET /history/diff/release/:id/:field"""
-    return ReleaseDiffView().get(change_id, field)
-
-
 def scheduled_release_diff_get(sc_id):
     """GET /scheduled_changes/diff/release/:sc_id"""
     return ScheduledReleaseDiffView().get(sc_id)
-
-
-def release_view_history_get(change_id, field):
-    """GET /history/view/release/:id/:field"""
-    return ReleaseFieldView().get(change_id, field)
 
 
 def release_get():
