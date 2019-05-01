@@ -19,7 +19,7 @@ def setUpModule():
 @pytest.mark.usefixtures("current_db_schema")
 class TestAUSThrottlingWithoutFallback(unittest.TestCase):
     def setUp(self):
-        dbo.setDb("sqlite:///:memory:")
+        dbo.setDb("sqlite:///:memory:", None, None)
         self.metadata.create_all(dbo.engine)
         dbo.releases.t.insert().execute(
             name="b",

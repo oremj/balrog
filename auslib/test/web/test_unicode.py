@@ -9,7 +9,7 @@ from auslib.web.public.base import app
 @pytest.mark.usefixtures("current_db_schema")
 class UnicodeTest(unittest.TestCase):
     def setUp(self):
-        dbo.setDb("sqlite:///:memory:")
+        dbo.setDb("sqlite:///:memory:", None, None)
         self.metadata.create_all(dbo.engine)
         self.client = app.test_client()
 
