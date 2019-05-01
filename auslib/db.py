@@ -286,9 +286,8 @@ class AUSTable(object):
        @type onUpdate: callable
     """
 
-    # TODO: historyClass=True is a horrible hack to work around the fact that we can't forward declare HistoryTable
     def __init__(
-        self, db, dialect, historyClass=True, historyKwargs={}, versioned=True, scheduled_changes=False, scheduled_changes_kwargs={}, onInsert=None, onUpdate=None, onDelete=None
+        self, db, dialect, historyClass=None, historyKwargs={}, versioned=True, scheduled_changes=False, scheduled_changes_kwargs={}, onInsert=None, onUpdate=None, onDelete=None
     ):
         self.db = db
         self.t = self.table
@@ -307,8 +306,6 @@ class AUSTable(object):
                 self.primary_key.append(col)
         # Set-up a history table to do logging in, if required
         if historyClass:
-            if historyClass is True:
-                historyClass = HistoryTable
             self.history = historyClass(db, dialect, self.t.metadata, self, **historyKwargs)
         else:
             self.history = None
@@ -1409,7 +1406,7 @@ class RequiredSignoffsTable(AUSTable):
         self.table.append_column(Column("role", String(50), primary_key=True))
         self.table.append_column(Column("signoffs_required", Integer, nullable=False))
 
-        super(RequiredSignoffsTable, self).__init__(db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]})
+        super(RequiredSignoffsTable, self).__init__(db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=HistoryTable)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {"rs": []}
@@ -1505,7 +1502,7 @@ class SignoffsTable(AUSTable):
         )
         # Because Signoffs cannot be modified, there's no possibility of an
         # update race, so they do not need to be versioned.
-        super(SignoffsTable, self).__init__(db, dialect, versioned=False)
+        super(SignoffsTable, self).__init__(db, dialect, versioned=False, historyClass=HistoryTable)
 
     def insert(self, changed_by=None, transaction=None, dryrun=False, **columns):
         if "sc_id" not in columns or "role" not in columns:
@@ -1574,7 +1571,7 @@ class Rules(AUSTable):
             Column("comment", String(500)),
         )
 
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True)
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, historyClass=HistoryTable)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {}
@@ -2184,7 +2181,7 @@ class Releases(AUSTable):
 class UserRoles(AUSTable):
     def __init__(self, db, metadata, dialect):
         self.table = Table("user_roles", metadata, Column("username", String(100), primary_key=True), Column("role", String(50), primary_key=True))
-        super(UserRoles, self).__init__(db, dialect)
+        super(UserRoles, self).__init__(db, dialect, historyClass=HistoryTable)
 
     def update(self, where, what, changed_by, old_data_version, transaction=None, dryrun=False):
         raise AttributeError("User roles cannot be modified (only granted and revoked)")
@@ -2220,7 +2217,7 @@ class Permissions(AUSTable):
             Column("options", JSONColumn),
         )
         self.user_roles = UserRoles(db, metadata, dialect)
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]})
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=HistoryTable)
 
     def getPotentialRequiredSignoffs(self, affected_rows, transaction=None):
         potential_required_signoffs = {"rs": []}
@@ -2474,7 +2471,7 @@ class EmergencyShutoffs(AUSTable):
             Column("product", String(15), nullable=False, primary_key=True),
             Column("channel", String(75), nullable=False, primary_key=True),
         )
-        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]})
+        AUSTable.__init__(self, db, dialect, scheduled_changes=True, scheduled_changes_kwargs={"conditions": ["time"]}, historyClass=HistoryTable)
 
     def insert(self, changed_by, transaction=None, dryrun=False, **columns):
         if not self.db.hasPermission(changed_by, "emergency_shutoff", "create", columns.get("product"), transaction):
