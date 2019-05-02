@@ -139,6 +139,9 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
         release: function () {
           return release;
         },
+        previous_version: function() {
+          return null;
+        },
         diff: function() {
           return false;
         },
