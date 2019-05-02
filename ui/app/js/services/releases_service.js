@@ -21,11 +21,11 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
     getHistory: function(name) {
       // TODO: handel pagination
       var deferred = $q.defer();
-      var url = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + '&delimeter=/';
-      $http.get(url, headers={})
-      .success(function(response) {
-        var releases = [];
-        response.items.forEach(function(r) {
+      var releases = [];
+      var baseUrl = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + '&delimeter=/';
+
+      function parseReleases(raw_releases) {
+        raw_releases.forEach(function(r) {
           var parts = r.name.replace(name + "/", "").replace(".json", "").split("-");
           var release = {
             "name": name,
@@ -34,18 +34,36 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
             "changed_by": parts[2],
             "data_url": r.mediaLink,
           };
-          // descending sort, so newer versions appear first
-          releases.sort(function(a, b) {
-            return a.data_version < b.data_version;
-          });
           releases.push(release);
         });
-        deferred.resolve(releases);
-      })
-      .error(function() {
-        console.error(arguments);
-        deferred.reject(arguments);
-      });
+      }
+
+      function getReleases(url, pageToken) {
+        var fullUrl = url;
+        if (pageToken) {
+          fullUrl += "&pageToken=" + pageToken;
+        }
+        $http.get(fullUrl, headers={})
+        .success(function(response) {
+          parseReleases(response.items);
+          if (response.nextPageToken) {
+            getReleases(url, response.nextPageToken);
+          }
+          else {
+            // descending sort, so newer versions appear first
+            releases.sort(function(a, b) {
+              return a.data_version < b.data_version;
+            });
+            deferred.resolve(releases);
+          }
+        })
+        .error(function() {
+          console.error(arguments);
+          deferred.reject(arguments);
+        });
+      }
+
+      getReleases(baseUrl);
       return deferred.promise;
     },
     getRelease: function(name) {
