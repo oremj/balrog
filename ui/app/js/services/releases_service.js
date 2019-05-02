@@ -19,10 +19,9 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
       return $http.get('/api/releases/columns/product');
     },
     getHistory: function(name) {
-      // TODO: handle pagination if needed for performance. should test this after we import Firefox-mozilla-central-nightly-latest data
+      // TODO: handel pagination
       var deferred = $q.defer();
       var url = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + '&delimeter=/';
-      console.log(url);
       $http.get(url, headers={})
       .success(function(response) {
         var releases = [];
@@ -30,11 +29,15 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
           var parts = r.name.replace(name + "/", "").replace(".json", "").split("-");
           var release = {
             "name": name,
-            "data_version": parts[0],
+            "data_version": parseInt(parts[0]),
             "timestamp": parseInt(parts[1]),
             "changed_by": parts[2],
             "data_url": r.mediaLink,
           };
+          // descending sort, so newer versions appear first
+          releases.sort(function(a, b) {
+            return a.data_version < b.data_version;
+          });
           releases.push(release);
         });
         deferred.resolve(releases);

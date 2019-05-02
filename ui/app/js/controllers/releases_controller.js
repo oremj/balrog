@@ -13,19 +13,13 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
   $scope.maxSize = 10;
   $scope.auth0 = Auth0;
 
-  function loadPage(newPage) {
+  if ($scope.release_name) {
     Releases.getHistory($scope.release_name)
     .then(function(response, err) {
       // TODO: handle err
       $scope.releases = response;
       $scope.releases_count = response.length;
       $scope.loading = false;
-    });
-  }
-
-  if ($scope.release_name) {
-    $scope.$watch("currentPage", function(newPage) {
-      loadPage(newPage);
     });
   } else {
     Releases.getReleases()
