@@ -1,17 +1,18 @@
 angular.module('app').controller('ReleaseDataCtrl',
-function($scope, $http, $modalInstance, Releases, Rules, release, diff) {
+function($scope, $http, $modalInstance, Releases, Rules, release, diff, previous_version = null) {
   $scope.release = release;
   $scope.diff = diff;
+  $scope.previous_version = previous_version;
 
-  if (release.change_id) {
+  if (release.timestamp) {
     if (diff) {
-      Releases.getDiff(release.change_id)
-      .then(function(response) {
-        $scope.release.diff = response.data;
-      });
-
+      if (previous_version) {
+      }
+      else {
+      }
+      $scope.release.diff = "this is a diff";
     } else {
-      Releases.getData(release.change_id)
+      Releases.getData(release.data_url)
       .then(function(response) {
         $scope.release.data = response.data;
       });

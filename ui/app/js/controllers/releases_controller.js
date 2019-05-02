@@ -141,7 +141,7 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
         },
         diff: function() {
           return false;
-        }
+        },
       }
     });
   };
@@ -158,9 +158,18 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
         release: function () {
           return release;
         },
+        previous_version: function() {
+          var i = $scope.releases.indexOf(release);
+          if (i === $scope.releases.length-1) {
+            return null;
+          }
+          else {
+            return $scope.releases[i+1].data_url;
+          }
+        },
         diff: function() {
           return true;
-        }
+        },
       }
     });
   };

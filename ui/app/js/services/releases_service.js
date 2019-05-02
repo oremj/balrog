@@ -72,9 +72,8 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
     getReadOnly: function(name) {
       return $http.get('/api/releases/' + encodeURIComponent(name) + '/read_only');
     },
-    getData: function(change_id) {
-      var url = '/api/history/view/release/' + change_id + '/data';
-      return $http.get(url);
+    getData: function(link) {
+      return $http.get(link);
     },
     getDiff: function(change_id) {
       var url = '/api/history/diff/release/' + change_id + '/data';
