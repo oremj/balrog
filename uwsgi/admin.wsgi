@@ -62,9 +62,10 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 # has at least one permission.
 cache.make_cache("users", 1, 300)
 
+# TODO: need to be able to disable this aspect of releases history (but not the frontend part) for localdev
 if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
     storage_client = storage.Client()
-    releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
+    releases_history_bucket = storage_client.get_bucket("bhearsum_balrogtest_releases_history")
 else:
     releases_history_bucket = None
 dbo.setDb(os.environ["DBURI"], releases_history_bucket)

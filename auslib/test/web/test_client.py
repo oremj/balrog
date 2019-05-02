@@ -101,7 +101,7 @@ class ClientTestBase(ClientTestCommon):
 }
 """
             )
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         dbo.setDomainWhitelist({"a.com": ("b", "c", "e", "distTest")})
         self.client = app.test_client()
@@ -1365,7 +1365,7 @@ class ClientTestMig64(ClientTestCommon):
         app.config["DEBUG"] = True
         app.config["SPECIAL_FORCE_HOSTS"] = ("http://a.com",)
         app.config["WHITELISTED_DOMAINS"] = {"a.com": ("a", "b", "c")}
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         self.client = app.test_client()
         dbo.setDomainWhitelist({"a.com": ("a", "b", "c")})
@@ -1537,7 +1537,7 @@ class ClientTestJaws(ClientTestCommon):
         app.config["DEBUG"] = True
         app.config["SPECIAL_FORCE_HOSTS"] = ("http://a.com",)
         app.config["WHITELISTED_DOMAINS"] = {"a.com": ("a", "b", "c")}
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         self.client = app.test_client()
         dbo.setDomainWhitelist({"a.com": ("a", "b", "c")})
@@ -1775,7 +1775,7 @@ class ClientTestWithErrorHandlers(ClientTestCommon):
     def setUp(self):
         app.config["DEBUG"] = True
         app.config["WHITELISTED_DOMAINS"] = {"a.com": ("a",)}
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         self.client = app.test_client()
 
@@ -1973,7 +1973,7 @@ class ClientTestCompactXML(ClientTestCommon):
         app.config["DEBUG"] = True
         app.config["SPECIAL_FORCE_HOSTS"] = ("http://a.com",)
         app.config["WHITELISTED_DOMAINS"] = {"a.com": ("b",)}
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         dbo.setDomainWhitelist({"a.com": ("b",)})
         self.client = app.test_client()

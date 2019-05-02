@@ -30,7 +30,7 @@ class CommonTestBase(unittest.TestCase):
         app.config["DEBUG"] = True
         self.public_client = app.test_client()
 
-        dbo.setDb("sqlite:///:memory:", None, None)
+        dbo.setDb("sqlite:///:memory:")
         self.metadata.create_all(dbo.engine)
         dbo.rules.t.insert().execute(
             rule_id=1, priority=90, backgroundRate=100, mapping="Fennec.55.0a1", update_type="minor", product="Fennec", data_version=1, alias="moz-releng"
