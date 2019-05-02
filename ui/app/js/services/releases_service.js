@@ -73,20 +73,15 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
       return $http.get('/api/releases/' + encodeURIComponent(name) + '/read_only');
     },
     getData: function(link) {
-      return $http.get(link);
-    },
-    getDiff: function(change_id) {
-      var url = '/api/history/diff/release/' + change_id + '/data';
-      return $http({
-        url: url,
-        method: 'GET',
-        transformResponse: function(value) {
-          // If we don't do this, angular is going to try
-          // to parse the data as JSON just because it's
-          // a string.
-          return value;
-        }
+      var deferred = $q.defer();
+      $http.get(link, headers={})
+      .success(function(response) {
+        deferred.resolve(JSON.stringify(response, null, "  "));
+      })
+      .error(function() {
+        deferred.reject(arguments);
       });
+      return deferred.promise;
     },
     getUpDiff: function(sc_id) {
       var url = '/api/scheduled_change/diff/release/' + sc_id;

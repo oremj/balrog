@@ -164,7 +164,7 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
             return null;
           }
           else {
-            return $scope.releases[i+1].data_url;
+            return $scope.releases[i+1];
           }
         },
         diff: function() {
