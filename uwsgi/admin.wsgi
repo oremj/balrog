@@ -62,12 +62,14 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 # has at least one permission.
 cache.make_cache("users", 1, 300)
 
-# TODO: need to be able to disable this aspect of releases history (but not the frontend part) for localdev
 if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    storage_client = storage.Client()
-    releases_history_bucket = storage_client.get_bucket("bhearsum_balrogtest_releases_history")
-else:
-    releases_history_bucket = None
+    if os.environ.get("RELEASES_HISTORY_WRITE_BUCKET") == "disable":
+        releases_history_bucket = None
+    else:
+        storage_client = storage.Client()
+        bucket_name = os.environ.get("RELEASES_HISTORY_WRITE_BUCKET", os.environ.get("RELEASES_HISTORY_BUCKET"))
+        releases_history_bucket = storage_client.get_bucket(bucket_name)
+
 dbo.setDb(os.environ["DBURI"], releases_history_bucket)
 if os.environ.get("NOTIFY_TO_ADDR"):
     use_tls = False
