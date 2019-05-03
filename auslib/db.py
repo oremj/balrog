@@ -680,7 +680,7 @@ class GCSHistory:
 
     def forInsert(self, insertedKeys, columns, changed_by, trans):
         timestamp = getMillisecondTimestamp()
-        for data_version, ts, data in ((None, timestamp-1, ""), (columns.get("data_version"), timestamp, json.dumps(columns[self.data_column]))):
+        for data_version, ts, data in ((None, timestamp - 1, ""), (columns.get("data_version"), timestamp, json.dumps(columns[self.data_column]))):
             bname = "{}/{}-{}-{}.json".format(columns.get(self.identifier_column), data_version, ts, changed_by)
             blob = self.bucket.blob(bname)
             blob.upload_from_string(data, content_type="application/json")
@@ -695,13 +695,12 @@ class GCSHistory:
         blob = self.bucket.blob(bname)
         blob.upload_from_string(json.dumps(rowData[self.data_column]), content_type="application/json")
 
-    # TODO: update these exceptions
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
         if self.identifier_column not in column_values or not data_version:
-            raise Exception("cannot proceed!")
+            raise ValueError("Cannot find GCS changes without {} and data_version".format(self.identifier_column))
         blobs = [b for b in self.bucket.list_blobs(prefix="{}/{}".format(column_values[self.identifier_column], data_version))]
         if len(blobs) != 1:
-            raise Exception("wrong number of blobs!")
+            raise ValueError("Found {} blobs instead of 1".format(len(blobs)))
         return {
             self.identifier_column: column_values[self.identifier_column],
             "data_version": data_version,
