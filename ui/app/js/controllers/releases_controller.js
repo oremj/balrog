@@ -16,10 +16,14 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
   if ($scope.release_name) {
     Releases.getHistory($scope.release_name)
     .then(function(response, err) {
-      // TODO: handle err
-      $scope.releases = response;
-      $scope.releases_count = response.length;
-      $scope.loading = false;
+      if (err) {
+        sweetAlert("Failed to load release revisions:", err);
+      }
+      else {
+        $scope.releases = response;
+        $scope.releases_count = response.length;
+        $scope.loading = false;
+      }
     });
   } else {
     Releases.getReleases()

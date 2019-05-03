@@ -19,7 +19,6 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
       return $http.get('/api/releases/columns/product');
     },
     getHistory: function(name) {
-      // TODO: handel pagination
       var deferred = $q.defer();
       var releases = [];
       var baseUrl = GCSConfig['releases_history_bucket'] + '?prefix=' + name + '/' + '&delimeter=/';
@@ -29,7 +28,7 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
           var parts = r.name.replace(name + "/", "").replace(".json", "").split("-");
           var release = {
             "name": name,
-            // TODO: can't do this because data version is None for deletes
+            // Sometimes data version in None, which will show up as NaN. Meh?
             "data_version": parseInt(parts[0]),
             "timestamp": parseInt(parts[1]),
             "changed_by": parts[2],
@@ -44,13 +43,17 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
         if (pageToken) {
           fullUrl += "&pageToken=" + pageToken;
         }
-        $http.get(fullUrl, headers={})
+        $http.get(fullUrl)
         .success(function(response) {
           parseReleases(response.items);
           if (response.nextPageToken) {
             getReleases(url, response.nextPageToken);
           }
           else {
+            // descending sort, so newer versions appear first
+            releases.sort(function(a, b) {
+              return a.data_version < b.data_version;
+            });
             deferred.resolve(releases);
           }
         })
@@ -71,7 +74,7 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
     },
     getData: function(link) {
       var deferred = $q.defer();
-      $http.get(link, headers={})
+      $http.get(link)
       .success(function(response) {
         deferred.resolve(JSON.stringify(response, null, "  "));
       })
