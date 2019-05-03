@@ -678,12 +678,12 @@ class GCSHistory:
         self.identifier_column = identifier_column
         self.data_column = data_column
 
-    # TODO: may need to do extra or different inserts for deletes and inserts?
-    # TODO: maybe timestamp should go before data version, since data version is None for deletes?
     def forInsert(self, insertedKeys, columns, changed_by, trans):
-        bname = "{}/{}-{}-{}.json".format(columns.get(self.identifier_column), columns.get("data_version"), getMillisecondTimestamp(), changed_by)
-        blob = self.bucket.blob(bname)
-        blob.upload_from_string(json.dumps(columns[self.data_column]), content_type="application/json")
+        timestamp = getMillisecondTimestamp()
+        for data_version, ts, data in ((None, timestamp-1, ""), (columns.get("data_version"), timestamp, json.dumps(columns[self.data_column]))):
+            bname = "{}/{}-{}-{}.json".format(columns.get(self.identifier_column), data_version, ts, changed_by)
+            blob = self.bucket.blob(bname)
+            blob.upload_from_string(data, content_type="application/json")
 
     def forDelete(self, rowData, changed_by, trans):
         bname = "{}/{}-{}-{}.json".format(rowData.get(self.identifier_column), rowData.get("data_version"), getMillisecondTimestamp(), changed_by)
