@@ -330,39 +330,6 @@ class ReleaseReadOnlyView(AdminView):
         return Response(status=201, response=json.dumps(dict(new_data_version=data_version)))
 
 
-class ReleaseHistoryView(HistoryView):
-    """/releases/:release/revisions"""
-
-    def __init__(self):
-        super(ReleaseHistoryView, self).__init__(dbo.releases)
-
-    def _get_what(self, change):
-        return dict(data=createBlob(change["data"]), product=change["product"])
-
-    def _get_release(self, release):
-        releases = self.table.getReleases(name=release, limit=1)
-        return releases[0] if releases else None
-
-    @requirelogin
-    def _post(self, release, transaction, changed_by):
-        try:
-            return self.revert_to_revision(
-                get_object_callback=lambda: self._get_release(release),
-                change_field="name",
-                get_what_callback=self._get_what,
-                changed_by=changed_by,
-                response_message="Excellent!",
-                transaction=transaction,
-                obj_not_found_msg="bad release",
-            )
-        except BlobValidationError as e:
-            self.log.warning("Bad input: %s", e.args)
-            return problem(400, "Bad Request", "Invalid input blob: %s" % e.args, ext={"data": e.errors})
-        except ValueError as e:
-            self.log.warning("Bad input: %s", e.args)
-            return problem(400, "Bad Request", "Invalid input", ext={"data": e.args})
-
-
 class ReleasesAPIView(AdminView):
     """/releases"""
 
