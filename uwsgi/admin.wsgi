@@ -40,13 +40,6 @@ configure_logging(**logging_kwargs)
 from auslib.global_state import cache, dbo  # noqa
 from auslib.web.admin.base import app as application  # noqa
 
-# TODO: make sure the app actually works locally without GOOGLE_APPLICATION_CREDENTIALS
-# probably by disabling writes to releases history
-if not os.environ.get("LOCALDEV") and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    log = logging.getLogger(__file__)
-    log.critical("GOOGLE_APPLICATION_CREDENTIALS must be provided")
-    sys.exit(1)
-
 cache.make_copies = True
 # We explicitly don't want a blob_version cache here because it will cause
 # issues where we run multiple instances of the admin app. Even though each
@@ -62,10 +55,22 @@ cache.make_cache("blob_schema", 50, 24 * 60 * 60)
 # has at least one permission.
 cache.make_cache("users", 1, 300)
 
+# Ensure that the necessary information is passed for releases history
+# to be written, unless we're in a local dev environment.
+if not os.environ.get("LOCALDEV"):
+    log = logging.getLogger(__file__)
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        log.critical("GOOGLE_APPLICATION_CREDENTIALS must be provided")
+        sys.exit(1)
+    if not os.environ.get("RELEASES_HISTORY_BUCKET"):
+        log.critical("RELEASES_HISTORY_BUCKET must be provided")
+        sys.exit(1)
+
+# Set up the releases history bucket, if enabled.
+# TODO: try getting rid of WRITE_BUCKET and just making users override the onther var
+releases_history_bucket = None
 if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    if os.environ.get("RELEASES_HISTORY_WRITE_BUCKET") == "disable":
-        releases_history_bucket = None
-    else:
+    if os.environ.get("RELEASES_HISTORY_WRITE_BUCKET") != "disable":
         storage_client = storage.Client()
         bucket_name = os.environ.get("RELEASES_HISTORY_WRITE_BUCKET", os.environ.get("RELEASES_HISTORY_BUCKET"))
         releases_history_bucket = storage_client.get_bucket(bucket_name)
@@ -189,3 +194,4 @@ angular.module('config', [])
     'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/{}/o'
 }});
 """.format(auth0_config, os.environ["RELEASES_HISTORY_BUCKET"]))
+# TODO: Make it possible for localdev to use its own bucket for reads, too

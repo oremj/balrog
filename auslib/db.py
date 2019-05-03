@@ -695,6 +695,7 @@ class GCSHistory:
         blob = self.bucket.blob(bname)
         blob.upload_from_string(json.dumps(rowData[self.data_column]), content_type="application/json")
 
+    # TODO: update these exceptions
     def getChange(self, change_id=None, column_values=None, data_version=None, transaction=None):
         if self.identifier_column not in column_values or not data_version:
             raise Exception("cannot proceed!")

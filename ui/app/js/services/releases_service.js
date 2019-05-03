@@ -29,6 +29,7 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
           var parts = r.name.replace(name + "/", "").replace(".json", "").split("-");
           var release = {
             "name": name,
+            // TODO: can't do this because data version is None for deletes
             "data_version": parseInt(parts[0]),
             "timestamp": parseInt(parts[1]),
             "changed_by": parts[2],
