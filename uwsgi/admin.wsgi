@@ -67,13 +67,10 @@ if not os.environ.get("LOCALDEV"):
         sys.exit(1)
 
 # Set up the releases history bucket, if enabled.
-# TODO: try getting rid of WRITE_BUCKET and just making users override the onther var
 releases_history_bucket = None
-if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    if os.environ.get("RELEASES_HISTORY_WRITE_BUCKET") != "disable":
-        storage_client = storage.Client()
-        bucket_name = os.environ.get("RELEASES_HISTORY_WRITE_BUCKET", os.environ.get("RELEASES_HISTORY_BUCKET"))
-        releases_history_bucket = storage_client.get_bucket(bucket_name)
+if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") and os.environ.get("RELEASES_HISTORY_BUCKET"):
+    storage_client = storage.Client()
+    releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
 
 dbo.setDb(os.environ["DBURI"], releases_history_bucket)
 if os.environ.get("NOTIFY_TO_ADDR"):
@@ -194,4 +191,3 @@ angular.module('config', [])
     'releases_history_bucket': 'https://www.googleapis.com/storage/v1/b/{}/o'
 }});
 """.format(auth0_config, os.environ["RELEASES_HISTORY_BUCKET"]))
-# TODO: Make it possible for localdev to use its own bucket for reads, too
