@@ -1,5 +1,6 @@
 import logging
 import os
+import os.path
 import sys
 
 from flask_wtf.csrf import CSRFProtect
@@ -59,7 +60,7 @@ cache.make_cache("users", 1, 300)
 # to be written, unless we're in a local dev environment.
 if not os.environ.get("LOCALDEV"):
     log = logging.getLogger(__file__)
-    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+    if not os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")):
         log.critical("GOOGLE_APPLICATION_CREDENTIALS must be provided")
         sys.exit(1)
     if not os.environ.get("RELEASES_HISTORY_BUCKET"):
@@ -68,7 +69,7 @@ if not os.environ.get("LOCALDEV"):
 
 # Set up the releases history bucket, if enabled.
 releases_history_bucket = None
-if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") and os.environ.get("RELEASES_HISTORY_BUCKET"):
+if os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")) and os.environ.get("RELEASES_HISTORY_BUCKET"):
     storage_client = storage.Client()
     releases_history_bucket = storage_client.get_bucket(os.environ["RELEASES_HISTORY_BUCKET"])
 

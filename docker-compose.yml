@@ -18,8 +18,6 @@ services:
       - "7070"
     volumes:
       - .:/app
-      # TODO: can we make this conditional? or stop it from creating a folder when unset at least?
-      - ./${GOOGLE_APPLICATION_CREDENTIALS}:/app/${GOOGLE_APPLICATION_CREDENTIALS}
     links:
       - balrogdb
     environment:
@@ -42,9 +40,9 @@ services:
       # By default, we disable writes to releases history for local development
       # and read existing history from the production bucket.
       # If you want to test release history writes, you need to set up your own
-      # bucket, change this variable, and provide GOOGLE_APPLICATION_CREDENTIALS
+      # bucket, change this variable, and provide credentials in google.json.
       - RELEASES_HISTORY_BUCKET=balrog-stage-release-history-v1
-      - GOOGLE_APPLICATION_CREDENTIALS
+      - GOOGLE_APPLICATION_CREDENTIALS=google.json
       # Grab mail information from the local environment
       - SMTP_HOST
       - SMTP_PORT
