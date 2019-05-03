@@ -51,10 +51,6 @@ angular.module("app").factory('Releases', function($http, $q, ScheduledChanges, 
             getReleases(url, response.nextPageToken);
           }
           else {
-            // descending sort, so newer versions appear first
-            releases.sort(function(a, b) {
-              return a.data_version < b.data_version;
-            });
             deferred.resolve(releases);
           }
         })

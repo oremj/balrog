@@ -52,8 +52,8 @@ function($scope, $routeParams, $location, $timeout, Releases, Search, $modal, Pa
   if ($scope.release_name) {
     $scope.ordering_options = [
       {
-        text: "Data Version",
-        value: "-data_version"
+        text: "Timestamp",
+        value: "-timestamp"
       },
     ];
   } else {
