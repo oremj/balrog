@@ -89,9 +89,9 @@ async def process_release(r, session, balrog_db, bucket, gcs_sem, loop):
     for change_id in change_ids:
         revisions = await loop.run_in_executor(
             None, balrog_db.execute,
-            f"SELECT data_version, timestamp, changed_by, data FROM releases_history WHERE change_id={change_id}"
+            f"SELECT data_version, timestamp, changed_by, data FROM releases_history WHERE change_id={change_id['change_id']}"
         )
-        for revision in revisions:
+        for rev in revisions:
             releases[r] += 1
             if rev["data"] is None:
                 old_version_hash = None
