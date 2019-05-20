@@ -188,5 +188,5 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     ignore_aiohttp_ssl_error(loop)
 
-    balrog_db = create_engine(dburi, pool_size=200, max_overflow=0, pool_timeout=None)
+    balrog_db = create_engine(dburi, pool_size=mysql_concurrency, max_overflow=0, pool_timeout=None)
     loop.run_until_complete(main(loop, balrog_db, bucket_name, limit_to, gcs_concurrency, skip_toplevel_keys, whitelist, gcs_timeout))
