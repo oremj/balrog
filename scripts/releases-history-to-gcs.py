@@ -77,41 +77,39 @@ def timeout_monkeypatch(storage, timeout_override):
     return storage
 
 
-async def process_release(r, session, balrog_db, bucket, mysql_sem, gcs_sem, loop):
+async def process_release(r, session, balrog_db, bucket, gcs_sem, loop):
     releases = defaultdict(int)
     uploads = defaultdict(lambda: defaultdict(int))
 
     print("Processing {}".format(r), flush=True)
-    async with mysql_sem:
-        revisions = await loop.run_in_executor(
-            None, balrog_db.execute, f"SELECT data_version, timestamp, changed_by, data FROM releases_history WHERE name='{r}'"
-        )
-        for rev in revisions:
-            releases[r] += 1
-            if rev["data"] is None:
-                old_version_hash = None
-            else:
-                old_version_hash = hashlib.md5(rev["data"].encode("ascii")).digest()
-            try:
-                async with gcs_sem:
-                    current_blob = await bucket.get_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
-                current_blob_hash = base64.b64decode(current_blob.md5Hash)
-            except aiohttp.ClientResponseError:
-                current_blob_hash = None
-            if old_version_hash != current_blob_hash:
-                async with gcs_sem:
-                    blob = bucket.new_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
-                await blob.upload(rev["data"], session)
-                uploads[r]["uploaded"] += 1
-            else:
-                uploads[r]["existing"] += 1
+    revisions = await loop.run_in_executor(
+        None, balrog_db.execute, f"SELECT data_version, timestamp, changed_by, data FROM releases_history WHERE name='{r}'"
+    )
+    for rev in revisions:
+        releases[r] += 1
+        if rev["data"] is None:
+            old_version_hash = None
+        else:
+            old_version_hash = hashlib.md5(rev["data"].encode("ascii")).digest()
+        try:
+            async with gcs_sem:
+                current_blob = await bucket.get_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
+            current_blob_hash = base64.b64decode(current_blob.md5Hash)
+        except aiohttp.ClientResponseError:
+            current_blob_hash = None
+        if old_version_hash != current_blob_hash:
+            async with gcs_sem:
+                blob = bucket.new_blob("{}/{}-{}-{}.json".format(r, rev["data_version"], rev["timestamp"], rev["changed_by"]))
+            await blob.upload(rev["data"], session)
+            uploads[r]["uploaded"] += 1
+        else:
+            uploads[r]["existing"] += 1
 
     return releases, uploads
 
 
-async def main(loop, balrog_db, bucket_name, limit_to, mysql_concurrency, gcs_concurrency, skip_toplevel_keys, whitelist, gcs_timeout):
+async def main(loop, balrog_db, bucket_name, limit_to, gcs_concurrency, skip_toplevel_keys, whitelist, gcs_timeout):
     # limit the number of connections at any one time
-    mysql_sem = asyncio.Semaphore(mysql_concurrency)
     gcs_sem = asyncio.Semaphore(gcs_concurrency)
     releases = defaultdict(int)
     uploads = defaultdict(lambda: defaultdict(int))
@@ -154,7 +152,7 @@ async def main(loop, balrog_db, bucket_name, limit_to, mysql_concurrency, gcs_co
                 print("Skipping {} because it matches a skip pattern".format(release_name), flush=True)
                 continue
 
-            tasks.append(loop.create_task(process_release(release_name, session, balrog_db, bucket, mysql_sem, gcs_sem, loop)))
+            tasks.append(loop.create_task(process_release(release_name, session, balrog_db, bucket, gcs_sem, loop)))
 
         for processed_releases, processed_uploads in await asyncio.gather(*tasks, loop=loop):
             for rel in processed_releases:
@@ -190,5 +188,5 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     ignore_aiohttp_ssl_error(loop)
 
-    balrog_db = create_engine(dburi)
-    loop.run_until_complete(main(loop, balrog_db, bucket_name, limit_to, mysql_concurrency, gcs_concurrency, skip_toplevel_keys, whitelist, gcs_timeout))
+    balrog_db = create_engine(dburi, pool_size=200, max_overflow=0, pool_timeout=None)
+    loop.run_until_complete(main(loop, balrog_db, bucket_name, limit_to, gcs_concurrency, skip_toplevel_keys, whitelist, gcs_timeout))
