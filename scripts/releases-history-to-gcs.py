@@ -225,8 +225,8 @@ if __name__ == "__main__":
     ignore_aiohttp_ssl_error(loop)
 
     balrog_db = create_engine(dburi,
-                              pool_size=mysql_concurrency,
-                              max_overflow=0,
+                              pool_size=300,
+                              max_overflow=100,
                               pool_timeout=None)
     loop.run_until_complete(
         main(loop, balrog_db, bucket_name, limit_to, gcs_concurrency,
